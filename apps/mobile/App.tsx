@@ -16,8 +16,11 @@ import { AdminWorkspaceDemo } from './src/AdminWorkspaceDemo';
 import { FormCatalogDemo, formIdForSpecialty } from './src/FormCatalogDemo';
 import {
   createDemoPatients, createDemoProfessionals, createPatientEntry,
-  createProfessionalEntry, createDemoAssignment, DEMO_SLOTS, nextDemoDay,
+  createProfessionalEntry, createDemoAssignment,
 } from './src/adminDemoData';
+import {
+  coverageKindLabel, formatDemoTimeRange, type DemoCoverageKind,
+} from './src/coverageDemo';
 
 type Tab = 'home' | 'agenda' | 'forms' | 'management';
 type AgendaFilter = 'all' | 'pending' | 'finished';
@@ -77,9 +80,9 @@ function HomePanel({
 
       <View style={styles.hero}>
         <Text style={styles.heroEyebrow}>PEDIATRICS · ATENCIÓN EN DOMICILIO</Text>
-        <Text style={styles.heroTitle}>Cada visita, con claridad y seguimiento.</Text>
+        <Text style={styles.heroTitle}>Cada cobertura, con claridad y seguimiento.</Text>
         <Text style={styles.heroBody}>
-          Esta vista demuestra el funcionamiento de la futura agenda. Todos los pacientes son ficticios.
+          Esta vista demuestra visitas y guardias. Todos los pacientes son ficticios.
         </Text>
         <Pressable
           accessibilityRole="button"
@@ -93,7 +96,7 @@ function HomePanel({
       </View>
 
       <View style={styles.statsRow}>
-        <SummaryStat value={todaysVisits.length} label="Visitas de hoy" accent />
+        <SummaryStat value={todaysVisits.length} label="Coberturas de hoy" accent />
         <SummaryStat value={todaysVisits.filter(v => isPending(v.status)).length} label="Pendientes" />
         <SummaryStat value={completed} label="Finalizadas (demo)" />
       </View>
@@ -161,7 +164,9 @@ function VisitDetail({
         <Text style={styles.mutedText}>{visit.detail}</Text>
         <View style={styles.hairline} />
         <LabelValue label="Fecha" value={formatDemoDate(visit.date)} />
-        <LabelValue label="Horario planificado" value={visit.timeRange} />
+        <LabelValue label="Modalidad" value={coverageKindLabel(visit.serviceKind)} />
+        <LabelValue label="Horario planificado"
+          value={formatDemoTimeRange(visit.startTime, visit.endTime)} />
         <LabelValue label="Ubicación" value={visit.neighborhood} />
         <LabelValue label="Referencia" value={visit.reference} />
       </View>
@@ -234,7 +239,7 @@ function AgendaPanel({
       <ScreenHeading
         eyebrow="Prestaciones asignadas"
         title="Agenda domiciliaria"
-        subtitle="Explorá tus visitas y filtrá por estado. No se conecta con datos de Pediatrics."
+        subtitle="Explorá visitas y guardias y filtrá por estado. No se conecta con datos de Pediatrics."
       />
       <View style={[styles.agendaColumns, isTablet && styles.agendaColumnsWide]}>
         <View style={[styles.agendaList, isTablet && styles.agendaListWide]}>
@@ -364,13 +369,15 @@ export default function App() {
     setProfessionals(previous => [...previous, professional]);
     return true;
   }
-  function assignVisit(patientId: string, professionalId: string, slotId: string): boolean {
+  function assignVisit(
+    patientId: string, professionalId: string, kind: DemoCoverageKind,
+    day: string, startTime: string, endTime: string,
+  ): boolean {
     const patient = patients.find(item => item.id === patientId);
     const professional = professionals.find(item => item.id === professionalId);
-    const slot = DEMO_SLOTS.find(item => item.id === slotId);
-    if (!patient || !professional || !slot) return false;
+    if (!patient || !professional) return false;
     const assignment = createDemoAssignment({
-      patient, professional, slot, current: visits, day: nextDemoDay(),
+      patient, professional, kind, day, startTime, endTime, current: visits,
     });
     if (!assignment) return false;
     setVisits(previous => [...previous, assignment]);
