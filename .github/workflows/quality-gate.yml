@@ -114,3 +114,7 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261010000000_standalone_foundation.sql
       - name: Test actual PostgreSQL RLS, denials and integrity
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/rls_isolation.sql
+      - name: Apply trusted operational command migration
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261010010000_operational_commands.sql
+      - name: Exercise role-scoped backend commands and race prevention
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/operational_commands.sql
