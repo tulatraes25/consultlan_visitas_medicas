@@ -26,7 +26,7 @@ describe('Pediatrics mobile demo interactions — synthetic data only', () => {
     expect(screen.getByText('Agenda domiciliaria')).toBeTruthy();
     fireEvent.press(screen.getByRole('button', { name: /Ver detalle de Paciente ficticio C/ }));
     expect(screen.getByText('Paciente ficticio C')).toBeTruthy();
-    expect(screen.getByText('Registro y firma no disponibles en esta demostración')).toBeTruthy();
+    expect(screen.getByText('Registro clínico y firma válida no disponibles')).toBeTruthy();
     fireEvent.press(screen.getAllByRole('button', { name: 'Volver a la agenda' })[0]);
     expect(screen.getByText('Agenda domiciliaria')).toBeTruthy();
   });
@@ -70,12 +70,42 @@ describe('Pediatrics mobile demo interactions — synthetic data only', () => {
     expect(screen.getAllByText('Fonoaudiología').length).toBeGreaterThan(1);
   });
 
+  test('signature modal opens, captures a synthetic stroke, clears and discards on close', () => {
+    render(<App />);
+    fireEvent.press(screen.getByRole('tab', { name: 'Agenda' }));
+    fireEvent.press(screen.getByRole('button', { name: /Ver detalle de Paciente ficticio C/ }));
+    fireEvent.press(screen.getByRole('button', { name: 'Probar ventana táctil de firma (demo)' }));
+
+    expect(screen.getByText('Ventana táctil de firma')).toBeTruthy();
+    expect(screen.getByText('SIMULACIÓN SIN VALIDEZ LEGAL')).toBeTruthy();
+    expect(screen.getByText('Trazos: 0')).toBeTruthy();
+    fireEvent.press(screen.getByRole('radio', { name: 'Vínculo de muestra: Tutor' }));
+    expect(screen.getByText('Elegir un vínculo no acredita identidad ni representación legal.')).toBeTruthy();
+
+    const pad = screen.getByTestId('demo-signature-pad');
+    fireEvent(pad, 'layout', { nativeEvent: { layout: { width: 320, height: 180 } } });
+    fireEvent(pad, 'responderGrant', { nativeEvent: { locationX: 12, locationY: 14 } });
+    fireEvent(pad, 'responderMove', { nativeEvent: { locationX: 45, locationY: 60 } });
+    expect(screen.getByText('Trazos: 1')).toBeTruthy();
+
+    fireEvent.press(screen.getByRole('button', { name: 'Borrar trazos de demostración' }));
+    expect(screen.getByText('Trazos: 0')).toBeTruthy();
+
+    fireEvent(pad, 'responderGrant', { nativeEvent: { locationX: 15, locationY: 30 } });
+    expect(screen.getByText('Trazos: 1')).toBeTruthy();
+    fireEvent.press(screen.getByRole('button', { name: 'Cerrar y descartar demostración' }));
+    expect(screen.queryByText('Ventana táctil de firma')).toBeNull();
+
+    fireEvent.press(screen.getByRole('button', { name: 'Probar ventana táctil de firma (demo)' }));
+    expect(screen.getByText('Trazos: 0')).toBeTruthy();
+  });
+
   test('medium tablet shows focused visit detail with a back action', () => {
     setViewport(1000, 850);
     render(<App />);
     fireEvent.press(screen.getByRole('tab', { name: 'Agenda' }));
     fireEvent.press(screen.getByRole('button', { name: /Ver detalle de Paciente ficticio F/ }));
-    expect(screen.getByText('Registro y firma no disponibles en esta demostración')).toBeTruthy();
+    expect(screen.getByText('Registro clínico y firma válida no disponibles')).toBeTruthy();
     expect(screen.getAllByRole('button', { name: 'Volver a la agenda' }).length).toBeGreaterThan(0);
   });
 });
