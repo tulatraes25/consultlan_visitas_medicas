@@ -32,7 +32,7 @@ jobs:
           node-version: '22'
       - name: Guard against source clinical documents
         run: |
-          if git ls-files | grep -Ei '\\.(pdf|docx|zip|emf|db|sqlite)$'; then
+          if git ls-files | grep -Eiq '\.(pdf|docx|zip|emf|db|sqlite)$'; then
             echo 'Clinical documents or database dumps must never be committed.'
             exit 1
           fi
