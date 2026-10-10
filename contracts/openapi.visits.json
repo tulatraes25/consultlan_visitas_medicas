@@ -1,0 +1,681 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "CONSULTLAN Visitas Domiciliarias - Draft API",
+    "version": "0.1.0-draft",
+    "description": "Contrato inicial sin servidor implementado. Solo ilustrativo; NO representa mecanismo legal certificado de firma ni permiso clínico validado. Identidades, roles, servicios de confianza, permisos y evidencias se resuelven en backend; nunca provienen sin validación del cuerpo de peticiones móviles."
+  },
+  "tags": [
+    {
+      "name": "Visits"
+    },
+    {
+      "name": "ClinicalRecords"
+    },
+    {
+      "name": "Attendance"
+    },
+    {
+      "name": "ProfessionalSignature"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/v1/visits": {
+      "get": {
+        "tags": [
+          "Visits"
+        ],
+        "operationId": "listMyVisits",
+        "summary": "Listar solo visitas autorizadas por actor/caso",
+        "description": "El backend filtra por tenant, rol, asignación y necesidad clínica. El cliente no tiene permiso para enumerar pacientes.",
+        "parameters": [
+          {
+            "name": "day",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Visitas permitidas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/VisitSummary"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/v1/visits/{visitId}": {
+      "get": {
+        "tags": [
+          "Visits"
+        ],
+        "operationId": "getAuthorizedVisit",
+        "summary": "Obtener visita dentro del alcance del profesional/coordinación",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/VisitId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Visita visible",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VisitSummary"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "description": "Visita inexistente o no visible"
+          }
+        }
+      }
+    },
+    "/v1/visits/{visitId}/start": {
+      "post": {
+        "operationId": "startAssignedVisit",
+        "summary": "Registrar el inicio de una visita asignada",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/VisitId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatch"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {},
+                "required": []
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "New server-acknowledged state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VisitSummary"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Validation"
+          }
+        },
+        "tags": [
+          "Visits"
+        ],
+        "description": "El servidor valida usuario profesional asignado, tenant, estado, versión, hora central e idempotencia. Offline solo se guarda borrador local."
+      }
+    },
+    "/v1/visits/{visitId}/clinical-records": {
+      "post": {
+        "operationId": "saveClinicalRecordDraft",
+        "summary": "Guardar registro clínico del profesional asignado",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/VisitId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatch"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClinicalRecordDraft"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "New server-acknowledged state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VisitSummary"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Validation"
+          }
+        },
+        "tags": [
+          "ClinicalRecords"
+        ],
+        "description": "El servidor asigna autor, versión, timestamp y auditoría; el cliente no puede suministrar una firma profesional verificada."
+      }
+    },
+    "/v1/visits/{visitId}/submit-for-review": {
+      "post": {
+        "operationId": "submitVisitForReview",
+        "summary": "Marcar evolución como lista para revisión",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/VisitId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatch"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "recordVersion": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                },
+                "required": [
+                  "recordVersion"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "New server-acknowledged state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VisitSummary"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Validation"
+          }
+        },
+        "tags": [
+          "Visits"
+        ],
+        "description": "La transición a revisión verifica que la versión de registro enviada existe y pertenece a la visita."
+      }
+    },
+    "/v1/visits/{visitId}/attendance-attestations": {
+      "post": {
+        "operationId": "submitAttendanceAttestation",
+        "summary": "Registrar conformidad, negativa o indisponibilidad de firmante",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/VisitId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatch"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttendanceAttestationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "New server-acknowledged state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VisitSummary"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Validation"
+          }
+        },
+        "tags": [
+          "Attendance"
+        ],
+        "description": "El firmante ve primero el documento exacto; una firma capturada se vincula con una sesión corta de servidor y su SHA-256. La firma manuscrita en pantalla NO se etiqueta como firma digital certificada."
+      }
+    },
+    "/v1/visits/{visitId}/professional-signature-requests": {
+      "post": {
+        "operationId": "requestProfessionalSignature",
+        "summary": "Solicitar firma profesional mediante prestador confiable",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/VisitId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatch"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfessionalSignatureRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Solicitud pendiente de verificación externa",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfessionalSignatureChallenge"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Validation"
+          }
+        },
+        "tags": [
+          "ProfessionalSignature"
+        ],
+        "description": "Solo inicia desafío de firma sobre un digest específico. El resultado se verifica desde el canal certificado del proveedor; jamás acepta bandera client-side 'signatureVerified' ni clave privada."
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "parameters": {
+      "VisitId": {
+        "name": "visitId",
+        "in": "path",
+        "required": true,
+        "description": "Identificador opaco, nunca DNI ni número de HC",
+        "schema": {
+          "type": "string",
+          "minLength": 8
+        }
+      },
+      "IdempotencyKey": {
+        "name": "Idempotency-Key",
+        "in": "header",
+        "required": true,
+        "description": "UUID de operación, misma respuesta ante reintento",
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "IfMatch": {
+        "name": "If-Match",
+        "in": "header",
+        "required": true,
+        "description": "ETag de versión para concurrencia optimista",
+        "schema": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "responses": {
+      "Unauthorized": {
+        "description": "Sesión ausente, caducada o revocada"
+      },
+      "Forbidden": {
+        "description": "El actor autenticado no tiene permiso para esta visita"
+      },
+      "Conflict": {
+        "description": "Versión obsoleta, operación duplicada incompatible o transición no permitida"
+      },
+      "Validation": {
+        "description": "Datos clínicos o de conformidad inválidos"
+      }
+    },
+    "schemas": {
+      "VisitState": {
+        "type": "string",
+        "enum": [
+          "PLANNED",
+          "ASSIGNED",
+          "IN_PROGRESS",
+          "PENDING_REVIEW",
+          "PENDING_SIGNATURE",
+          "CLOSED_VERIFIED",
+          "CANCELLED",
+          "NOT_PERFORMED"
+        ]
+      },
+      "VisitSummary": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "visitId",
+          "state",
+          "version",
+          "serviceType",
+          "scheduledStart",
+          "scheduledEnd"
+        ],
+        "properties": {
+          "visitId": {
+            "type": "string",
+            "description": "Identificador opaco"
+          },
+          "state": {
+            "$ref": "#/components/schemas/VisitState"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "serviceType": {
+            "type": "string",
+            "enum": [
+              "MEDICINE",
+              "NURSING",
+              "CAREGIVING",
+              "PHYSIOTHERAPY",
+              "SPEECH_THERAPY",
+              "OCCUPATIONAL_THERAPY",
+              "NUTRITION",
+              "OTHER"
+            ]
+          },
+          "scheduledStart": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "scheduledEnd": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "patientDisplay": {
+            "type": "string",
+            "description": "Mínima identificación mostrable al actor autorizado"
+          },
+          "caregiverConformity": {
+            "type": "string",
+            "enum": [
+              "NOT_REQUESTED",
+              "SIGNED",
+              "REFUSED",
+              "UNAVAILABLE"
+            ]
+          }
+        }
+      },
+      "ClinicalRecordDraft": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "templateVersion",
+          "notes"
+        ],
+        "properties": {
+          "templateVersion": {
+            "type": "string",
+            "minLength": 1
+          },
+          "notes": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 20000
+          },
+          "observations": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "type": "object",
+              "required": [
+                "code",
+                "value",
+                "unit"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "code": {
+                  "type": "string"
+                },
+                "value": {
+                  "type": "number"
+                },
+                "unit": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "AttendanceAttestationRequest": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "outcome",
+              "documentSha256",
+              "captureSessionId"
+            ],
+            "properties": {
+              "outcome": {
+                "const": "SIGNED"
+              },
+              "documentSha256": {
+                "type": "string",
+                "pattern": "^[0-9a-fA-F]{64}$"
+              },
+              "captureSessionId": {
+                "type": "string",
+                "minLength": 12
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "outcome",
+              "documentSha256",
+              "reason"
+            ],
+            "properties": {
+              "outcome": {
+                "type": "string",
+                "enum": [
+                  "REFUSED",
+                  "UNAVAILABLE"
+                ]
+              },
+              "documentSha256": {
+                "type": "string",
+                "pattern": "^[0-9a-fA-F]{64}$"
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 8
+              }
+            }
+          }
+        ],
+        "description": "La identidad del firmante se verifica contra sesión/registro del backend; no es un campo cliente trusted."
+      },
+      "ProfessionalSignatureRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "documentSha256"
+        ],
+        "properties": {
+          "documentSha256": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{64}$"
+          }
+        }
+      },
+      "ProfessionalSignatureChallenge": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "requestId",
+          "status"
+        ],
+        "properties": {
+          "requestId": {
+            "type": "string"
+          },
+          "status": {
+            "const": "PENDING_PROVIDER_VERIFICATION"
+          }
+        }
+      }
+    }
+  },
+  "x-security-invariants": [
+    "Tenant+actor+case grants are constructed from authenticated server context.",
+    "No public HTTP endpoint accepts CLOSED_VERIFIED or a boolean to claim certified professional signature.",
+    "A signed attendance record is different from an informed clinical consent.",
+    "PDF version and digest precede caregiver capture and professional signature.",
+    "Never store professional private signing keys on mobile.",
+    "No identifying patient data, real signatures or production credentials in repository or CI logs."
+  ]
+}
