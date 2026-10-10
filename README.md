@@ -6,7 +6,7 @@ Aplicación móvil para la **continuidad de cuidados domiciliarios pediátricos*
 
 ## Estado
 - Frontend React Native/Expo: navegación, agenda y firmas táctiles **solo de demostración**, con datos sintéticos y sin transmisión de trazos.
-- Backend: migraciones SUPA-01/02, **HC-01** (episodios/planes/equipo) y **HC-02A** (roster único de visitas y guardias, relevos). Edge SUPA-03 y permisos RLS con pruebas en GitHub. El agendamiento antiguo de visitas queda deliberadamente bloqueado; HC-02B deberá crear operaciones clínicas/administrativas supervisadas. **Sin proyecto Supabase desplegado ni pacientes reales, sin órdenes médicas ni servicios asistenciales activos.**
+- Backend: migraciones SUPA-01/02, HC-01 (episodios/planes/equipo), HC-02A (roster visitas/guardias/relevos) y **HC-02B** (comandos administrativos con auditoría y autorización del backend). **Solo se crean episodios y metadatos de plan en DRAFT; la aprobación médica, activación de casos y firmas siguen bloqueadas**. Agenda futura requiere plan aprobado de un circuito clínico todavía no implementado. **Sin proyecto Supabase desplegado ni pacientes reales, sin órdenes médicas ni servicios asistenciales activos.**
 - Integración clínica y firmas: **no implementadas**. Supabase no aporta por sí solo firma digital certificada.
 
 ## Documentación y código
@@ -15,6 +15,7 @@ Aplicación móvil para la **continuidad de cuidados domiciliarios pediátricos*
 - [SPEC-001](docs/specs/SPEC-001-visitas-domiciliarias.md) — requisitos y pendientes.
 - [HC-01 episodio, equipo y RLS](docs/specs/HC-01-episode-schema-and-rls.md) — migración PostgreSQL y controles de seguridad; sin aprobación clínica real.
 - [HC-02A coberturas y relevos](docs/specs/HC-02A-coverage-handover.md) — visitas puntuales y guardias extensas con prevención de superposición; todavía no hay altas operativas.
+- [HC-02B operaciones controladas](docs/specs/HC-02B-controlled-planning-commands.md) — admisión en borrador, integrantes del equipo, planificación condicional y recepción de relevos, sin simular aprobaciones clínicas.
 - [FORM-001](docs/specs/FORM-001-inventario-clinico.md) — planillas de origen inventariadas sin datos de pacientes.
 - [Supabase: migración y pruebas RLS](supabase/README.md) — instalación pendiente de proyecto en la nube, prueba en PostgreSQL sintético.
 - [App móvil](apps/mobile/README.md) — demo Android/iOS y tests de UI.
