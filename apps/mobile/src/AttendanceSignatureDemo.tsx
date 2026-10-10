@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 import type { DemoVisit } from './demoData';
+import { formatDemoTimeRange } from './coverageDemo';
 import { palette, corners, spacing, touchSize } from './theme';
 
 /**
@@ -163,7 +164,7 @@ export function AttendanceSignatureDemo({
             <Text style={styles.sectionLabel}>RESUMEN DE PRESTACIÓN FICTICIA</Text>
             <View style={styles.visitSummary}>
               <Text style={styles.summaryName}>{visit.patientLabel}</Text>
-              <Text style={styles.summaryLine}>{visit.specialty} · {visit.timeRange}</Text>
+              <Text style={styles.summaryLine}>{visit.specialty} · {formatDemoTimeRange(visit.startTime, visit.endTime)}</Text>
               <Text style={styles.summaryReference}>{visit.reference}</Text>
             </View>
 
