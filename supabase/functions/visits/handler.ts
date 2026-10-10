@@ -170,9 +170,22 @@ export function createVisitHandler(services: TrustedServices) {
     if (headerLength > MAX_BODY_BYTES) return json(413, { error: "BODY_TOO_LARGE" });
     let body: unknown;
     try {
-      const bytes = await request.arrayBuffer();
-      if (bytes.byteLength > MAX_BODY_BYTES) return json(413, { error: "BODY_TOO_LARGE" });
-      body = JSON.parse(new TextDecoder().decode(bytes));
+      // Limit streaming uploads BEFORE allocating large buffers.
+      const reader = request.body?.getReader();
+      if (!reader) return json(400, { error: "INVALID_JSON" });
+      const buffer = new Uint8Array(MAX_BODY_BYTES);
+      let size = 0;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (size + value.byteLength > MAX_BODY_BYTES) {
+          await reader.cancel();
+          return json(413, { error: "BODY_TOO_LARGE" });
+        }
+        buffer.set(value, size);
+        size += value.byteLength;
+      }
+      body = JSON.parse(new TextDecoder().decode(buffer.subarray(0, size)));
     } catch {
       return json(400, { error: "INVALID_JSON" });
     }
