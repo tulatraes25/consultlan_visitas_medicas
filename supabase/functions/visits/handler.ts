@@ -163,7 +163,6 @@ function checkField(value: unknown, kind: FieldKind): boolean {
     case "dateTime": return DATE_TIME.test(value) && Number.isFinite(Date.parse(value));
     case "cancelReason": return REASONS.has(value);
     case "coverageKind": return value === "VISIT" || value === "SHIFT";
-    case "positiveInt": return false;
   }
 }
 function sanitize(
