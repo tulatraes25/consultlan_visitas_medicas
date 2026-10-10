@@ -44,3 +44,33 @@ jobs:
           done
       - name: Domain security and API contract tests
         run: npm test
+
+  mobile-bundle:
+    name: Expo typecheck and Android/iOS JS bundles
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: apps/mobile
+    env:
+      CI: '1'
+      EXPO_NO_TELEMETRY: '1'
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install mobile dependencies
+        run: npm install --no-audit --no-fund
+      - name: TypeScript strict check
+        run: npm run typecheck
+      - name: Export Android JavaScript bundle
+        run: npm run export:android
+      - name: Export iOS JavaScript bundle
+        run: npm run export:ios
+      - name: Confirm bundles exist
+        run: |
+          test -d dist/android
+          test -d dist/ios
