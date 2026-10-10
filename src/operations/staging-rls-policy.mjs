@@ -15,6 +15,7 @@ function envValue(env, name) {
 function block(code) { throw new StagingGateError(code); }
 
 export function validateRlsStagingEnvironment(env, { live = false } = {}) {
+  if (!env || typeof env !== "object") return { ok: false, issues: ["STAGING_RLS_CONFIG_MISSING"] };
   const target = validateStagingEnvironment(env, { live });
   const issues = [...target.issues];
   if (envValue(env, "STAGING_RLS_E2E") !== "YES") issues.push("RLS_E2E_EXPLICIT_OPT_IN_REQUIRED");
