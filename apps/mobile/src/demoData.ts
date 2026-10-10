@@ -2,6 +2,8 @@
  * Fully synthetic, ephemeral fixtures. Never connect to CONSULTLAN or store PHI.
  * Identifiers intentionally cannot be confused with real patient identifiers.
  */
+import type { DemoCoverageKind } from './coverageDemo';
+
 export type VisitStatus = 'ASSIGNED' | 'IN_PROGRESS' | 'CLOSED_VERIFIED';
 export type Specialty =
   | 'Enfermería' | 'Kinesiología' | 'Medicina' | 'Fonoaudiología'
@@ -12,9 +14,13 @@ export type DemoVisit = Readonly<{
   reference: string;
   patientLabel: string;
   specialty: Specialty;
-  professionalRef?: string; // Synthetic assignment only; no Supabase/CONSULTLAN identity.
-  date: string;
-  timeRange: string;
+  professionalRef?: string; // Synthetic identity, never Supabase/CONSULTLAN identity.
+  patientRef?: string;
+  episodeRef?: string; // Homecare episode identity separate from outpatient patients.
+  serviceKind: DemoCoverageKind;
+  date: string; // YYYY-MM-DD, synthetic local civil date
+  startTime: string; // HH:mm, strict 24-hour clock
+  endTime: string; // HH:mm, if <= start: following civil day
   status: VisitStatus;
   neighborhood: string;
   detail: string;
@@ -36,37 +42,49 @@ export function createDemoVisits(now = new Date()): DemoVisit[] {
   return [
     {
       id: 'DEMO-0001', reference: 'VIS-DEMO-0001', patientLabel: 'Paciente ficticio A',
-      specialty: 'Enfermería', date: dayOffset(now, 0), timeRange: '08:30 – 09:15',
+      specialty: 'Enfermería', date: dayOffset(now, 0), startTime: '08:30', endTime: '09:15', serviceKind: 'VISIT',
+      patientRef: 'DEMO-PAT-A', episodeRef: 'DEMO-EPI-A',
+      professionalRef: 'DEMO-PRO-2',
       status: 'CLOSED_VERIFIED', neighborhood: 'Domicilio simulado · Zona A',
       detail: 'Control de enfermería de demostración. No contiene indicaciones clínicas.',
     },
     {
       id: 'DEMO-0002', reference: 'VIS-DEMO-0002', patientLabel: 'Paciente ficticio B',
-      specialty: 'Kinesiología', date: dayOffset(now, 0), timeRange: '10:00 – 10:45',
+      specialty: 'Kinesiología', date: dayOffset(now, 0), startTime: '10:00', endTime: '10:45', serviceKind: 'VISIT',
+      patientRef: 'DEMO-PAT-B', episodeRef: 'DEMO-EPI-B',
+      professionalRef: 'DEMO-PRO-3',
       status: 'IN_PROGRESS', neighborhood: 'Domicilio simulado · Zona B',
       detail: 'Sesión de kinesiología ficticia. Sin registro de evolución real.',
     },
     {
       id: 'DEMO-0003', reference: 'VIS-DEMO-0003', patientLabel: 'Paciente ficticio C',
-      specialty: 'Medicina', date: dayOffset(now, 0), timeRange: '15:00 – 15:40',
+      specialty: 'Medicina', date: dayOffset(now, 0), startTime: '15:00', endTime: '15:40', serviceKind: 'VISIT',
+      patientRef: 'DEMO-PAT-C', episodeRef: 'DEMO-EPI-C',
+      professionalRef: 'DEMO-PRO-1',
       status: 'ASSIGNED', neighborhood: 'Domicilio simulado · Zona C',
       detail: 'Visita médica ficticia. No existe historia clínica asociada.',
     },
     {
       id: 'DEMO-0004', reference: 'VIS-DEMO-0004', patientLabel: 'Paciente ficticio D',
-      specialty: 'Fonoaudiología', date: dayOffset(now, 1), timeRange: '09:00 – 09:50',
+      specialty: 'Fonoaudiología', date: dayOffset(now, 1), startTime: '09:00', endTime: '09:50', serviceKind: 'VISIT',
+      patientRef: 'DEMO-PAT-D', episodeRef: 'DEMO-EPI-D',
+      professionalRef: 'DEMO-PRO-4',
       status: 'ASSIGNED', neighborhood: 'Domicilio simulado · Zona D',
       detail: 'Sesión de fonoaudiología ficticia para probar el flujo de agenda.',
     },
     {
       id: 'DEMO-0005', reference: 'VIS-DEMO-0005', patientLabel: 'Paciente ficticio E',
-      specialty: 'Terapia ocupacional', date: dayOffset(now, 1), timeRange: '11:30 – 12:15',
+      specialty: 'Terapia ocupacional', date: dayOffset(now, 1), startTime: '11:30', endTime: '12:15', serviceKind: 'VISIT',
+      patientRef: 'DEMO-PAT-E', episodeRef: 'DEMO-EPI-E',
+      professionalRef: 'DEMO-PRO-5',
       status: 'ASSIGNED', neighborhood: 'Domicilio simulado · Zona E',
       detail: 'Sesión de terapia ocupacional ficticia para demostrar el detalle.',
     },
     {
       id: 'DEMO-0006', reference: 'VIS-DEMO-0006', patientLabel: 'Paciente ficticio F',
-      specialty: 'Nutrición', date: dayOffset(now, 2), timeRange: '14:00 – 14:30',
+      specialty: 'Nutrición', date: dayOffset(now, 2), startTime: '14:00', endTime: '14:30', serviceKind: 'VISIT',
+      patientRef: 'DEMO-PAT-F', episodeRef: 'DEMO-EPI-F',
+      professionalRef: 'DEMO-PRO-6',
       status: 'ASSIGNED', neighborhood: 'Domicilio simulado · Zona F',
       detail: 'Consulta nutricional ficticia. No contiene datos sanitarios.',
     },

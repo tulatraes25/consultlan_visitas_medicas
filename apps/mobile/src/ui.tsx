@@ -2,6 +2,7 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { DemoVisit, VisitStatus } from './demoData';
 import { formatDemoDate, statusLabel } from './demoData';
+import { coverageKindLabel, formatDemoTimeRange } from './coverageDemo';
 import { palette, corners, spacing, touchSize } from './theme';
 
 export function BrandMark({ dark = false }: { dark?: boolean }) {
@@ -52,7 +53,7 @@ export function VisitCard({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Ver detalle de ${visit.patientLabel}, ${visit.specialty}, ${visit.timeRange}`}
+      accessibilityLabel={`Ver detalle de ${visit.patientLabel}, ${visit.specialty}, ${formatDemoTimeRange(visit.startTime, visit.endTime)}`}
       accessibilityState={{ selected }}
       onPress={() => onPress(visit.id)}
       style={({ pressed }) => [
@@ -63,7 +64,7 @@ export function VisitCard({
       <View style={styles.cardTop}>
         <View style={styles.cardTimeLine}>
           <View style={styles.calendarDot} />
-          <Text style={styles.cardTime}>{visit.timeRange}</Text>
+          <Text style={styles.cardTime}>{formatDemoTimeRange(visit.startTime, visit.endTime)}</Text>
           <Text style={styles.cardDate}>{formatDemoDate(visit.date)}</Text>
         </View>
         <StatusChip status={visit.status} />
@@ -75,6 +76,7 @@ export function VisitCard({
         <View style={styles.cardContent}>
           <Text style={styles.cardTitle} numberOfLines={1}>{visit.patientLabel}</Text>
           <Text style={styles.cardSubtitle} numberOfLines={1}>{visit.specialty}</Text>
+          <Text style={styles.cardKind}>{coverageKindLabel(visit.serviceKind)}</Text>
           <Text style={styles.cardLocation} numberOfLines={1}>{visit.neighborhood}</Text>
         </View>
         <Text style={styles.cardChevron} accessibilityElementsHidden>›</Text>
@@ -157,6 +159,7 @@ const styles = StyleSheet.create({
   cardContent: { flex: 1, minWidth: 0, gap: spacing.xs },
   cardTitle: { color: palette.text, fontWeight: '700', fontSize: 15 },
   cardSubtitle: { color: palette.textSecondary, fontSize: 13 },
+  cardKind: { color: palette.primary, fontSize: 11, fontWeight: '800' },
   cardLocation: { color: palette.textMuted, fontSize: 12 },
   cardChevron: { color: palette.primary, fontSize: 26, fontWeight: '300' },
   screenHeading: { marginBottom: spacing.xl, gap: spacing.sm },

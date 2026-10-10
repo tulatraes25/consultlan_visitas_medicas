@@ -2,8 +2,12 @@ import React, { useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import type { DemoVisit, Specialty } from "./demoData";
 import {
-  DEMO_SLOTS, SPECIALTIES, type DemoPatient, type DemoProfessional,
+  SPECIALTIES, nextDemoDay, type DemoPatient, type DemoProfessional,
 } from "./adminDemoData";
+import {
+  coverageDurationLabel, findDemoContinuityHints, formatDemoTimeRange,
+  resolveDemoWindow, type DemoCoverageKind,
+} from "./coverageDemo";
 import { PrimaryAction, ScreenHeading } from "./ui";
 import { corners, palette, spacing, touchSize } from "./theme";
 
@@ -36,7 +40,8 @@ export function AdminWorkspaceDemo({
   visits: readonly DemoVisit[];
   onCreatePatient: (code: string) => boolean;
   onCreateProfessional: (code: string, specialty: Specialty) => boolean;
-  onAssign: (patientId: string, professionalId: string, slotId: string) => boolean;
+  onAssign: (patientId: string, professionalId: string, kind: DemoCoverageKind,
+    day: string, startTime: string, endTime: string) => boolean;
   onOpenAgenda: () => void;
 }) {
   const [section, setSection] = useState<Section>("patients");
@@ -45,7 +50,12 @@ export function AdminWorkspaceDemo({
   const [specialty, setSpecialty] = useState<Specialty>("Enfermería");
   const [selectedPatient, setSelectedPatient] = useState(patients[0]?.id ?? "");
   const [selectedProfessional, setSelectedProfessional] = useState(professionals[0]?.id ?? "");
-  const [selectedSlot, setSelectedSlot] = useState(DEMO_SLOTS[0].id);
+  const [kind, setKind] = useState<DemoCoverageKind>("VISIT");
+  const [day, setDay] = useState(() => nextDemoDay());
+  const [startTime, setStartTime] = useState("09:00");
+  const [endTime, setEndTime] = useState("10:00");
+  const previewWindow = resolveDemoWindow(day, startTime, endTime);
+  const continuityHints = findDemoContinuityHints(visits);
   const [feedback, setFeedback] = useState("");
 
   const sections: readonly { id: Section; label: string }[] = [
@@ -75,19 +85,24 @@ export function AdminWorkspaceDemo({
     setFeedback("Profesional ficticio incorporado a esta demostración.");
   }
   function assign() {
-    if (!onAssign(selectedPatient, selectedProfessional, selectedSlot)) {
-      setFeedback("No se pudo simular la asignación: verificá los datos o el horario ocupado.");
+    if (!previewWindow) {
+      setFeedback("Fecha u horario inválidos. Usá AAAA-MM-DD y HH:mm; la cobertura no puede superar 24 h.");
       return;
     }
-    setFeedback("Visita ficticia asignada solo en la memoria de la aplicación.");
+    if (!onAssign(selectedPatient, selectedProfessional, kind, day, startTime, endTime)) {
+      setFeedback("No se pudo simular la cobertura: datos inexistentes o profesional con horario superpuesto.");
+      return;
+    }
+    setFeedback((kind === "SHIFT" ? "Guardia" : "Visita") +
+      " ficticia asignada solo en la memoria de la aplicación.");
   }
 
   return (
     <View style={styles.page}>
       <ScreenHeading
         eyebrow="Coordinación · simulación"
-        title="Administración de visitas"
-        subtitle="Explorá el circuito de pacientes, profesionales y agenda sin cuentas ni datos reales."
+        title="Administración de coberturas"
+        subtitle="Programá visitas y guardias ficticias sin cuentas ni datos reales."
       />
       <View style={styles.warning} accessibilityRole="text">
         <Text style={styles.warningTitle}>SOLO DEMOSTRACIÓN · SIN CONEXIÓN A SUPABASE</Text>
@@ -187,10 +202,11 @@ export function AdminWorkspaceDemo({
 
       {section === "assignments" && (
         <View style={styles.panel}>
-          <Text style={styles.panelHeading}>Asignar una visita de muestra</Text>
+          <Text style={styles.panelHeading}>Programar cobertura de muestra</Text>
           <Text style={styles.helper}>
-            Una visita nueva aparecerá en la agenda general. La fecha será mañana;
-            nunca se reserva un turno en un servidor.
+            Elegí la modalidad, la fecha y el horario de inicio y fin. En esta
+            demostración cada paciente tiene un episodio ficticio. No se reserva
+            ninguna prestación ni se autoriza un plan de cuidados en el servidor.
           </Text>
           <Text style={styles.listTitle}>Paciente</Text>
           <View style={styles.choices} accessibilityRole="radiogroup">
@@ -209,19 +225,85 @@ export function AdminWorkspaceDemo({
                 onPress={() => setSelectedProfessional(p.id)} />
             ))}
           </View>
-          <Text style={styles.listTitle}>Horario de demostración</Text>
+          <Text style={styles.listTitle}>Tipo de cobertura</Text>
           <View style={styles.choices} accessibilityRole="radiogroup">
-            {DEMO_SLOTS.map(slot => (
-              <Choice key={slot.id} label={slot.label}
-                accessibilityLabel={"Horario " + slot.label}
-                selected={selectedSlot === slot.id}
-                onPress={() => setSelectedSlot(slot.id)} />
-            ))}
+            <Choice label="Visita puntual" accessibilityLabel="Modalidad Visita puntual"
+              selected={kind === "VISIT"} onPress={() => setKind("VISIT")} />
+            <Choice label="Guardia prolongada" accessibilityLabel="Modalidad Guardia prolongada"
+              selected={kind === "SHIFT"} onPress={() => setKind("SHIFT")} />
           </View>
-          <PrimaryAction label="Simular asignación de visita" onPress={assign} />
+          <Text style={styles.listTitle}>Fecha y horario ficticios</Text>
+          <TextInput
+            accessibilityLabel="Fecha ficticia AAAA-MM-DD"
+            placeholder="AAAA-MM-DD"
+            placeholderTextColor={palette.textMuted}
+            value={day}
+            onChangeText={setDay}
+            maxLength={10}
+            autoCorrect={false}
+            style={styles.input}
+          />
+          <View style={styles.timeRow}>
+            <View style={styles.timeColumn}>
+              <Text style={styles.listTitle}>Inicio (HH:mm)</Text>
+              <TextInput
+                accessibilityLabel="Inicio de cobertura HH:mm"
+                placeholder="09:00"
+                placeholderTextColor={palette.textMuted}
+                value={startTime}
+                onChangeText={setStartTime}
+                maxLength={5}
+                autoCorrect={false}
+                style={styles.input}
+              />
+            </View>
+            <View style={styles.timeColumn}>
+              <Text style={styles.listTitle}>Fin (HH:mm)</Text>
+              <TextInput
+                accessibilityLabel="Fin de cobertura HH:mm"
+                placeholder="10:00"
+                placeholderTextColor={palette.textMuted}
+                value={endTime}
+                onChangeText={setEndTime}
+                maxLength={5}
+                autoCorrect={false}
+                style={styles.input}
+              />
+            </View>
+          </View>
+          <View style={styles.noteBox}>
+            <Text style={styles.helper}>
+              {previewWindow
+                ? formatDemoTimeRange(startTime, endTime) + " · " +
+                  coverageDurationLabel(previewWindow.durationMinutes) +
+                  (previewWindow.overnight ? " · termina al día siguiente" : "")
+                : "Fecha u horario inválido · ingresá formato AAAA-MM-DD y HH:mm."}
+            </Text>
+            <Text style={styles.helper}>
+              Esta agenda admite visitas y guardias de duración variable, con
+              un máximo técnico de 24 h por cobertura de demostración.
+            </Text>
+          </View>
+          <PrimaryAction label="Simular asignación de cobertura" onPress={assign} />
           <View style={styles.noteBox}>
             <Text style={styles.helper}>Agenda ficticia actual: {visits.length} prestaciones</Text>
           </View>
+          {continuityHints.length > 0 ? (
+            <View style={styles.continuity}>
+              <Text style={styles.continuityTitle}>
+                Posibles continuidades de guardia · solo demostración
+              </Text>
+              <Text style={styles.helper}>
+                Estos horarios consecutivos NO prueban comunicación clínica,
+                presencia física, relevo realizado ni recepción firmada.
+              </Text>
+              {continuityHints.map(hint => (
+                <Text key={hint.outgoingId + hint.incomingId} style={styles.helper}>
+                  {hint.outgoingId} → {hint.incomingId} · mismo episodio ficticio
+                </Text>
+              ))}
+            </View>
+          ) : null}
           <PrimaryAction label="Consultar agenda simulada" outline onPress={onOpenAgenda} />
         </View>
       )}
@@ -263,6 +345,14 @@ const styles = StyleSheet.create({
   },
   panelHeading: { fontSize: 18, fontWeight: "800", color: palette.deep },
   helper: { color: palette.textSecondary, fontSize: 12, lineHeight: 19 },
+  timeRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md },
+  timeColumn: { flex: 1, minWidth: 120, gap: spacing.sm },
+  continuity: {
+    backgroundColor: palette.primarySubtle, borderWidth: 1,
+    borderColor: palette.brandMuted, borderRadius: corners.medium,
+    padding: spacing.lg, gap: spacing.sm,
+  },
+  continuityTitle: { color: palette.deep, fontWeight: "800", fontSize: 13 },
   input: {
     minHeight: touchSize + 3, borderWidth: 1, borderColor: palette.borderStrong,
     color: palette.text, backgroundColor: palette.surface,
