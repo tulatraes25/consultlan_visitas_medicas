@@ -1,5 +1,5 @@
 # ADR-001 — Modelo movil, formularios, firmas y diseno
-Fecha: 2026-10-10. Estado: PROPOSED. Revisar con Pediatrics antes de implementar.
+Fecha: 2026-10-10. Estado: PARCIALMENTE SUPERSEDED por ADR-002. Los hallazgos de planillas, firmas y diseño siguen vigentes; la arquitectura de backend aquí mencionada ya NO aplica.
 
 ## Hallazgos verificados en formularios originales DOCX
 Lectura programatica de texto y celdas de tablas (sin datos reales ni scans en GitHub):
@@ -44,8 +44,8 @@ Origen verificado: tulatraes25/consultlan@ae53227304844904c47f979544e9b110d5d902
 Fuente de referencia: system font stack; espaciado 2/4/6/8/12/16/20/24/32 px. Altura tactil MINIMA 44 px; adaptar tipografia legible movil.
 IMPORTANTE: prototipo anterior con acciones primarias azules no representa el producto final.
 
-## Arquitectura candidata
-React Native + Expo + TypeScript para movil; backend REST protegido separado, con PostgreSQL y artefactos firmados versionados. La decision final requiere verificar posibilidades de compartir contratos con backend actual Java/Spring y estrategia de login; no montar backend nuevo sin contrato de integracion y seguridad aprobado.
+## Arquitectura decidida en ADR-002
+React Native/Expo + proyecto Supabase Auth/PostgreSQL/RLS/Edge Functions/Storage privado totalmente autonomo. No comparte backend, cuentas, historia clinica ni API con Pediatrics/CONSULTLAN. Consultar `docs/adr/ADR-002-supabase-autonomo.md` como fuente vigente.
 
 ## Criterios de aceptacion de Gate 0
 1. Inventario de campos de imagen Kardex/Signos y PDF por revision visual privada sin divulgacion de PHI.

@@ -1,6 +1,6 @@
 # Pediatrics Visitas — aplicación móvil (DEMO)
 
-**Scope:** navegación de muestra para teléfono y tablet. **No habilita prestaciones reales.**
+**Scope:** navegación de muestra para teléfono y tablet. **No habilita prestaciones reales.** La arquitectura decidida para la aplicación operativa es un Supabase independiente, sin conexión con Pediatrics/CONSULTLAN; esta demo aún no se conecta a Supabase.
 **Datos:** 6 registros sintéticos creados en memoria, relativos a la fecha local del dispositivo. No almacena ni envía información personal.
 
 ## Stack
@@ -19,8 +19,8 @@ Usar el emulador/dispositivo compatible con Expo SDK 57. Para producir bundles e
 1. Inicio: jornada, métricas ilustrativas y dos próximas visitas.
 2. Agenda: búsqueda local y filtros por estado.
 3. Detalle: prestación ficticia y explicación del circuito de documentación y firmas.
-5. Ventana táctil de firma (simulación): trazo con dedo o lápiz, borrar y descartar. No guarda, transmite ni autentica firmas.
 4. Adaptación: navegación inferior en teléfonos; barra lateral desde 900 dp; panel lateral de detalle solo a partir de 1180 dp, con detalle a pantalla completa en tamaños intermedios.
+5. Ventana táctil de firma (simulación): trazo con dedo o lápiz, borrar y descartar. No guarda, transmite ni autentica firmas.
 
 ## Límites y seguridad
 - Se muestra siempre **MODO DEMO · datos ficticios**.
@@ -31,4 +31,4 @@ Usar el emulador/dispositivo compatible con Expo SDK 57. Para producir bundles e
 - Ninguna acción clínica se simula como aceptada o certificada.
 - No publicar en stores ni conectar con API real desde este prototipo.
 - Los colores provienen del sistema institucional: `#166534`, `#0B3D2A`, `#DDF5E6`.
-- Próximo gate: pantalla de autenticación real y API backend con permisos estrictos; antes, resolver la arquitectura de identidad y la cadena de custodia.
+- Próximo gate: configurar Supabase Auth propio y conectar solo lectura autorizada tras validar RLS en un proyecto staging. Edge Functions auditadas servirán para cambios de estado, altas y firmas. No introducir service_role ni otros secretos en el móvil.

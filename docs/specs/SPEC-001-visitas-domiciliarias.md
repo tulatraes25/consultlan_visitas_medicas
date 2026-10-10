@@ -3,7 +3,7 @@ Estado: PROPOSED / discovery. Fecha: 2026-10-10.
 Baseline del repositorio: db688fad41539d0b239a5f6b3194001ca306c875.
 
 ## Objetivo
-Aplicacion movil y tablet para prestaciones de internacion domiciliaria de Pediatrics (medicos, enfermeria, cuidadores, kinesiologia, fonoaudiologia, terapia ocupacional, nutricion y especialidades futuras). UI coherente con CONSULTLAN, sin copiar historia clinica ni base operativa completa.
+Aplicacion movil y tablet para prestaciones de internacion domiciliaria de Pediatrics (medicos, enfermeria, cuidadores, kinesiologia, fonoaudiologia, terapia ocupacional, nutricion y especialidades futuras). UI coherente con CONSULTLAN solo como referencia visual. La app es AUTONOMA: Supabase Auth/PostgreSQL/Storage/Edge Functions propios. No comparte servidor, pacientes, profesionales, sesiones, API ni historia clinica con CONSULTLAN.
 
 ## Fuentes funcionales
 Solicitud de Pediatrics y paquete documental recibido por privado: planillas medica, kines, fono, T.O., nutricion, asistencia enfermeria/cuidadores, hoja de evolucion, kardex, signos vitales, control procedimientos, hoja de crisis y dossier mensual de 56 paginas. **No incorporar documentos reales, datos identificables, firmas o scans al repositorio.** Se requieren fixtures sinteticos antes de convertir campos.
@@ -19,8 +19,8 @@ R06: conformidad de adulto responsable o cuidador identificado: ver resumen, dec
 R07: firma profesional para documentos sanitarios mediante mecanismo de firma digital valido bajo Ley 25.506 cuando corresponda; evaluar integracion con certificador licenciado. NO almacenar claves privadas de profesionales en la app ni simular firma digital con sello PNG.
 R08: documento canonico generado en servidor, timestamp, version, hash SHA-256, evidencia de firma y registro de auditoria append-only; correccion por addendum, nunca sobrescribir documento cerrado.
 R09: datos locales cifrados y minimizados para conectividad limitada; sincronizacion idempotente con deteccion de conflictos; un cierre offline no es cierre validado.
-R10: backend y base propia, API de CONSULTLAN con privilegios minimos y autentificacion de servicio; no acceso SQL cruzado directo. Integracion requiere contrato estable aprobado.
-R11: panel administrativo movil/tablet para coordinacion y altas segun roles, sin depender de acceso al servidor; analizar si recepcion existente gestiona asignaciones.
+R10: proyecto Supabase totalmente independiente, con Auth y datos propios. Acceso por RLS por organizacion y profesional asignado; Edge Functions para operaciones privilegiadas, con chequeos server-side. NO usar API ni credenciales de CONSULTLAN, NO sincronizar datos clinicos automaticamente.
+R11: panel propio de administracion/coordinacion en la app; gestion desde cero de pacientes, profesionales, invitaciones Auth, especialidades y asignaciones. Nunca asumir que el rol de recepcion de CONSULTLAN confiere permisos aqui.
 R12: exportacion de prestaciones firmadas y conciliacion por periodo, profesional, especialidad, paciente y cobertura. Reportes sin exponer datos innecesarios.
 R13: interfaz para smartphone y tablet Android/iOS con accesibilidad, controles tactiles y sistema visual extraido del frontend CONSULTLAN, sujeto a auditoria precisa.
 
@@ -33,15 +33,14 @@ N05: no almacenar imagen de firma del profesional para aplicarla automaticamente
 N06: posibilidad de revocacion de sesiones, perdida de dispositivo, backup cifrado, recuperacion, retention y auditoria.
 
 ## Modelo de dominio propuesto
-PatientRef (identificador externo pseudonimo), CaregiverIdentity, Professional, Assignment, Visit, FormTemplate, FormSubmission, Observation, Intervention, VisitEvidence, SignatureRequest, SignatureEvidence, SignedDocument, AuditEvent, SyncOperation, Attachment.
+Patient (UUID propio Supabase, sin enlace externo), CaregiverIdentity, Professional (Auth UID propio), OrganizationMembership, Assignment, Visit, FormTemplate, FormSubmission, Observation, Intervention, VisitEvidence, SignatureRequest, SignatureEvidence, SignedDocument, AuditEvent, SyncOperation, Attachment.
 FHIR mapping orientativo: Patient, RelatedPerson, Practitioner, Encounter, Observation, Procedure, QuestionnaireResponse, DocumentReference, Provenance, AuditEvent. No adoptar FHIR completo sin dimensionar interoperabilidad.
 
 ## Flujo
 COORDINACION asigna visita -> PROFESIONAL ve su agenda -> registra llegada y prestaciones -> presenta resumen al ADULTO RESPONSABLE -> captura conformidad/negativa y evidencia -> valida/firma documento profesional segun marco aplicable -> servidor emite cierre, PDF, hash y auditoria -> coordinacion concilia. Cierre pendiente de firma/sync se distingue visual y logicamente de cerrado verificado.
 
-## Arquitectura candidata (pendiente de ADR)
-React Native + Expo + TypeScript; API nueva con identidad federada (decidir proveedor); PostgreSQL aislado, almacenamiento de documentos cifrado, cola outbox para sincronizacion y proveedor de firma digital. Extraer tokens visuales de src/frontend/web-next del CONSULTLAN real. Mantener app movil sin backend expuesto directamente a la red privada de CONSULTLAN.
-Alternativas a evaluar: PWA offline vs React Native; Kotlin Multiplatform; Medplum/FHIR completo vs modelo propio con adaptadores.
+## Arquitectura decidida (ADR-002)
+React Native + Expo + TypeScript y proyecto Supabase autonomo: Auth, PostgreSQL, RLS, Edge Functions y Storage privado (este ultimo en gate futuro). Profesionales/pacientes se cargan desde cero. Las claves privilegiadas permanecen exclusivamente en funciones server-side; datos clinicos solo cuando se completen politicas legales y de seguridad. Se reutilizan SOLO tokens visuales del CONSULTLAN real. No existe ni existira una conexion tecnica con el servidor Pediatrics/CONSULTLAN bajo la decision actual.
 
 ## Referencias inspeccionadas
 - https://github.com/medplum/medplum
@@ -54,11 +53,11 @@ Inspiracion metodologica, NO dependencia ni copia de codigo sin auditoria de lic
 ## GATE 0 criterios de aceptacion
 - [ ] Inventariar todos los campos obligatorios de los DOCX; auditoria visual de las 56 paginas escaneadas con datos privados en entorno controlado.
 - [ ] Aprobar matriz rol-accion y alcance por especialidad con Pediatrics.
-- [ ] Aprobar contrato de integracion y politica de no duplicacion de historia clinica.
+- [x] Rechazar integracion con CONSULTLAN: arquitectura 100% independiente en Supabase (ADR-002).
 - [ ] Resolver decision legal/tecnica de firma electronica y firma digital.
 - [ ] Extraer tokens de estilo del CONSULTLAN real y crear ADR mobile.
 - [ ] Configurar CI y fixtures sinteticos, sin secretos ni datos reales.
 - [ ] Definir UAT con al menos un recorrido por especialidad, rechazo de firma, offline/reintento y correccion por addendum.
 
 ## Limitaciones actuales
-Este documento es una especificacion inicial, NO implementacion ni certificacion clinica, juridica o de seguridad. El PDF escaneado de 56 paginas aun no ha sido auditado campo por campo. Las decisiones de stack son propuestas. La integracion existente de CONSULTLAN no se modifica en esta etapa.
+Este documento es una especificacion inicial, NO implementacion ni certificacion clinica, juridica o de seguridad. El PDF escaneado de 56 paginas aun no ha sido auditado campo por campo. La arquitectura de Supabase independiente ya fue decidida. Persisten pendientes las firmas validas, formularios clinicos y el aprovisionamiento/configuracion del proyecto Supabase real. Ningun componente del servidor CONSULTLAN sera integrado.
