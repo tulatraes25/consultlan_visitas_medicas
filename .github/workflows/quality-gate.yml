@@ -176,9 +176,9 @@ jobs:
         with:
           deno-version: v2.x
       - name: Strict type check of Edge runtime and tests
-        run: deno check supabase/functions/visits/index.ts supabase/functions/visits/handler.test.ts supabase/functions/visits/session.test.ts
+        run: deno check supabase/functions/visits/index.ts supabase/functions/visits/handler.test.ts supabase/functions/visits/session.test.ts supabase/functions/visits/authentication.test.ts
       - name: Exercise authenticated Edge handler without cloud credentials
-        run: deno test supabase/functions/visits/handler.test.ts supabase/functions/visits/session.test.ts
+        run: deno test supabase/functions/visits/handler.test.ts supabase/functions/visits/session.test.ts supabase/functions/visits/authentication.test.ts
       - name: Enforce Edge-only secret references
         run: |
           if grep -R -nE 'SUPABASE_(SERVICE_ROLE_KEY|SECRET_KEY)' apps/mobile/src apps/mobile/App.tsx; then
