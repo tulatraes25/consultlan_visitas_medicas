@@ -11,6 +11,7 @@ import {
   BrandMark, DemoBanner, PrimaryAction, ScreenHeading, StatusChip, VisitCard,
 } from './src/ui';
 import { palette, corners, spacing, touchSize } from './src/theme';
+import { AttendanceSignatureDemo } from './src/AttendanceSignatureDemo';
 
 type Tab = 'home' | 'agenda';
 type AgendaFilter = 'all' | 'pending' | 'finished';
@@ -124,6 +125,7 @@ function HomePanel({
 function VisitDetail({
   visit, isTablet, onBack,
 }: { visit: DemoVisit; isTablet: boolean; onBack?: () => void }) {
+  const [signatureVisible, setSignatureVisible] = useState(false);
   return (
     <View style={styles.detailPage}>
       {!isTablet && onBack ? (
@@ -170,10 +172,20 @@ function VisitDetail({
         ))}
       </View>
 
-      <InfoBox heading="Registro y firma no disponibles en esta demostración">
+      <PrimaryAction
+        label="Probar ventana táctil de firma (demo)"
+        onPress={() => setSignatureVisible(true)}
+      />
+      <AttendanceSignatureDemo
+        visit={visit}
+        visible={signatureVisible}
+        onClose={() => setSignatureVisible(false)}
+      />
+      <InfoBox heading="Registro clínico y firma válida no disponibles">
         <Text style={styles.infoText}>
-          No es posible iniciar una visita real, editar información clínica ni capturar firmas en
-          esta versión. El diseño es navegable, pero no genera constancias legales o asistenciales.
+          No es posible iniciar una visita real, editar información clínica ni validar firmas
+          en esta versión. La ventana táctil solo permite dibujar en memoria, sin crear constancias
+          legales, registros asistenciales ni documentos firmados.
         </Text>
       </InfoBox>
       {!isTablet && onBack ? (
