@@ -14,7 +14,7 @@ const EPISODE_A = "e1000000-0000-4000-8000-000000000001";
 const EPISODE_B = "e2000000-0000-4000-8000-000000000002";
 const JWT_A = "testA.userA.signatureA";
 const JWT_B = "testB.userB.signatureB";
-const JWT_REVOKED = "revoked.user.signature";
+const JWT_EXPIRED = "testExpired." + Buffer.from(JSON.stringify({ exp: 1 })).toString("base64url") + ".syntheticSignature";
 
 function good() {
   return {
@@ -36,7 +36,7 @@ function good() {
     STAGING_EPISODE_B_ID: EPISODE_B,
     STAGING_USER_A_JWT: JWT_A,
     STAGING_USER_B_JWT: JWT_B,
-    STAGING_REVOKED_USER_JWT: JWT_REVOKED,
+    STAGING_EXPIRED_USER_JWT: JWT_EXPIRED,
   };
 }
 
@@ -73,8 +73,9 @@ test("STAGING-01B requires independent refs, two distinct synthetic users and ex
     { ...good(), STAGING_ORGANIZATION_B_ID: ORG_A },
     { ...good(), STAGING_EPISODE_B_ID: EPISODE_A },
     { ...good(), STAGING_USER_B_JWT: JWT_A },
-    { ...good(), STAGING_REVOKED_USER_JWT: JWT_B },
+    { ...good(), STAGING_EXPIRED_USER_JWT: JWT_B },
     { ...good(), STAGING_USER_A_JWT: "sb_secret_wrong" },
+    { ...good(), STAGING_EXPIRED_USER_JWT: "random.header.signature" },
     { ...good(), STAGING_USER_A_ID: "not-a-uuid" },
   ]) {
     assert.equal(validateRlsStagingEnvironment(env,{live:true}).ok,false);
@@ -96,7 +97,7 @@ test("STAGING-01B proves two nonempty own rows and two-way cross-tenant denial",
   const result=await verifySyntheticCrossTenantRls(good(),mockFetch(permittedResponses(),calls));
   assert.equal(result.ownRows,"TWO_NONEMPTY_ROWS_VERIFIED");
   assert.equal(result.crossTenant,"BOTH_DIRECTIONS_DENIED");
-  assert.equal(result.revokedToken,"DENIED");
+  assert.equal(result.expiredToken,"DENIED");
   assert.equal(calls.length,8);
   for(const {url,options} of calls) {
     assert.ok(url.startsWith(good().STAGING_URL+"/"));
@@ -109,7 +110,7 @@ test("STAGING-01B proves two nonempty own rows and two-way cross-tenant denial",
     assert.ok(!("service_role" in options.headers));
   }
   assert.equal(calls[6].options.headers.authorization,undefined);
-  assert.equal(calls[7].options.headers.authorization,"Bearer "+JWT_REVOKED);
+  assert.equal(calls[7].options.headers.authorization,"Bearer "+JWT_EXPIRED);
   assert.ok(calls[2].url.includes("select=id,organization_id"));
 });
 
@@ -164,12 +165,12 @@ test("STAGING-01B blocks auth mismatch, extra clinical fields and anonymous data
   );
 });
 
-test("STAGING-01B does not treat active revoked JWT or unauthenticated own rows as success", async () => {
-  const revoked=permittedResponses();
-  revoked[7]={status:200,body:{id:USER_A}};
+test("STAGING-01B does not treat expired access JWT or unauthenticated own rows as success", async () => {
+  const expired=permittedResponses();
+  expired[7]={status:200,body:{id:USER_A}};
   await assert.rejects(
-    verifySyntheticCrossTenantRls(good(),mockFetch(revoked,[])),
-    {code:"STAGING_REVOKED_JWT_STILL_ACCEPTED"},
+    verifySyntheticCrossTenantRls(good(),mockFetch(expired,[])),
+    {code:"STAGING_EXPIRED_JWT_STILL_ACCEPTED"},
   );
   const failedOwn=permittedResponses();
   failedOwn[2]={status:401};
