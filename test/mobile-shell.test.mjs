@@ -1,0 +1,37 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+
+const read = path => readFileSync(new URL('../' + path, import.meta.url), 'utf8');
+const config = JSON.parse(read('apps/mobile/app.json')).expo;
+const packageJson = JSON.parse(read('apps/mobile/package.json'));
+const fixtures = read('apps/mobile/src/demoData.ts');
+const app = read('apps/mobile/App.tsx');
+const theme = read('apps/mobile/src/theme.ts');
+
+test('mobile project is deliberately demo only, supports iPad and stays independent', () => {
+  assert.equal(config.extra.demoOnly, true);
+  assert.equal(config.extra.clinicalAccessEnabled, false);
+  assert.equal(config.ios.supportsTablet, true);
+  assert.equal(config.updates.enabled, false);
+  assert.equal(packageJson.private, true);
+  assert.match(packageJson.dependencies.expo, /^~57\./);
+});
+test('real CONSULTLAN Pediatrics brand tokens are used', () => {
+  for (const hex of ['#166534','#0B3D2A','#DDF5E6','#F4F6F8']) {
+    assert.ok(theme.includes(hex),hex);
+  }
+});
+test('all fixtures are visibly synthetic and no network functions are embedded', () => {
+  assert.match(fixtures,/Paciente ficticio A/);
+  assert.match(fixtures,/DEMO-0001/);
+  assert.doesNotMatch(fixtures,/https?:\/\//i);
+  assert.doesNotMatch(app,/\bfetch\s*\(|\baxios\b|AsyncStorage|SecureStore/);
+  assert.match(app,/MODO DEMO|DemoBanner/);
+});
+test('home, agenda, detail and explicit non-operational clinical messages exist', () => {
+  for (const screen of ['HomePanel','AgendaPanel','VisitDetail']) assert.ok(app.includes(screen));
+  assert.match(app,/no accede a historias clínicas/i);
+  assert.match(app,/No es posible iniciar una visita real/i);
+  assert.match(app,/isTablet/);
+});
