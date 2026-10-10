@@ -10,7 +10,7 @@ SUPA-03 conservaba comandos del prototipo de visitas ambulatorias, anteriores al
 - R2. Mantener exclusivamente alta administrativa de paciente/profesional propios, comandos HC-02B con restricciones SQL y `requestHomecarePlanReview` de HC-02C1B (PENDING).
 - R3. Rechazar toda operación retirada con HTTP 422, incluso con JWT sintético válido y parámetros aparentes completos, **sin invocar ninguna RPC**.
 - R4. Conservar denegaciones por token inválido, exceso de campos, actor aportado por cliente, cambios de roles, secrets y error de backend. El contrato de Gateway debe ser una lista cerrada.
-- R5. No eliminar ni modificar migraciones históricas de manera destructiva en este gate; las RPC antiguas siguen existiendo para pruebas SQL de legado y deberán revisarse/revocarse antes de staging. No confundir inaccesibilidad desde la Edge con protección ante claves privilegiadas robadas.
+- R5. SUPA-04 retira solo el acceso Edge y conserva las RPC para regresiones SQL. El gate SUPA-04B añade la revocación posterior de EXECUTE para service_role, anon y authenticated sin migraciones destructivas. Una clave privilegiada robada sigue siendo crítica aunque estas cinco rutas no sean ejecutables.
 - R6. No se añaden capacidades de firma, activación, notas clínicas ni pacientes reales.
 
 ## Implementación y verificación
@@ -21,6 +21,6 @@ SUPA-03 conservaba comandos del prototipo de visitas ambulatorias, anteriores al
 - PR CI completo sobre SHA exacto; merge normal; push CI post-main. Sin esta última evidencia no declarar CLOSED_CERTIFIED.
 
 ## Próximos controles necesarios
-1. En staging autónomo, auditar las RPC históricas y reducir grants de service_role cuando el esquema y suites se hayan migrado completamente.
+1. SUPA-04B revoca permisos de ejecución de las cinco RPC clínicas históricas; volver a verificar ACL y acceso real contra un staging autónomo antes de todo despliegue.
 2. Probar autenticar y autorización realmente con Supabase Auth, Edge Functions y RLS contra cuentas sintéticas; testear revocación y aislamiento de organización.
 3. Diseñar acceso profesional a contenido clínico después de habilitaciones, planes reales aprobados y controles institucionales.

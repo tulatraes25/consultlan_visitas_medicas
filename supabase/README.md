@@ -31,6 +31,10 @@ psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261010030000_homecare_coverage.
 psql -v ON_ERROR_STOP=1 -f supabase/tests/homecare_coverage_handover.sql
 psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261010040000_homecare_controlled_commands.sql
 psql -v ON_ERROR_STOP=1 -f supabase/tests/homecare_controlled_commands.sql
+psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261010050000_homecare_review_requests.sql
+psql -v ON_ERROR_STOP=1 -f supabase/tests/homecare_plan_review_requests.sql
+psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261010060000_revoke_legacy_clinical_rpc.sql
+psql -v ON_ERROR_STOP=1 -f supabase/tests/revoke_legacy_clinical_rpc.sql
 ```
 El stub `postgres_auth_stub.sql` simula exclusivamente el esquema de autenticación y roles de Supabase dentro del Postgres de CI. **No debe ejecutarse en Supabase real.**
 
@@ -71,7 +75,7 @@ La prueba SQL usa episodios y planes sintéticos previamente aprobados como fixt
 
 La revisión de metadatos de un plan domiciliario ahora se solicita mediante `requestHomecarePlanReview`, respaldada por `api_hc_request_plan_review`. La tabla `homecare_plan_review_requests` solo permite estado **PENDING**, con RLS para administración y sin capacidad de aprobación ni activación clínica. La migración y sus pruebas se incluyen después de HC-02B en el Quality Gate.
 
-**SUPA-04:** la Edge deja de exponer las rutas clínicas heredadas `scheduleVisit`, `beginVisit`, `addClinicalNote`, `submitVisitReview` y `cancelVisit`. Los RPC históricos de SUPA-02 permanecen en la base del prototipo por compatibilidad de pruebas, pero no son un contrato móvil autorizado. Se debe evitar cualquier acceso público directo a operaciones que utilicen `service_role`. No habilitar toma de notas, inicio de atención o cierre hasta definir y aprobar los circuitos clínicos.
+**SUPA-04:** la Edge deja de exponer las rutas clínicas heredadas `scheduleVisit`, `beginVisit`, `addClinicalNote`, `submitVisitReview` y `cancelVisit`. Las definiciones RPC históricas de SUPA-02 permanecen en la base para las pruebas originales, pero SUPA-04B **revoca su permiso EXECUTE a service_role** tras dichas pruebas. Por tanto ya no son un contrato operativo para el móvil ni el servidor. Se debe evitar cualquier acceso público directo a operaciones que utilicen `service_role`. No habilitar toma de notas, inicio de atención o cierre hasta definir y aprobar los circuitos clínicos.
 
 ## Puesta en marcha posterior (NO realizada)
 1. La administración propietaria de Pediatrics crea un **proyecto Supabase nuevo y separado**, comprueba responsabilidad contractual, región de residencia de datos, privacidad, backup/restore y política de retención. Nunca usar el proyecto SICOM ni un entorno de CONSULTLAN.
