@@ -52,11 +52,15 @@ jobs:
           node --check src/domain/clinical-authorization-policy.mjs
           node --check src/operations/staging-policy.mjs
           node --check scripts/staging-preflight.mjs
+          node --check src/operations/staging-rls-policy.mjs
+          node --check scripts/staging-rls-verify.mjs
           for test_file in test/*.test.mjs; do
             node --check "$test_file"
           done
       - name: Validate staging source offline (no network or secrets)
         run: node scripts/staging-preflight.mjs --ci
+      - name: Validate synthetic two-tenant RLS runner remains offline
+        run: node scripts/staging-rls-verify.mjs --ci
       - name: Domain security and API contract tests
         run: npm test
 

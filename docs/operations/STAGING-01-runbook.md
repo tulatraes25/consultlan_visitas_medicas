@@ -65,6 +65,35 @@ Este comando **NO** instala migraciones, no modifica pacientes ni planes, no imp
 
 Las respuestas y los secretos no se imprimen ni se almacenan. Si falla una petición, la prueba bloquea; nunca se permite fallback a otro servidor.
 
+## 4B. STAGING-01B — RLS no vacío con dos organizaciones (código preparado, NO ejecutado)
+
+Este gate requiere que el operador prepare, **solo en staging**, dos organizaciones inventadas A/B, dos cuentas ficticias activas con membresía ADMIN o COORDINATOR en sus propias organizaciones, dos episodios ficticios existentes (uno por organización) y un token de acceso emitido previamente para una cuenta ficticia que **ya esté vencido** y cuyo payload incluya `exp` en el pasado. No agregar pacientes verdaderos ni contenido clínico. Confirmar que cada cuenta puede leer únicamente metadatos de su propio episodio y que los permisos siguen vigentes de manera deliberada.
+
+Las variables del paso 2 continúan siendo obligatorias. Agregar de forma temporal y segura, sin guardar en el repo ni pegarlas en un chat:
+
+- `STAGING_RLS_E2E=YES` y `STAGING_SYNTHETIC_FIXTURES=YES`.
+- `STAGING_USER_A_ID`, `STAGING_USER_B_ID`: UUID de cuentas sintéticas diferentes de Auth de ESTE staging.
+- `STAGING_ORGANIZATION_A_ID`, `STAGING_ORGANIZATION_B_ID`: UUID de organizaciones diferentes.
+- `STAGING_EPISODE_A_ID`, `STAGING_EPISODE_B_ID`: UUID de episodios creados sintéticamente, uno para cada organización.
+- `STAGING_USER_A_JWT`, `STAGING_USER_B_JWT`: JWT de sesiones activas sintéticas, proporcionados de manera segura al proceso.
+- `STAGING_EXPIRED_USER_JWT`: JWT de una sesión de ensayo de este staging que se dejó expirar; su `exp` debe estar vencido.
+
+En una terminal aislada con las variables provistas mediante un gestor seguro:
+
+```bash
+node scripts/staging-rls-verify.mjs --ci
+node scripts/staging-rls-verify.mjs --check-env
+# SOLO si el operador habilitó STAGING_ALLOW_NETWORK=YES:
+node scripts/staging-rls-verify.mjs --probe
+```
+
+El modo `--probe` ejecuta **únicamente GET**: verifica identidades actuales ante `/auth/v1/user`, lectura no vacía del propio episodio (id y organization_id), lectura vacía del episodio ajeno en ambas direcciones, ausencia de acceso anónimo a una fila conocida y rechazo del JWT vencido. Cualquier fallo bloquea. Nunca crea sesiones, usuarios, visitas, tratamientos ni documentos.
+
+La validación de Auth por dos cuentas y un JWT vencido requiere credenciales reales **de ensayo**, que no están disponibles ni almacenadas en GitHub. Esto no puede considerarse certificado hasta su ejecución en el proyecto autónomo aprobado. Aun con PASS, persisten pruebas de permisos más finos para especialistas, Storage, backups, firmas y procedimientos.
+
+**Advertencia sobre cierre de sesión:** Supabase puede mantener válido un JWT de acceso hasta su vencimiento aunque se haya ejecutado `signOut()`. Esta verificación **no** demuestra cierre inmediato de sesiones. Para comandos clínicos sensibles será necesaria una comprobación server-side de sesión activa (por ejemplo, con `session_id` y el estado autorizado de `auth.sessions`), estrategia de expiración y pruebas específicas antes de pacientes reales. No pedir JWT en chats ni almacenar token de prueba en repositorios. Ver [documentación oficial de sesiones](https://supabase.com/docs/guides/auth/sessions).
+
+
 ## 5. Aceptación de STAGING-01B/01C (todavía NO cumplida)
 - Mostrar evidencia de proyecto autónomo, titularidad, región, políticas y datos ficticios. Confirmar identidad contra proyectos excluidos por medios independientes.
 - Ejecutar RLS real con **dos organizaciones y usuarios ficticios distintos**: lectura permitida para el propio equipo; lectura de otro caso, usuarios desactivados, anon y acceso transversal denegados. Usar casos con filas sintéticas para evitar falsos verdes por tablas vacías.
