@@ -304,6 +304,7 @@ function NavigationButton({
 export default function App() {
   const { width } = useWindowDimensions();
   const isTablet = width >= 900;
+  const isSplitAgenda = width >= 1180;
   const visits = useMemo(() => createDemoVisits(), []);
   const [tab, setTab] = useState<Tab>('home');
   const [selectedId, setSelectedId] = useState(visits[1]?.id ?? visits[0]?.id ?? '');
@@ -358,12 +359,12 @@ export default function App() {
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            {!isTablet && showMobileDetail ? (
+            {showMobileDetail && !isSplitAgenda ? (
               <VisitDetail visit={selectedVisit} isTablet={false} onBack={() => openTab('agenda')} />
             ) : tab === 'home' ? (
               <HomePanel visits={visits} onAgenda={() => openTab('agenda')} onSelect={openVisit} />
             ) : (
-              <AgendaPanel visits={visits} selectedId={selectedId} onSelect={openVisit} isTablet={isTablet} />
+              <AgendaPanel visits={visits} selectedId={selectedId} onSelect={openVisit} isTablet={isSplitAgenda} />
             )}
             <Text style={styles.footerNotice}>CONSULTLAN VISITAS · Prototipo sin uso asistencial</Text>
           </ScrollView>
