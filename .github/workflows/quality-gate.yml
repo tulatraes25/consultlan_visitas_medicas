@@ -39,6 +39,7 @@ jobs:
           node --check src/domain/visit-policy.mjs
           node --check src/domain/homecare-policy.mjs
           node --check src/domain/homecare-form-contracts.mjs
+          node --check src/domain/clinical-authorization-policy.mjs
           for test_file in test/*.test.mjs; do
             node --check "$test_file"
           done
@@ -132,6 +133,10 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261010040000_homecare_controlled_commands.sql
       - name: Test server-side homecare planning, coverage, and handover permissions
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/homecare_controlled_commands.sql
+      - name: Apply pending-only clinical plan review intake migration
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261010050000_homecare_review_requests.sql
+      - name: Exercise synthetic review permissions, audit and fail-closed state
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/homecare_plan_review_requests.sql
 
   edge-functions:
     name: Deno Edge JWT boundary and request validation
