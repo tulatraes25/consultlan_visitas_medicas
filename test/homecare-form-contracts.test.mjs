@@ -114,6 +114,9 @@ test("preview refuses patient IDs, raw pen strokes, private keys, clinical data 
     assert.deepEqual(inspectFormPreviewRequest({...base,[key]:value}),
       {allowed:false,code:"IDENTIFIABLE_OR_SIGNATURE_DATA_NOT_ACCEPTED"},key);
   }
+  assert.deepEqual(inspectFormPreviewRequest({
+    templateId:"MEDICAL_ATTENDANCE",action:"PREVIEW_STRUCTURE",unlistedNote:"no data allowed",
+  }),{allowed:false,code:"EXTRA_PREVIEW_FIELDS_NOT_ACCEPTED"});
   assert.equal(inspectFormPreviewRequest({templateId:"UNKNOWN",action:"PREVIEW_STRUCTURE"}).allowed,false);
   assert.equal(inspectFormPreviewRequest(null).allowed,false);
 });
