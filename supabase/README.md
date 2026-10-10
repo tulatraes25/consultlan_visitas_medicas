@@ -1,6 +1,6 @@
-# Supabase independiente — GATE SUPA-01
+# Supabase independiente — SUPA-01/02/03 y HC-01
 
-**Estado:** migraciones SUPA-01 y SUPA-02 con RLS, comandos backend-only y pruebas en PostgreSQL real; sin instalación en ninguna cuenta Supabase.
+**Estado:** migraciones SUPA-01/02 y HC-01 con RLS, comandos backend-only de prototipo y pruebas en PostgreSQL; Edge SUPA-03 desarrollada por separado. Sin proyecto Supabase real instalado.
 **Decisión:** [ADR-002](../docs/adr/ADR-002-supabase-autonomo.md). **Prohibida** la conexión con el servidor de Pediatrics/CONSULTLAN.
 
 ## Modelo inicial
@@ -25,6 +25,8 @@ psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261010000000_standalone_foundat
 psql -v ON_ERROR_STOP=1 -f supabase/tests/rls_isolation.sql
 psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261010010000_operational_commands.sql
 psql -v ON_ERROR_STOP=1 -f supabase/tests/operational_commands.sql
+psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261010020000_homecare_episodes.sql
+psql -v ON_ERROR_STOP=1 -f supabase/tests/homecare_episode_isolation.sql
 ```
 El stub `postgres_auth_stub.sql` simula exclusivamente el esquema de autenticación y roles de Supabase dentro del Postgres de CI. **No debe ejecutarse en Supabase real.**
 
@@ -32,6 +34,16 @@ Se prueban usuarios asignados y no asignados, aislamiento entre organizaciones, 
 
 ## SUPA-02 — Operaciones sin permisos de escritura móviles
 La migración `20261010010000_operational_commands.sql` agrega RPC `api_*` **solo para `service_role`**, para crear pacientes, registrar profesionales asociados a Auth propio, agendar sin superposiciones, iniciar visitas, agregar notas versionadas, enviar a revisión y cancelar. Las claves UUID de reintento evitan duplicaciones. Estos RPC NO son directamente accesibles por clientes autenticados o anónimos. Aún no existe Edge Function verificada, así que siguen **inutilizables desde la app**. Ver [SUPA-02](../docs/specs/SUPA-02-operational-commands.md).
+
+## HC-01 — Episodios domiciliarios y plan/equipo como límites de acceso
+
+La migración `20261010020000_homecare_episodes.sql` añade episodios propios del programa, profesionales del equipo y metadatos de versiones de planes, con FKs por paciente/organización/episodio y políticas RLS restrictivas. **No hay aprobaciones médicas ni indicaciones clínicas creadas por el sistema.**
+
+- Todas las nuevas visitas requieren episodio y versión de plan. Las antiguas visitas del prototipo se mantienen sin episodio y fuera de las lecturas; no hay migración automática de pacientes o expedientes de la clínica.
+- Solo miembros activos del equipo ven metadatos de su episodio. Las notas clínicas existentes continúan limitadas al profesional de la prestación asignada; el área administrativa no puede leerlas.
+- La agenda anterior de SUPA-02 no acepta episodio y se **rechaza por diseño**; HC-02 implementará nuevos comandos de planificación con plan y equipo vigentes. No instalar aplicaciones esperando que la agenda antigua siga funcionando.
+- El plan aprobado es **solo un estado de fixture SQL en GitHub**: cualquier aprobación válida requiere futura verificación de la habilitación profesional, indicación concreta y circuito médico.
+- Ver [SPEC HC-01](../docs/specs/HC-01-episode-schema-and-rls.md).
 
 ## Puesta en marcha posterior (NO realizada)
 1. La administración propietaria de Pediatrics crea un **proyecto Supabase nuevo y separado**, comprueba responsabilidad contractual, región de residencia de datos, privacidad, backup/restore y política de retención. Nunca usar el proyecto SICOM ni un entorno de CONSULTLAN.
