@@ -118,3 +118,25 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261010010000_operational_commands.sql
       - name: Exercise role-scoped backend commands and race prevention
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/operational_commands.sql
+
+  edge-functions:
+    name: Deno Edge JWT boundary and request validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+      - name: Install Deno 2
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Strict type check of Edge runtime and tests
+        run: deno check supabase/functions/visits/index.ts supabase/functions/visits/handler.test.ts
+      - name: Exercise authenticated Edge handler without cloud credentials
+        run: deno test supabase/functions/visits/handler.test.ts
+      - name: Enforce Edge-only secret references
+        run: |
+          if grep -R -nE 'SUPABASE_(SERVICE_ROLE_KEY|SECRET_KEY)' apps/mobile/src apps/mobile/App.tsx; then
+            echo 'A mobile component must not include server-side secrets.'
+            exit 1
+          fi
