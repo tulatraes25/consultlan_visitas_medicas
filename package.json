@@ -1,0 +1,14 @@
+{
+  "name": "consultlan-visitas-medicas-contracts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Spec-first contracts and domain safety tests for Pediatrics home visits. No patient data.",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "check": "npm test"
+  }
+}
