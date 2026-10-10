@@ -21,9 +21,12 @@ Usar el emulador/dispositivo compatible con Expo SDK 57. Para producir bundles e
 3. Detalle: prestación ficticia y explicación del circuito de documentación y firmas.
 4. Adaptación: navegación inferior en teléfonos; barra lateral desde 900 dp; panel lateral de detalle solo a partir de 1180 dp, con detalle a pantalla completa en tamaños intermedios.
 5. Ventana táctil de firma (simulación): trazo con dedo o lápiz, borrar y descartar. No guarda, transmite ni autentica firmas.
+6. Gestión administrativa simulada: pacientes ficticios, profesionales ficticios por especialidad, selección de horarios y asignación local visible en la agenda. No crea cuentas reales ni persiste datos.
 
 ## Límites y seguridad
 - Se muestra siempre **MODO DEMO · datos ficticios**.
+- La pestaña Gestión solo sirve para probar UX, **no es una ruta autenticada ni representa permisos reales**. Solo admite códigos de 1 a 4 caracteres y genera nombres de muestra.
+- Las futuras invitaciones a Supabase Auth y las altas clínicas reales no están conectadas a estos formularios.
 - No hay autenticación, conexión a CONSULTLAN, historias clínicas, firma electrónica/digital válida ni guardado de documentos.
 - La prueba táctil usa trazos SVG **en memoria volátil**. Al cerrar el modal se desmonta el lienzo y se descartan sus trazos; no existe botón de enviar o firmar.
 - La selección de vínculo familiar es ilustrativa y **no verifica identidad** ni autorización de cuidadores.
