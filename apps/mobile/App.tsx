@@ -1,19 +1,24 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View,
   useWindowDimensions,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import {
-  createDemoVisits, formatDemoDate, isPending, type DemoVisit,
+  createDemoVisits, formatDemoDate, isPending, type DemoVisit, type Specialty,
 } from './src/demoData';
 import {
   BrandMark, DemoBanner, PrimaryAction, ScreenHeading, StatusChip, VisitCard,
 } from './src/ui';
 import { palette, corners, spacing, touchSize } from './src/theme';
 import { AttendanceSignatureDemo } from './src/AttendanceSignatureDemo';
+import { AdminWorkspaceDemo } from './src/AdminWorkspaceDemo';
+import {
+  createDemoPatients, createDemoProfessionals, createPatientEntry,
+  createProfessionalEntry, createDemoAssignment, DEMO_SLOTS, nextDemoDay,
+} from './src/adminDemoData';
 
-type Tab = 'home' | 'agenda';
+type Tab = 'home' | 'agenda' | 'management';
 type AgendaFilter = 'all' | 'pending' | 'finished';
 
 const sectionSteps = [
@@ -317,7 +322,9 @@ export default function App() {
   const { width } = useWindowDimensions();
   const isTablet = width >= 900;
   const isSplitAgenda = width >= 1180;
-  const visits = useMemo(() => createDemoVisits(), []);
+  const [visits, setVisits] = useState<DemoVisit[]>(() => createDemoVisits());
+  const [patients, setPatients] = useState(() => createDemoPatients());
+  const [professionals, setProfessionals] = useState(() => createDemoProfessionals());
   const [tab, setTab] = useState<Tab>('home');
   const [selectedId, setSelectedId] = useState(visits[1]?.id ?? visits[0]?.id ?? '');
   const [showMobileDetail, setShowMobileDetail] = useState(false);
@@ -326,6 +333,30 @@ export default function App() {
   function openTab(nextTab: Tab) {
     setTab(nextTab);
     setShowMobileDetail(false);
+  }
+  function addPatient(code: string): boolean {
+    const patient = createPatientEntry(code, patients);
+    if (!patient) return false;
+    setPatients(previous => [...previous, patient]);
+    return true;
+  }
+  function addProfessional(code: string, specialty: Specialty): boolean {
+    const professional = createProfessionalEntry(code, specialty, professionals);
+    if (!professional) return false;
+    setProfessionals(previous => [...previous, professional]);
+    return true;
+  }
+  function assignVisit(patientId: string, professionalId: string, slotId: string): boolean {
+    const patient = patients.find(item => item.id === patientId);
+    const professional = professionals.find(item => item.id === professionalId);
+    const slot = DEMO_SLOTS.find(item => item.id === slotId);
+    if (!patient || !professional || !slot) return false;
+    const assignment = createDemoAssignment({
+      patient, professional, slot, current: visits, day: nextDemoDay(),
+    });
+    if (!assignment) return false;
+    setVisits(previous => [...previous, assignment]);
+    return true;
   }
   function openVisit(visitId: string) {
     setSelectedId(visitId);
@@ -344,6 +375,7 @@ export default function App() {
             <View style={styles.sidebarNav} accessibilityRole="tablist">
               <NavigationButton label="Inicio" dark active={tab === 'home'} onPress={() => openTab('home')} />
               <NavigationButton label="Agenda" dark active={tab === 'agenda'} onPress={() => openTab('agenda')} />
+              <NavigationButton label="Gestión" dark active={tab === 'management'} onPress={() => openTab('management')} />
             </View>
             <View style={styles.sidebarBottom}>
               <DemoBanner small />
@@ -375,8 +407,14 @@ export default function App() {
               <VisitDetail visit={selectedVisit} isTablet={false} onBack={() => openTab('agenda')} />
             ) : tab === 'home' ? (
               <HomePanel visits={visits} onAgenda={() => openTab('agenda')} onSelect={openVisit} />
-            ) : (
+            ) : tab === 'agenda' ? (
               <AgendaPanel visits={visits} selectedId={selectedId} onSelect={openVisit} isTablet={isSplitAgenda} />
+            ) : (
+              <AdminWorkspaceDemo
+                patients={patients} professionals={professionals} visits={visits}
+                onCreatePatient={addPatient} onCreateProfessional={addProfessional}
+                onAssign={assignVisit} onOpenAgenda={() => openTab('agenda')}
+              />
             )}
             <Text style={styles.footerNotice}>CONSULTLAN VISITAS · Prototipo sin uso asistencial</Text>
           </ScrollView>
@@ -384,6 +422,7 @@ export default function App() {
             <View style={styles.bottomTabs} accessibilityRole="tablist">
               <NavigationButton label="Inicio" active={tab === 'home' && !showMobileDetail} onPress={() => openTab('home')} />
               <NavigationButton label="Agenda" active={tab === 'agenda'} onPress={() => openTab('agenda')} />
+              <NavigationButton label="Gestión" active={tab === 'management'} onPress={() => openTab('management')} />
             </View>
           ) : null}
         </View>
