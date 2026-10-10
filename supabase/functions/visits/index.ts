@@ -1,6 +1,7 @@
 // SUPA-03. Supabase Edge entrypoint. No clinical data is logged or cached.
 // Deploy only to the new, standalone visits project after staging security review.
 import { createVisitHandler, type CommandResult } from "./handler.ts";
+import { sessionIdFromVerifiedUserJwt } from "./session.ts";
 
 const url = Deno.env.get("SUPABASE_URL");
 const publicKey = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ??
@@ -16,6 +17,19 @@ const origin = new URL(url).origin;
 // These are backend-controlled URLs; user JSON may never select the endpoint.
 const authUrl = new URL("/auth/v1/user", origin).toString();
 const rpcBase = new URL("/rest/v1/rpc/", origin).toString();
+
+function serverOnlyHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {
+    apikey: serviceKey!,
+    "content-type": "application/json",
+    accept: "application/json",
+  };
+  // Secret keys are apikey-only; legacy service_role JWTs are Bearer.
+  if (!serviceKey!.startsWith("sb_secret_")) {
+    headers.authorization = "Bearer " + serviceKey;
+  }
+  return headers;
+}
 
 const handler = createVisitHandler({
   async authenticate(jwt) {
@@ -39,25 +53,32 @@ const handler = createVisitHandler({
         ("is_anonymous" in user && user.is_anonymous === true)) {
       return null;
     }
+    // Supabase access JWTs may remain valid after signOut until exp.
+    // Extract session_id ONLY AFTER Auth has verified the JWT and user ID,
+    // then require the signed session to still exist in this project's Auth.
+    const sessionId = sessionIdFromVerifiedUserJwt(jwt, user.id);
+    if (!sessionId) return null;
+    const liveSession = await fetch(rpcBase + "api_is_live_session", {
+      method: "POST",
+      headers: serverOnlyHeaders(),
+      body: JSON.stringify({ p_user: user.id, p_session: sessionId }),
+      signal: AbortSignal.timeout(8000),
+      redirect: "error",
+    });
+    if (!liveSession.ok) throw new Error("Auth session verifier unavailable");
+    let active: unknown;
+    try { active = await liveSession.json(); }
+    catch { throw new Error("Auth session verifier unavailable"); }
+    if (active !== true) return null;
     return user.id;
   },
 
   async command(name, args): Promise<CommandResult> {
     // Never trust a SQL function name from a request; handler uses a fixed allowlist.
     // Supabase secrets are only read in this Edge runtime, never in React Native.
-    const headers: Record<string, string> = {
-      apikey: serviceKey,
-      "content-type": "application/json",
-      accept: "application/json",
-    };
-    // Legacy service_role keys are JWTs. Modern sb_secret keys use apikey,
-    // NOT "Authorization: Bearer sb_secret...". Validate on real staging.
-    if (!serviceKey.startsWith("sb_secret_")) {
-      headers.authorization = "Bearer " + serviceKey;
-    }
     const response = await fetch(rpcBase + name, {
       method: "POST",
-      headers,
+      headers: serverOnlyHeaders(),
       body: JSON.stringify(args),
       signal: AbortSignal.timeout(8000),
       redirect: "error",

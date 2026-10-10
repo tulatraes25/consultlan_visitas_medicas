@@ -9,6 +9,11 @@ create role service_role nologin bypassrls;
 create schema auth;
 grant usage on schema auth to authenticated;
 create table auth.users (id uuid primary key);
+-- CI-only miniature Auth session table; NEVER apply this shim to Supabase.
+create table auth.sessions (
+  id uuid primary key,
+  user_id uuid not null references auth.users(id) on delete cascade
+);
 create function auth.uid() returns uuid
 language sql stable
 as $$

@@ -32,17 +32,19 @@ No se acepta ningún otro campo. Fechas ISO 8601, UUIDs válidos, cuerpos hasta 
 
 ## Arquitectura
 1. Gateway Supabase verifica un JWT de usuario (`verify_jwt=true`).
-2. La Edge Function vuelve a consultar `/auth/v1/user` con ese JWT contra **su propio proyecto**, verificando identidad actual. Rechaza cuentas anónimas y errores.
-3. El ID confirmado por Auth se convierte en `p_actor`, sin usar ningún ID declarado en el JSON.
-4. Se invoca una RPC de lista cerrada usando secreto **exclusivo del servidor**, nunca credenciales aportadas por el dispositivo.
-5. La RPC vuelve a verificar membresía/organización/profesional y registra auditoría de mutación. Solo se concedió `EXECUTE` al rol backend.
-6. Los errores 42501 / 23505 / 23P01 / 22023 se convierten en 403/409/409/422 sin revelar SQL ni notas clínicas.
-7. Cualquier validación externa o fallo de servicio es **fail closed**.
+2. La Edge Function vuelve a consultar `/auth/v1/user` con ese JWT contra **su propio proyecto**, verificando identidad y rechazando cuentas anónimas, expiradas o inválidas.
+3. **SEC-SESSION-01**: solo después de verificar la identidad, extrae `sub` y `session_id` del JWT, compara `sub` con el usuario verificado y consulta `api_is_live_session` mediante credencial exclusiva de Edge. La RPC exige una sesión todavía presente en `auth.sessions` del propio Supabase. Sesión ausente, ajena, sin ID, expirada o RPC no disponible: **no despachar**.
+4. Solo una sesión validada aporta el usuario que se convierte en `p_actor`, sin usar ningún ID declarado en el JSON.
+5. Se invoca una RPC de lista cerrada usando secreto **exclusivo del servidor**, nunca credenciales aportadas por el dispositivo.
+6. La RPC de la operación vuelve a verificar membresía/organización/profesional y registra auditoría de mutación. Solo se concedió `EXECUTE` al rol backend.
+7. Los errores 42501 / 23505 / 23P01 / 22023 se convierten en 403/409/409/422 sin revelar SQL ni notas clínicas.
+8. Cualquier validación externa o fallo de servicio es **fail closed**.
 
 ## Seguridad y restricciones
 - `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` (o `SUPABASE_ANON_KEY`) y `SUPABASE_SECRET_KEY` (o `SUPABASE_SERVICE_ROLE_KEY`) se proveen **en secretos de Edge**, nunca en GitHub ni en el bundle.
 - La Edge usa el token real de usuario únicamente para verificar la sesión. Nunca expone su token ni los secretos `service_role` en respuestas.
 - El rol `service_role` puede saltarse RLS; **la seguridad final depende tanto del gateway autenticado como de validaciones SQL**. El proyecto real requiere pruebas end-to-end con sesión válida, revocada y permisos cruzados.
+- El chequeo de existencia de sesión se prueba por ahora con el `auth.sessions` sintético de PostgreSQL CI. Su compatibilidad exacta, baja tras `signOut`, latencia y disponibilidad deben comprobarse en Supabase staging antes de operar. Es una condición necesaria, no sustituye autorización médica.
 - Con claves modernas `sb_secret_...` se usa `apikey` del servidor; con service-role JWT legado se incorpora además Authorization. Ambas variantes requieren pruebas reales en staging antes de uso clínico.
 - No se implementa alta inicial/invitación de usuario, gestión de roles administrativos, carga de archivos ni cierre firmado. Corresponden a gates posteriores.
 - No se utiliza CONSULTLAN como identidad, proveedor de API ni base de datos.

@@ -18,7 +18,7 @@ Pasar del PostgreSQL sintético y la Edge sin credenciales a un protocolo reprod
 4. Para el muestreo anónimo, HTTP 401/403 es denegación; 200 solo es aceptable con arreglo JSON vacío. Cualquier registro visible constituye falla. Esta verificación **no demuestra RLS completo** si la tabla está vacía: habrá que validar con varios usuarios sintéticos.
 5. Para la Edge, POST con acción deliberadamente desconocida, sin Authorization/JWT, debe responder 401 o 403. HTTP 200/422 o 404 se tratan como falla y no se ignoran. El body nunca contiene pacientes ni operaciones reales.
 6. Los requests tienen timeout, `redirect: error` y `cache: no-store`. No se almacenan respuestas, ni telemetría, ni capturas en el repositorio.
-7. `--ci` exige `project_id` local definido en config.toml, `verify_jwt = true` para visitas, las siete migraciones en orden y retirada de comandos clínicos históricos de la Edge; comprueba que la migración final revoca permisos de las cinco RPC antiguas.
+7. `--ci` exige `project_id` local definido en config.toml, `verify_jwt = true` para visitas, las ocho migraciones en orden y retirada de comandos clínicos históricos de la Edge; comprueba que la migración final revoca permisos de las cinco RPC antiguas.
 8. No se habilitan comandos para activar episodios, aprobar planes, cargar documentos, medicación, registrar asistencia ni firmar.
 9. No ejecutar `supabase db reset --linked` ni `db push` automáticamente. El aprovisionamiento real requiere autorización de la institución, responsable de datos, configuración de Auth/Storage/backups, inspección de RLS y checklist en staging.
 10. El proyecto fuente es público: prohibido subir archivos `.env`, bases, dumps, llaves, certificados o datos sensibles a GitHub.
