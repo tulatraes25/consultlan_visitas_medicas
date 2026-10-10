@@ -12,6 +12,7 @@ export type DemoVisit = Readonly<{
   reference: string;
   patientLabel: string;
   specialty: Specialty;
+  professionalRef?: string; // Synthetic assignment only; no Supabase/CONSULTLAN identity.
   date: string;
   timeRange: string;
   status: VisitStatus;
