@@ -1,0 +1,27 @@
+# Generated dependencies and mobile caches
+node_modules/
+apps/mobile/node_modules/
+.expo/
+apps/mobile/.expo/
+dist/
+apps/mobile/dist/
+*.tsbuildinfo
+coverage/
+.DS_Store
+
+# Real health and authorization evidence never belongs in git
+*.db
+*.sqlite
+*.sqlite3
+*.pdf
+*.docx
+*.doc
+*.emf
+*.zip
+*.p12
+*.pfx
+*.key
+*.pem
+.env
+.env.*
+!.env.example
