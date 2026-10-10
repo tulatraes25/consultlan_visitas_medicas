@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View,
   useWindowDimensions,
@@ -338,6 +338,7 @@ export default function App() {
   const isTablet = width >= 900;
   const isSplitAgenda = width >= 1180;
   const [visits, setVisits] = useState<DemoVisit[]>(() => createDemoVisits());
+  const visitsRef = useRef(visits); // Synchronous demo guard against rapid double-tap assignments.
   const [patients, setPatients] = useState(() => createDemoPatients());
   const [professionals, setProfessionals] = useState(() => createDemoProfessionals());
   const [tab, setTab] = useState<Tab>('home');
@@ -377,10 +378,11 @@ export default function App() {
     const professional = professionals.find(item => item.id === professionalId);
     if (!patient || !professional) return false;
     const assignment = createDemoAssignment({
-      patient, professional, kind, day, startTime, endTime, current: visits,
+      patient, professional, kind, day, startTime, endTime, current: visitsRef.current,
     });
     if (!assignment) return false;
-    setVisits(previous => [...previous, assignment]);
+    visitsRef.current = [...visitsRef.current, assignment];
+    setVisits(visitsRef.current);
     return true;
   }
   function openVisit(visitId: string) {
