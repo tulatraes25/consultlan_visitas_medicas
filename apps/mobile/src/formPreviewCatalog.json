@@ -1,0 +1,346 @@
+{
+  "sourceContract": "HC-03A",
+  "mode": "READ_ONLY_STRUCTURE_PREVIEW",
+  "templates": [
+    {
+      "id": "MEDICAL_ATTENDANCE",
+      "source": "Planilla médica",
+      "specialty": "MEDICINA",
+      "kind": "ATTENDANCE",
+      "headerFields": [
+        {
+          "id": "homecarePatient",
+          "sourceLabel": "Paciente",
+          "kind": "CASE_CONTEXT"
+        },
+        {
+          "id": "insurer",
+          "sourceLabel": "Obra social",
+          "kind": "CASE_CONTEXT"
+        },
+        {
+          "id": "sheetDate",
+          "sourceLabel": "Fecha",
+          "kind": "DATE_ONLY"
+        }
+      ],
+      "rowFields": [
+        {
+          "id": "serviceDate",
+          "sourceLabel": "Fecha",
+          "kind": "DATE_ONLY"
+        },
+        {
+          "id": "professionalSignature",
+          "sourceLabel": "Firma profesional",
+          "kind": "PROFESSIONAL_SIGNATURE_REQUEST"
+        },
+        {
+          "id": "responsibleSignature",
+          "sourceLabel": "Firma padre/madre/tutor",
+          "kind": "RESPONSIBLE_ATTESTATION_REQUEST"
+        }
+      ]
+    },
+    {
+      "id": "NURSING_CAREGIVER_ATTENDANCE",
+      "source": "Enfermería/cuidadoras",
+      "specialty": "ENFERMERIA_O_CUIDADOS",
+      "kind": "ATTENDANCE",
+      "headerFields": [
+        {
+          "id": "homecarePatient",
+          "sourceLabel": "Paciente",
+          "kind": "CASE_CONTEXT"
+        },
+        {
+          "id": "insurer",
+          "sourceLabel": "Obra social",
+          "kind": "CASE_CONTEXT"
+        },
+        {
+          "id": "sheetDate",
+          "sourceLabel": "Fecha",
+          "kind": "DATE_ONLY"
+        }
+      ],
+      "rowFields": [
+        {
+          "id": "serviceDate",
+          "sourceLabel": "Fecha",
+          "kind": "DATE_ONLY"
+        },
+        {
+          "id": "serviceTime",
+          "sourceLabel": "Horario",
+          "kind": "TIME_ONLY"
+        },
+        {
+          "id": "professionalSignature",
+          "sourceLabel": "Firma y sello profesional",
+          "kind": "PROFESSIONAL_SIGNATURE_REQUEST"
+        },
+        {
+          "id": "responsibleSignature",
+          "sourceLabel": "Firma familiar",
+          "kind": "RESPONSIBLE_ATTESTATION_REQUEST"
+        }
+      ]
+    },
+    {
+      "id": "PHYSIOTHERAPY_ATTENDANCE",
+      "source": "Kinesiología",
+      "specialty": "KINESIOLOGIA",
+      "kind": "ATTENDANCE",
+      "headerFields": [
+        {
+          "id": "homecarePatient",
+          "sourceLabel": "Paciente",
+          "kind": "CASE_CONTEXT"
+        },
+        {
+          "id": "insurer",
+          "sourceLabel": "Obra social",
+          "kind": "CASE_CONTEXT"
+        },
+        {
+          "id": "sheetDate",
+          "sourceLabel": "Fecha",
+          "kind": "DATE_ONLY"
+        }
+      ],
+      "rowFields": [
+        {
+          "id": "serviceDate",
+          "sourceLabel": "Fecha",
+          "kind": "DATE_ONLY"
+        },
+        {
+          "id": "professionalSignature",
+          "sourceLabel": "Firma kinesiólogo",
+          "kind": "PROFESSIONAL_SIGNATURE_REQUEST"
+        },
+        {
+          "id": "responsibleSignature",
+          "sourceLabel": "Firma familiar",
+          "kind": "RESPONSIBLE_ATTESTATION_REQUEST"
+        }
+      ]
+    },
+    {
+      "id": "SPEECH_ATTENDANCE",
+      "source": "Fonoaudiología",
+      "specialty": "FONOAUDIOLOGIA",
+      "kind": "ATTENDANCE",
+      "headerFields": [
+        {
+          "id": "homecarePatient",
+          "sourceLabel": "Paciente",
+          "kind": "CASE_CONTEXT"
+        },
+        {
+          "id": "insurer",
+          "sourceLabel": "Obra social",
+          "kind": "CASE_CONTEXT"
+        },
+        {
+          "id": "sheetDate",
+          "sourceLabel": "Fecha",
+          "kind": "DATE_ONLY"
+        }
+      ],
+      "rowFields": [
+        {
+          "id": "serviceDate",
+          "sourceLabel": "Fecha",
+          "kind": "DATE_ONLY"
+        },
+        {
+          "id": "professionalSignature",
+          "sourceLabel": "Firma especialista",
+          "kind": "PROFESSIONAL_SIGNATURE_REQUEST"
+        },
+        {
+          "id": "responsibleSignature",
+          "sourceLabel": "Firma familiar",
+          "kind": "RESPONSIBLE_ATTESTATION_REQUEST"
+        }
+      ]
+    },
+    {
+      "id": "OCCUPATIONAL_THERAPY_ATTENDANCE",
+      "source": "Terapia ocupacional",
+      "specialty": "TERAPIA_OCUPACIONAL",
+      "kind": "ATTENDANCE",
+      "headerFields": [
+        {
+          "id": "homecarePatient",
+          "sourceLabel": "Paciente",
+          "kind": "CASE_CONTEXT"
+        },
+        {
+          "id": "insurer",
+          "sourceLabel": "Obra social",
+          "kind": "CASE_CONTEXT"
+        },
+        {
+          "id": "sheetDate",
+          "sourceLabel": "Fecha",
+          "kind": "DATE_ONLY"
+        }
+      ],
+      "rowFields": [
+        {
+          "id": "serviceDate",
+          "sourceLabel": "Fecha",
+          "kind": "DATE_ONLY"
+        },
+        {
+          "id": "professionalSignature",
+          "sourceLabel": "Firma especialista",
+          "kind": "PROFESSIONAL_SIGNATURE_REQUEST"
+        },
+        {
+          "id": "responsibleSignature",
+          "sourceLabel": "Firma familiar",
+          "kind": "RESPONSIBLE_ATTESTATION_REQUEST"
+        }
+      ]
+    },
+    {
+      "id": "NUTRITION_ATTENDANCE",
+      "source": "Nutrición",
+      "specialty": "NUTRICION",
+      "kind": "ATTENDANCE",
+      "headerFields": [
+        {
+          "id": "homecarePatient",
+          "sourceLabel": "Paciente",
+          "kind": "CASE_CONTEXT"
+        },
+        {
+          "id": "insurer",
+          "sourceLabel": "Obra social",
+          "kind": "CASE_CONTEXT"
+        }
+      ],
+      "rowFields": [
+        {
+          "id": "serviceDate",
+          "sourceLabel": "Fecha",
+          "kind": "DATE_ONLY"
+        },
+        {
+          "id": "professionalSignature",
+          "sourceLabel": "Firma y sello profesional",
+          "kind": "PROFESSIONAL_SIGNATURE_REQUEST"
+        },
+        {
+          "id": "responsibleSignature",
+          "sourceLabel": "Firma tutor",
+          "kind": "RESPONSIBLE_ATTESTATION_REQUEST"
+        }
+      ]
+    },
+    {
+      "id": "CLINICAL_EVOLUTION",
+      "source": "Hoja evolución",
+      "specialty": "EQUIPO_TRATANTE_SEGUN_ASIGNACION",
+      "kind": "CLINICAL_EVOLUTION",
+      "headerFields": [
+        {
+          "id": "homecarePatient",
+          "sourceLabel": "Paciente",
+          "kind": "CASE_CONTEXT"
+        },
+        {
+          "id": "insurer",
+          "sourceLabel": "Obra social",
+          "kind": "CASE_CONTEXT"
+        },
+        {
+          "id": "sheetDate",
+          "sourceLabel": "Fecha",
+          "kind": "DATE_ONLY"
+        }
+      ],
+      "rowFields": [
+        {
+          "id": "evolution",
+          "sourceLabel": "Evolución",
+          "kind": "CLINICAL_NARRATIVE"
+        }
+      ]
+    }
+  ],
+  "paper": [
+    {
+      "id": "KARDEX",
+      "source": "Ficha Kardex",
+      "confirmedLabels": [
+        "Paciente",
+        "Medicación"
+      ],
+      "unknownColumns": true,
+      "restrictions": [
+        "No inferir dosis, vía, frecuencia ni encabezados no legibles.",
+        "Permanece físicamente en el domicilio."
+      ]
+    },
+    {
+      "id": "VITAL_SIGNS",
+      "source": "Signos vitales",
+      "confirmedLabels": [
+        "Paciente",
+        "Fecha",
+        "Horario",
+        "SpO2",
+        "FC",
+        "FR",
+        "T°",
+        "T/A",
+        "Firma y sello"
+      ],
+      "unknownColumns": false,
+      "restrictions": [
+        "No establecer umbrales ni reglas de alarmas clínicas.",
+        "Permanece físicamente en el domicilio."
+      ]
+    },
+    {
+      "id": "PROCEDURE_SHEET",
+      "source": "Control procedimientos",
+      "confirmedLabels": [
+        "Paciente",
+        "Obra social",
+        "Fecha",
+        "Horario",
+        "Procedimiento",
+        "Firma profesional"
+      ],
+      "unknownColumns": false,
+      "restrictions": [
+        "Los procedimientos indicados en origen no forman un catálogo cerrado.",
+        "No documentar una práctica ejecutada con una referencia al papel."
+      ]
+    },
+    {
+      "id": "CRISIS_SHEET",
+      "source": "Hoja de crisis",
+      "confirmedLabels": [
+        "Fecha",
+        "Tipo de crisis",
+        "Duración"
+      ],
+      "unknownColumns": false,
+      "restrictions": [
+        "No implica triaje o monitoreo de emergencias.",
+        "Permanece físicamente en el domicilio."
+      ]
+    }
+  ],
+  "monthlyDossier": {
+    "source": "PDF mensual de 56 páginas escaneadas",
+    "status": "REFERENCE_ONLY"
+  }
+}
