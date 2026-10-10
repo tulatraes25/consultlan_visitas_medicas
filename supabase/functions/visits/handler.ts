@@ -3,7 +3,7 @@
  * It has no Supabase dependencies and is exercised with synthetic JWT fixtures.
  * Only the runtime adapter is allowed to touch secrets or make network requests.
  */
-type FieldKind = "uuid" | "name" | "specialty" | "narrative" | "dateTime" | "cancelReason" | "coverageKind" | "positiveInt";
+type FieldKind = "uuid" | "name" | "specialty" | "dateTime" | "coverageKind" | "positiveInt";
 type CommandSpec = {
   rpc: string;
   fields: Record<string, { db: string; kind: FieldKind }>;
@@ -97,57 +97,11 @@ const COMMANDS: Record<string, CommandSpec> = {
       specialty: { db: "p_specialty", kind: "specialty" },
     },
   },
-  scheduleVisit: {
-    rpc: "api_schedule_visit",
-    fields: {
-      organizationId: { db: "p_org", kind: "uuid" },
-      patientId: { db: "p_patient", kind: "uuid" },
-      professionalId: { db: "p_professional", kind: "uuid" },
-      scheduledStart: { db: "p_start", kind: "dateTime" },
-      scheduledEnd: { db: "p_end", kind: "dateTime" },
-      requestKey: { db: "p_request_key", kind: "uuid" },
-    },
-  },
-  beginVisit: {
-    rpc: "api_begin_visit",
-    fields: {
-      organizationId: { db: "p_org", kind: "uuid" },
-      visitId: { db: "p_visit", kind: "uuid" },
-    },
-  },
-  addClinicalNote: {
-    rpc: "api_add_clinical_note",
-    fields: {
-      organizationId: { db: "p_org", kind: "uuid" },
-      visitId: { db: "p_visit", kind: "uuid" },
-      narrative: { db: "p_narrative", kind: "narrative" },
-      requestKey: { db: "p_request_key", kind: "uuid" },
-    },
-  },
-  submitVisitReview: {
-    rpc: "api_submit_visit_review",
-    fields: {
-      organizationId: { db: "p_org", kind: "uuid" },
-      visitId: { db: "p_visit", kind: "uuid" },
-    },
-  },
-  cancelVisit: {
-    rpc: "api_cancel_visit",
-    fields: {
-      organizationId: { db: "p_org", kind: "uuid" },
-      visitId: { db: "p_visit", kind: "uuid" },
-      reasonCode: { db: "p_reason_code", kind: "cancelReason" },
-    },
-  },
 };
 
 const UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 const JWT = /^Bearer ([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)$/;
 const DATE_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2})$/;
-const REASONS = new Set([
-  "SERVICE_NOT_REQUIRED", "PATIENT_UNAVAILABLE",
-  "PROFESSIONAL_UNAVAILABLE", "OTHER",
-]);
 const MAX_BODY_BYTES = 32768;
 const HEADERS = {
   "content-type": "application/json; charset=utf-8",
@@ -169,9 +123,7 @@ function checkField(value: unknown, kind: FieldKind): boolean {
     case "uuid": return UUID.test(value);
     case "name": return value === value.trim() && value.length >= 2 && value.length <= 160;
     case "specialty": return value === value.trim() && value.length >= 2 && value.length <= 100;
-    case "narrative": return value === value.trim() && value.length >= 1 && value.length <= 20000;
     case "dateTime": return DATE_TIME.test(value) && Number.isFinite(Date.parse(value));
-    case "cancelReason": return REASONS.has(value);
     case "coverageKind": return value === "VISIT" || value === "SHIFT";
   }
 }

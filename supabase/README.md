@@ -67,6 +67,12 @@ La migración `20261010040000_homecare_controlled_commands.sql` crea operaciones
 
 La prueba SQL usa episodios y planes sintéticos previamente aprobados como fixtures del entorno de CI; estos estados no prueban acreditación profesional. Véase [HC-02B](../docs/specs/HC-02B-controlled-planning-commands.md).
 
+## HC-02C1B y SUPA-04 — Revisión pendiente y cierre de rutas antiguas
+
+La revisión de metadatos de un plan domiciliario ahora se solicita mediante `requestHomecarePlanReview`, respaldada por `api_hc_request_plan_review`. La tabla `homecare_plan_review_requests` solo permite estado **PENDING**, con RLS para administración y sin capacidad de aprobación ni activación clínica. La migración y sus pruebas se incluyen después de HC-02B en el Quality Gate.
+
+**SUPA-04:** la Edge deja de exponer las rutas clínicas heredadas `scheduleVisit`, `beginVisit`, `addClinicalNote`, `submitVisitReview` y `cancelVisit`. Los RPC históricos de SUPA-02 permanecen en la base del prototipo por compatibilidad de pruebas, pero no son un contrato móvil autorizado. Se debe evitar cualquier acceso público directo a operaciones que utilicen `service_role`. No habilitar toma de notas, inicio de atención o cierre hasta definir y aprobar los circuitos clínicos.
+
 ## Puesta en marcha posterior (NO realizada)
 1. La administración propietaria de Pediatrics crea un **proyecto Supabase nuevo y separado**, comprueba responsabilidad contractual, región de residencia de datos, privacidad, backup/restore y política de retención. Nunca usar el proyecto SICOM ni un entorno de CONSULTLAN.
 2. Configura Supabase Auth con registro abierto/usuarios anónimos deshabilitados; define invitaciones, MFA, rotación, recuperación y control de sesiones. **No** desplegar con pacientes reales sin una revisión de cumplimiento sanitario/contractual.

@@ -10,11 +10,7 @@ Cerrar el límite de confianza entre aplicación React Native y las RPC `service
 
 - `action = createPatient`: organizationId, displayName, requestKey (UUID)
 - `registerProfessional`: organizationId, authUserId de usuario ya invitado en ESTE Auth, specialty
-- `scheduleVisit`: organizationId, patientId, professionalId, scheduledStart, scheduledEnd, requestKey
-- `beginVisit`: organizationId, visitId
-- `addClinicalNote`: organizationId, visitId, narrative, requestKey
-- `submitVisitReview`: organizationId, visitId
-- `cancelVisit`: organizationId, visitId, reasonCode (catálogo definido).
+- **SUPA-04:** las operaciones de visita histórica `scheduleVisit`, `beginVisit`, `addClinicalNote`, `submitVisitReview` y `cancelVisit` están bloqueadas (422) en la Edge. No constituyen un contrato clínico vigente.
 
 ### HC-02B — Comandos de internación domiciliaria
 
@@ -23,13 +19,14 @@ El mismo gateway añade seis operaciones con validación estricta de campos:
 - `createHomecareEpisodeDraft`: organizationId, patientId (paciente del programa), requestKey
 - `assignHomecareCareTeamMember`: organizationId, episodeId, professionalId
 - `createHomecarePlanDraft`: organizationId, episodeId, requestKey
+- `requestHomecarePlanReview` (HC-02C1B): organizationId, episodeId, carePlanVersion, requestKey; solo solicitud PENDING, sin aprobación
 - `scheduleHomecareCoverage`: organizationId, episodeId, professionalId, carePlanVersion (entero positivo), serviceKind = VISIT|SHIFT, scheduledStart, scheduledEnd, requestKey
 - `requestHomecareHandover`: organizationId, outgoingCoverageId, incomingCoverageId
 - `acknowledgeHomecareHandover`: organizationId, handoverId
 
 La creación de episodios, planes y permisos no implica atención activa. **No existe** comando para aprobar indicaciones, verificar matrículas, activar internaciones, confirmar emergencias ni cerrar documentos clínicos firmados. `scheduleHomecareCoverage` será rechazado por PostgreSQL si el caso no está ACTIVE con plan APPROVED y profesional autorizado. Los casos y planes aprobados de CI son exclusivamente simulaciones.
 
-**Las rutas antiguas de SUPA-02 quedan como interfaces históricas incompatibles con la nueva integridad longitudinal; no utilizarlas en una app clínica.** Se retirarán formalmente al estabilizar el protocolo de HC-02C.
+**SUPA-04 — recorte del alcance clínico:** se retiraron las cinco rutas clínicas históricas del allowlist Edge. Sus RPC SQL históricas pueden seguir existiendo para pruebas del prototipo, pero ningún comando de Edge las invoca. No desplegar acceso directo a RPC privilegiadas; el backend mantiene exclusivos sus secretos. Las rutas de registro administrativo y los comandos HC-02B/HC-02C1B permanecen sujetos a SQL, permisos y auditoría.
 
 No se acepta ningún otro campo. Fechas ISO 8601, UUIDs válidos, cuerpos hasta 32 KiB. Las respuestas son JSON con `Cache-Control: no-store`. Las credenciales nunca se registran en logs.
 
