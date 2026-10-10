@@ -1,0 +1,197 @@
+/**
+ * SUPA-03 — isolated, fail-closed request policy for the mobile Edge Function.
+ * It has no Supabase dependencies and is exercised with synthetic JWT fixtures.
+ * Only the runtime adapter is allowed to touch secrets or make network requests.
+ */
+type FieldKind = "uuid" | "name" | "specialty" | "narrative" | "dateTime" | "cancelReason";
+type CommandSpec = {
+  rpc: string;
+  fields: Record<string, { db: string; kind: FieldKind }>;
+};
+export type CommandResult =
+  | { ok: true; data: unknown }
+  | { ok: false; code: string };
+
+export type TrustedServices = {
+  // MUST be verified against this Supabase project's Auth API, not decoded only.
+  authenticate: (jwt: string) => Promise<string | null>;
+  // MUST use service_role on the server, never a key supplied in the request.
+  command: (rpc: string, args: Record<string, unknown>) => Promise<CommandResult>;
+};
+const COMMANDS: Record<string, CommandSpec> = {
+  createPatient: {
+    rpc: "api_create_patient",
+    fields: {
+      organizationId: { db: "p_org", kind: "uuid" },
+      displayName: { db: "p_display_name", kind: "name" },
+      requestKey: { db: "p_request_key", kind: "uuid" },
+    },
+  },
+  registerProfessional: {
+    rpc: "api_register_professional",
+    fields: {
+      organizationId: { db: "p_org", kind: "uuid" },
+      authUserId: { db: "p_auth_user", kind: "uuid" },
+      specialty: { db: "p_specialty", kind: "specialty" },
+    },
+  },
+  scheduleVisit: {
+    rpc: "api_schedule_visit",
+    fields: {
+      organizationId: { db: "p_org", kind: "uuid" },
+      patientId: { db: "p_patient", kind: "uuid" },
+      professionalId: { db: "p_professional", kind: "uuid" },
+      scheduledStart: { db: "p_start", kind: "dateTime" },
+      scheduledEnd: { db: "p_end", kind: "dateTime" },
+      requestKey: { db: "p_request_key", kind: "uuid" },
+    },
+  },
+  beginVisit: {
+    rpc: "api_begin_visit",
+    fields: {
+      organizationId: { db: "p_org", kind: "uuid" },
+      visitId: { db: "p_visit", kind: "uuid" },
+    },
+  },
+  addClinicalNote: {
+    rpc: "api_add_clinical_note",
+    fields: {
+      organizationId: { db: "p_org", kind: "uuid" },
+      visitId: { db: "p_visit", kind: "uuid" },
+      narrative: { db: "p_narrative", kind: "narrative" },
+      requestKey: { db: "p_request_key", kind: "uuid" },
+    },
+  },
+  submitVisitReview: {
+    rpc: "api_submit_visit_review",
+    fields: {
+      organizationId: { db: "p_org", kind: "uuid" },
+      visitId: { db: "p_visit", kind: "uuid" },
+    },
+  },
+  cancelVisit: {
+    rpc: "api_cancel_visit",
+    fields: {
+      organizationId: { db: "p_org", kind: "uuid" },
+      visitId: { db: "p_visit", kind: "uuid" },
+      reasonCode: { db: "p_reason_code", kind: "cancelReason" },
+    },
+  },
+};
+
+const UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
+const JWT = /^Bearer ([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)$/;
+const DATE_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2})$/;
+const REASONS = new Set([
+  "SERVICE_NOT_REQUIRED", "PATIENT_UNAVAILABLE",
+  "PROFESSIONAL_UNAVAILABLE", "OTHER",
+]);
+const MAX_BODY_BYTES = 32768;
+const HEADERS = {
+  "content-type": "application/json; charset=utf-8",
+  "cache-control": "no-store",
+  "x-content-type-options": "nosniff",
+} as const;
+
+function json(status: number, data: Record<string, unknown>): Response {
+  return new Response(JSON.stringify(data), { status, headers: HEADERS });
+}
+function record(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+function checkField(value: unknown, kind: FieldKind): boolean {
+  if (typeof value !== "string") return false;
+  switch (kind) {
+    case "uuid": return UUID.test(value);
+    case "name": return value === value.trim() && value.length >= 2 && value.length <= 160;
+    case "specialty": return value === value.trim() && value.length >= 2 && value.length <= 100;
+    case "narrative": return value === value.trim() && value.length >= 1 && value.length <= 20000;
+    case "dateTime": return DATE_TIME.test(value) && Number.isFinite(Date.parse(value));
+    case "cancelReason": return REASONS.has(value);
+  }
+}
+function sanitize(
+  body: unknown,
+): { rpc: string; args: Record<string, unknown> } | null {
+  if (!record(body) || typeof body.action !== "string") return null;
+  const spec = Object.prototype.hasOwnProperty.call(COMMANDS, body.action)
+    ? COMMANDS[body.action]
+    : undefined;
+  if (!spec) return null;
+  const allowed = Object.keys(spec.fields);
+  if (Object.keys(body).length !== allowed.length + 1) return null;
+  for (const key of Object.keys(body)) {
+    if (key !== "action" && !allowed.includes(key)) return null;
+  }
+  const args: Record<string, unknown> = {};
+  for (const [name, field] of Object.entries(spec.fields)) {
+    if (!checkField(body[name], field.kind)) return null;
+    args[field.db] = body[name];
+  }
+  return { rpc: spec.rpc, args };
+}
+function errorStatus(code: string): number {
+  switch (code) {
+    case "42501": return 403;
+    case "22023": return 422;
+    case "23505":
+    case "23P01": return 409;
+    default: return 502;
+  }
+}
+
+export function createVisitHandler(services: TrustedServices) {
+  return async function handle(request: Request): Promise<Response> {
+    if (request.method !== "POST") {
+      return json(405, { error: "METHOD_NOT_ALLOWED" });
+    }
+    // Supabase client calls a user JWT; an apikey alone is never proof of identity.
+    const bearer = request.headers.get("authorization") ?? "";
+    if (bearer.length > 8192 || !JWT.test(bearer)) {
+      return json(401, { error: "AUTHENTICATION_REQUIRED" });
+    }
+    const token = JWT.exec(bearer)?.[1];
+    if (!token || token.startsWith("sb_")) {
+      return json(401, { error: "AUTHENTICATION_REQUIRED" });
+    }
+    let actor: string | null;
+    try {
+      actor = await services.authenticate(token);
+    } catch {
+      return json(503, { error: "AUTH_SERVICE_UNAVAILABLE" });
+    }
+    if (!actor || !UUID.test(actor)) {
+      return json(401, { error: "AUTHENTICATION_FAILED" });
+    }
+    if (!/^\s*application\/json\b/i.test(request.headers.get("content-type") ?? "")) {
+      return json(415, { error: "JSON_REQUIRED" });
+    }
+    const headerLength = Number(request.headers.get("content-length") || "0");
+    if (headerLength > MAX_BODY_BYTES) return json(413, { error: "BODY_TOO_LARGE" });
+    let body: unknown;
+    try {
+      const bytes = await request.arrayBuffer();
+      if (bytes.byteLength > MAX_BODY_BYTES) return json(413, { error: "BODY_TOO_LARGE" });
+      body = JSON.parse(new TextDecoder().decode(bytes));
+    } catch {
+      return json(400, { error: "INVALID_JSON" });
+    }
+    const sanitized = sanitize(body);
+    if (!sanitized) return json(422, { error: "INVALID_OPERATION_OR_FIELDS" });
+
+    // Overwrite identity: NEVER accept actor ID, role or privileged key from JSON.
+    const args = { ...sanitized.args, p_actor: actor };
+    let result: CommandResult;
+    try {
+      result = await services.command(sanitized.rpc, args);
+    } catch {
+      return json(502, { error: "DATA_SERVICE_UNAVAILABLE" });
+    }
+    if (!result.ok) {
+      const status = errorStatus(result.code);
+      // Do not leak SQL messages, patient names, provider URLs, JWTs or signing secrets.
+      return json(status, { error: status === 502 ? "DATA_OPERATION_FAILED" : "OPERATION_DENIED_OR_CONFLICT" });
+    }
+    return json(200, { ok: true, result: result.data });
+  };
+}
