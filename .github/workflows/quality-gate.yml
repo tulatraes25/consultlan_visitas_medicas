@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - main
-      - 'spec/**'
-      - 'feature/**'
   pull_request:
     branches:
       - main
@@ -66,6 +64,8 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: TypeScript strict check
         run: npm run typecheck
+      - name: React Native rendered interaction tests (phone/tablet)
+        run: npm run test:ui
       - name: Export Android JavaScript bundle
         run: npm run export:android
       - name: Export iOS JavaScript bundle
