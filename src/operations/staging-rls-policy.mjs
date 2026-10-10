@@ -14,6 +14,16 @@ function envValue(env, name) {
 }
 function block(code) { throw new StagingGateError(code); }
 
+// The exp claim is only a local shape/age guard. Signature and rejection
+// must still be checked against Supabase Auth; this does not validate a session.
+function hasPastExpClaim(token) {
+  try {
+    const payload = JSON.parse(Buffer.from(token.split(".")[1], "base64url").toString("utf8"));
+    return Number.isSafeInteger(payload?.exp) &&
+      payload.exp > 0 && payload.exp < Math.floor(Date.now() / 1000) - 120;
+  } catch { return false; }
+}
+
 export function validateRlsStagingEnvironment(env, { live = false } = {}) {
   if (!env || typeof env !== "object") return { ok: false, issues: ["STAGING_RLS_CONFIG_MISSING"] };
   const target = validateStagingEnvironment(env, { live });
@@ -38,10 +48,13 @@ export function validateRlsStagingEnvironment(env, { live = false } = {}) {
   const tokens = [
     envValue(env, "STAGING_USER_A_JWT"),
     envValue(env, "STAGING_USER_B_JWT"),
-    envValue(env, "STAGING_REVOKED_USER_JWT"),
+    envValue(env, "STAGING_EXPIRED_USER_JWT"),
   ];
   if (tokens.some(t => !USER_JWT.test(t)) || new Set(tokens).size !== 3) {
     issues.push("DISTINCT_SYNTHETIC_JWTS_REQUIRED");
+  }
+  if (!hasPastExpClaim(envValue(env, "STAGING_EXPIRED_USER_JWT"))) {
+    issues.push("EXPIRED_JWT_EXP_CLAIM_REQUIRED");
   }
   return { ok: issues.length === 0, issues };
 }
@@ -85,7 +98,7 @@ async function rowsFor(request, base, key, token, episode) {
 
 /**
  * Exactly eight GETs; all fixture IDs and JWTs remain in memory.
- * Own episode must be nonempty; cross-tenant must be empty; revoked token denied.
+ * Own episode must be nonempty; cross-tenant must be empty; expired token denied.
  */
 export async function verifySyntheticCrossTenantRls(env, request = fetch) {
   if (!validateRlsStagingEnvironment(env, { live: true }).ok) block("STAGING_RLS_CONFIG_REJECTED");
@@ -131,15 +144,15 @@ export async function verifySyntheticCrossTenantRls(env, request = fetch) {
     block("STAGING_RLS_ANONYMOUS_UNEXPECTED_STATUS");
   }
 
-  const revoked = await safeFetch(
+  const expired = await safeFetch(
     request, base + "/auth/v1/user",
-    requestOptions(key, envValue(env, "STAGING_REVOKED_USER_JWT")),
+    requestOptions(key, envValue(env, "STAGING_EXPIRED_USER_JWT")),
   );
-  if (revoked.status !== 401 && revoked.status !== 403) block("STAGING_REVOKED_JWT_STILL_ACCEPTED");
+  if (expired.status !== 401 && expired.status !== 403) block("STAGING_EXPIRED_JWT_STILL_ACCEPTED");
 
   return { authenticated: "TWO_IDENTITIES_VERIFIED",
     ownRows: "TWO_NONEMPTY_ROWS_VERIFIED",
     crossTenant: "BOTH_DIRECTIONS_DENIED",
     anonymous: "KNOWN_ROW_NOT_VISIBLE",
-    revokedToken: "DENIED" };
+    expiredToken: "DENIED" };
 }
