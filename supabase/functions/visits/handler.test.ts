@@ -277,3 +277,38 @@ Deno.test("revoked Supabase user JWT cannot dispatch any homecare operation", as
   equal(response.status, 401, "revoked user cannot create homecare case");
   equal(h.calls.length, 0, "no RPC call when JWT is rejected by Auth");
 });
+
+
+Deno.test("HC-02C1B allows only administrative PENDING review intake, never clinical approval", async () => {
+  const h = harness();
+  const request = {
+    action: "requestHomecarePlanReview",
+    organizationId: ORG,
+    episodeId: "e1000000-0000-4000-8000-000000000001",
+    carePlanVersion: 2,
+    requestKey: REQUEST,
+  };
+  const ok = await h.handle(post(request));
+  equal(ok.status, 200, "synthetic intake routes through protected RPC");
+  equal(h.calls.length, 1, "only one request reaches the backend");
+  equal(h.calls[0].rpc, "api_hc_request_plan_review", "fixed pending-only RPC");
+  equal(h.calls[0].args.p_actor, ACTOR, "actor comes from verified Supabase Auth");
+  equal(h.calls[0].args.p_version, 2, "version is forwarded as integer");
+  for (const attempted of [
+    { ...request, carePlanVersion: 0 },
+    { ...request, carePlanVersion: "2" },
+    { ...request, clinicalNotes: "forbidden" },
+    { ...request, planDigest: "forbidden" },
+    { ...request, approved: true },
+    { ...request, reviewState: "APPROVED" },
+    { ...request, p_actor: ACTOR },
+    { ...request, service_role: "secret" },
+    { ...request, clinicPatientId: PATIENT },
+    { ...request, action: "approveHomecareCarePlan" },
+    { ...request, action: "activateHomecareEpisode" },
+  ]) {
+    const result = await h.handle(post(attempted));
+    equal(result.status, 422, "non-contract or clinical operation must be denied");
+  }
+  equal(h.calls.length, 1, "attempts to submit clinical approvals never dispatch");
+});

@@ -43,6 +43,16 @@ const COMMANDS: Record<string, CommandSpec> = {
       requestKey: { db: "p_request_key", kind: "uuid" },
     },
   },
+  // Administrative review request only: never clinical approval or activation.
+  requestHomecarePlanReview: {
+    rpc: "api_hc_request_plan_review",
+    fields: {
+      organizationId: { db: "p_org", kind: "uuid" },
+      episodeId: { db: "p_episode", kind: "uuid" },
+      carePlanVersion: { db: "p_version", kind: "positiveInt" },
+      requestKey: { db: "p_request_key", kind: "uuid" },
+    },
+  },
   scheduleHomecareCoverage: {
     rpc: "api_hc_schedule_coverage",
     fields: {
