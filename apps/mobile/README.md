@@ -22,16 +22,20 @@ Usar el emulador/dispositivo compatible con Expo SDK 57. Para producir bundles e
 4. Adaptación: navegación inferior en teléfonos; barra lateral desde 900 dp; panel lateral de detalle solo a partir de 1180 dp, con detalle a pantalla completa en tamaños intermedios.
 5. Ventana táctil de firma (simulación): trazo con dedo o lápiz, borrar y descartar. No guarda, transmite ni autentica firmas.
 6. Gestión administrativa simulada: pacientes ficticios, profesionales ficticios por especialidad, selección de horarios y asignación local visible en la agenda. No crea cuentas reales ni persiste datos.
+7. **Planillas (HC-03B)**: catálogo por seis especialidades y hoja de evolución; previsualiza campos originales confirmados, sin campos de captura ni firmas. Lista→detalle en celulares/tablets medianas y dos paneles en tablet ancha. Desde una visita ficticia se abre la plantilla de su especialidad **sin enviar datos del paciente**.
+8. **Hojas en domicilio**: Kardex, signos vitales, procedimientos y hoja de crisis figuran únicamente como referencias físicas; no son formularios editables ni sistemas de alarmas.
 
 ## Límites y seguridad
 - Se muestra siempre **MODO DEMO · datos ficticios**.
 - La pestaña Gestión solo sirve para probar UX, **no es una ruta autenticada ni representa permisos reales**. Solo admite códigos de 1 a 4 caracteres y genera nombres de muestra.
 - Las futuras invitaciones a Supabase Auth y las altas clínicas reales no están conectadas a estos formularios.
 - No hay autenticación, conexión a CONSULTLAN, historias clínicas, firma electrónica/digital válida ni guardado de documentos.
+- La previsualización HC-03B utiliza `formPreviewCatalog.json`, cuya paridad exacta con HC-03A se comprueba mediante tests Node; **solo expone etiquetas de campos**, no datos, identificadores, imágenes ni valores clínicos.
+- La vista de planillas no dispone de botones de enviar, guardar, prescribir, confirmar crisis o firmar.
 - La prueba táctil usa trazos SVG **en memoria volátil**. Al cerrar el modal se desmonta el lienzo y se descartan sus trazos; no existe botón de enviar o firmar.
 - La selección de vínculo familiar es ilustrativa y **no verifica identidad** ni autorización de cuidadores.
 - El registro de asistencia del familiar y la firma digital certificada del profesional seguirán siendo documentos separados.
 - Ninguna acción clínica se simula como aceptada o certificada.
 - No publicar en stores ni conectar con API real desde este prototipo.
 - Los colores provienen del sistema institucional: `#166534`, `#0B3D2A`, `#DDF5E6`.
-- Próximo gate: configurar Supabase Auth propio y conectar solo lectura autorizada tras validar RLS en un proyecto staging. Edge Functions auditadas servirán para cambios de estado, altas y firmas. No introducir service_role ni otros secretos en el móvil.
+- Próximos gates: HC-02C (aprobación/activación clínica con responsables habilitados), HC-03C (flujo seguro de evidencias y firmas), más staging Supabase independiente con RLS real y pruebas físicas. No introducir service_role ni otros secretos en el móvil.

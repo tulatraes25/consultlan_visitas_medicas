@@ -13,12 +13,13 @@ import {
 import { palette, corners, spacing, touchSize } from './src/theme';
 import { AttendanceSignatureDemo } from './src/AttendanceSignatureDemo';
 import { AdminWorkspaceDemo } from './src/AdminWorkspaceDemo';
+import { FormCatalogDemo, formIdForSpecialty } from './src/FormCatalogDemo';
 import {
   createDemoPatients, createDemoProfessionals, createPatientEntry,
   createProfessionalEntry, createDemoAssignment, DEMO_SLOTS, nextDemoDay,
 } from './src/adminDemoData';
 
-type Tab = 'home' | 'agenda' | 'management';
+type Tab = 'home' | 'agenda' | 'forms' | 'management';
 type AgendaFilter = 'all' | 'pending' | 'finished';
 
 const sectionSteps = [
@@ -128,8 +129,11 @@ function HomePanel({
 }
 
 function VisitDetail({
-  visit, isTablet, onBack,
-}: { visit: DemoVisit; isTablet: boolean; onBack?: () => void }) {
+  visit, isTablet, onBack, onOpenForms,
+}: {
+  visit: DemoVisit; isTablet: boolean; onBack?: () => void;
+  onOpenForms: (specialty: Specialty) => void;
+}) {
   const [signatureVisible, setSignatureVisible] = useState(false);
   return (
     <View style={styles.detailPage}>
@@ -178,6 +182,11 @@ function VisitDetail({
       </View>
 
       <PrimaryAction
+        label="Ver planilla de esta especialidad (demo)"
+        onPress={() => onOpenForms(visit.specialty)}
+        outline
+      />
+      <PrimaryAction
         label="Probar ventana táctil de firma (demo)"
         onPress={() => setSignatureVisible(true)}
       />
@@ -201,12 +210,13 @@ function VisitDetail({
 }
 
 function AgendaPanel({
-  visits, selectedId, onSelect, isTablet,
+  visits, selectedId, onSelect, isTablet, onOpenForms,
 }: {
   visits: DemoVisit[];
   selectedId: string;
   onSelect: (id: string) => void;
   isTablet: boolean;
+  onOpenForms: (specialty: Specialty) => void;
 }) {
   const [filter, setFilter] = useState<AgendaFilter>('all');
   const [search, setSearch] = useState('');
@@ -285,7 +295,7 @@ function AgendaPanel({
         </View>
         {isTablet ? (
           <View style={styles.agendaDetail}>
-            <VisitDetail visit={selected} isTablet />
+            <VisitDetail visit={selected} isTablet onOpenForms={onOpenForms} />
           </View>
         ) : null}
       </View>
@@ -328,10 +338,18 @@ export default function App() {
   const [tab, setTab] = useState<Tab>('home');
   const [selectedId, setSelectedId] = useState(visits[1]?.id ?? visits[0]?.id ?? '');
   const [showMobileDetail, setShowMobileDetail] = useState(false);
+  const [initialFormTemplateId, setInitialFormTemplateId] = useState<string | undefined>();
   const selectedVisit = visits.find(v => v.id === selectedId) ?? visits[0];
 
   function openTab(nextTab: Tab) {
     setTab(nextTab);
+    setShowMobileDetail(false);
+    if (nextTab === 'forms') setInitialFormTemplateId(undefined);
+  }
+  function openFormForSpecialty(specialty: Specialty) {
+    // Only the specialty is routed; no patient/visit fields are passed into form previews.
+    setInitialFormTemplateId(formIdForSpecialty(specialty));
+    setTab('forms');
     setShowMobileDetail(false);
   }
   function addPatient(code: string): boolean {
@@ -375,6 +393,7 @@ export default function App() {
             <View style={styles.sidebarNav} accessibilityRole="tablist">
               <NavigationButton label="Inicio" dark active={tab === 'home'} onPress={() => openTab('home')} />
               <NavigationButton label="Agenda" dark active={tab === 'agenda'} onPress={() => openTab('agenda')} />
+              <NavigationButton label="Planillas" dark active={tab === 'forms'} onPress={() => openTab('forms')} />
               <NavigationButton label="Gestión" dark active={tab === 'management'} onPress={() => openTab('management')} />
             </View>
             <View style={styles.sidebarBottom}>
@@ -404,11 +423,15 @@ export default function App() {
             showsVerticalScrollIndicator={false}
           >
             {showMobileDetail && !isSplitAgenda ? (
-              <VisitDetail visit={selectedVisit} isTablet={false} onBack={() => openTab('agenda')} />
+              <VisitDetail visit={selectedVisit} isTablet={false} onBack={() => openTab('agenda')}
+                onOpenForms={openFormForSpecialty} />
             ) : tab === 'home' ? (
               <HomePanel visits={visits} onAgenda={() => openTab('agenda')} onSelect={openVisit} />
             ) : tab === 'agenda' ? (
-              <AgendaPanel visits={visits} selectedId={selectedId} onSelect={openVisit} isTablet={isSplitAgenda} />
+              <AgendaPanel visits={visits} selectedId={selectedId} onSelect={openVisit}
+                onOpenForms={openFormForSpecialty} isTablet={isSplitAgenda} />
+            ) : tab === 'forms' ? (
+              <FormCatalogDemo key={initialFormTemplateId ?? 'catalog'} initialTemplateId={initialFormTemplateId} />
             ) : (
               <AdminWorkspaceDemo
                 patients={patients} professionals={professionals} visits={visits}
@@ -422,6 +445,7 @@ export default function App() {
             <View style={styles.bottomTabs} accessibilityRole="tablist">
               <NavigationButton label="Inicio" active={tab === 'home' && !showMobileDetail} onPress={() => openTab('home')} />
               <NavigationButton label="Agenda" active={tab === 'agenda'} onPress={() => openTab('agenda')} />
+              <NavigationButton label="Planillas" active={tab === 'forms'} onPress={() => openTab('forms')} />
               <NavigationButton label="Gestión" active={tab === 'management'} onPress={() => openTab('management')} />
             </View>
           ) : null}
