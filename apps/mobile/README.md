@@ -19,11 +19,15 @@ Usar el emulador/dispositivo compatible con Expo SDK 57. Para producir bundles e
 1. Inicio: jornada, métricas ilustrativas y dos próximas visitas.
 2. Agenda: búsqueda local y filtros por estado.
 3. Detalle: prestación ficticia y explicación del circuito de documentación y firmas.
+5. Ventana táctil de firma (simulación): trazo con dedo o lápiz, borrar y descartar. No guarda, transmite ni autentica firmas.
 4. Adaptación: navegación inferior en teléfonos; barra lateral desde 900 dp; panel lateral de detalle solo a partir de 1180 dp, con detalle a pantalla completa en tamaños intermedios.
 
 ## Límites y seguridad
 - Se muestra siempre **MODO DEMO · datos ficticios**.
-- No hay autenticación, conexión a CONSULTLAN, historias clínicas, firma ni guardado de documentos.
+- No hay autenticación, conexión a CONSULTLAN, historias clínicas, firma electrónica/digital válida ni guardado de documentos.
+- La prueba táctil usa trazos SVG **en memoria volátil**. Al cerrar el modal se desmonta el lienzo y se descartan sus trazos; no existe botón de enviar o firmar.
+- La selección de vínculo familiar es ilustrativa y **no verifica identidad** ni autorización de cuidadores.
+- El registro de asistencia del familiar y la firma digital certificada del profesional seguirán siendo documentos separados.
 - Ninguna acción clínica se simula como aceptada o certificada.
 - No publicar en stores ni conectar con API real desde este prototipo.
 - Los colores provienen del sistema institucional: `#166534`, `#0B3D2A`, `#DDF5E6`.
