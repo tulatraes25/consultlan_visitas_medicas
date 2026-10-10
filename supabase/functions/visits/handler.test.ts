@@ -175,3 +175,105 @@ Deno.test("requires exact cancellation reason and sane timestamps", async () => 
   equal(badDates.status, 422, "free-text dates rejected");
   equal(h.calls.length, 0, "invalid schedule must not reach SQL");
 });
+
+
+Deno.test("HC-02B operations preserve verified actor and dispatch only fixed RPC names", async () => {
+  const e = "e1000000-0000-4000-8000-000000000001";
+  const out = "d1000000-0000-4000-8000-000000000002";
+  const incoming = "d1000000-0000-4000-8000-000000000003";
+  const handover = "f1000000-0000-4000-8000-000000000001";
+  const pairs = [
+    ["createHomecareEpisodeDraft",
+      { organizationId: ORG, patientId: PATIENT, requestKey: REQUEST },
+      "api_hc_create_episode_draft"],
+    ["assignHomecareCareTeamMember",
+      { organizationId: ORG, episodeId: e, professionalId: PROFESSIONAL },
+      "api_hc_assign_team_member"],
+    ["createHomecarePlanDraft",
+      { organizationId: ORG, episodeId: e, requestKey: REQUEST },
+      "api_hc_create_plan_draft"],
+    ["scheduleHomecareCoverage",
+      { organizationId: ORG, episodeId: e, professionalId: PROFESSIONAL,
+        carePlanVersion: 1, serviceKind: "SHIFT",
+        scheduledStart: "2026-10-30T06:00:00Z",
+        scheduledEnd: "2026-10-30T18:00:00Z", requestKey: REQUEST },
+      "api_hc_schedule_coverage"],
+    ["requestHomecareHandover",
+      { organizationId: ORG, outgoingCoverageId: out, incomingCoverageId: incoming },
+      "api_hc_request_handover"],
+    ["acknowledgeHomecareHandover",
+      { organizationId: ORG, handoverId: handover },
+      "api_hc_ack_handover"],
+  ] as const;
+  const h = harness();
+  for (const [action, params, rpc] of pairs) {
+    const response = await h.handle(post({ action, ...params }));
+    equal(response.status, 200, "HC command is syntactically valid");
+    equal(h.calls[h.calls.length - 1].rpc, rpc, "fixed server RPC mapping");
+    equal(h.calls[h.calls.length - 1].args.p_actor, ACTOR,
+      "only server verified identity may be used");
+  }
+  const coverage = h.calls.find(call => call.rpc === "api_hc_schedule_coverage");
+  equal(coverage?.args.p_plan_version, 1, "numeric plan version forwarded as integer");
+  equal(coverage?.args.p_kind, "SHIFT", "approved coverage type forwarded");
+  equal(h.calls.length, pairs.length, "each valid command dispatches once");
+});
+
+Deno.test("clinical approval, emergency acknowledgement and signatures remain absent", async () => {
+  const h = harness();
+  for (const action of [
+    "approveHomecareCarePlan", "activateHomecareEpisode",
+    "signMedicalOrder", "acknowledgeEmergency", "dischargeHomecareEpisode",
+    "setProviderLicenseVerified",
+  ]) {
+    const response = await h.handle(post({
+      action, organizationId: ORG, episodeId: PATIENT,
+    }));
+    equal(response.status, 422, "unsafe action not available in HC-02B");
+  }
+  equal(h.calls.length, 0, "no unapproved clinical command reaches SQL");
+});
+
+Deno.test("rejects malformed coverage kind/version and client-supplied identity or privileges", async () => {
+  const valid = {
+    action: "scheduleHomecareCoverage",
+    organizationId: ORG,
+    episodeId: "e1000000-0000-4000-8000-000000000001",
+    professionalId: PROFESSIONAL,
+    carePlanVersion: 1,
+    serviceKind: "SHIFT",
+    scheduledStart: "2026-10-30T06:00:00Z",
+    scheduledEnd: "2026-10-30T18:00:00Z",
+    requestKey: REQUEST,
+  };
+  const invalid = [
+    { ...valid, carePlanVersion: "1" },
+    { ...valid, carePlanVersion: 1.3 },
+    { ...valid, carePlanVersion: 0 },
+    { ...valid, carePlanVersion: -1 },
+    { ...valid, carePlanVersion: 1000001 },
+    { ...valid, serviceKind: "MEDICAL_ORDER" },
+    { ...valid, serviceKind: "VISIT;DROP TABLE" },
+    { ...valid, p_actor: ACTOR },
+    { ...valid, app_role: "ADMIN" },
+    { ...valid, service_role: "fake" },
+    { ...valid, patientId: PATIENT },
+    { ...valid, clinicPatientId: PATIENT },
+  ];
+  const h = harness();
+  for (const payload of invalid) {
+    const response = await h.handle(post(payload));
+    equal(response.status, 422, "malformed or extra clinical field must be rejected");
+  }
+  equal(h.calls.length, 0, "no invalid coverages reach database");
+});
+
+Deno.test("revoked Supabase user JWT cannot dispatch any homecare operation", async () => {
+  const h = harness({ authenticate: async () => null });
+  const response = await h.handle(post({
+    action: "createHomecareEpisodeDraft",
+    organizationId: ORG, patientId: PATIENT, requestKey: REQUEST,
+  }));
+  equal(response.status, 401, "revoked user cannot create homecare case");
+  equal(h.calls.length, 0, "no RPC call when JWT is rejected by Auth");
+});

@@ -16,6 +16,21 @@ Cerrar el límite de confianza entre aplicación React Native y las RPC `service
 - `submitVisitReview`: organizationId, visitId
 - `cancelVisit`: organizationId, visitId, reasonCode (catálogo definido).
 
+### HC-02B — Comandos de internación domiciliaria
+
+El mismo gateway añade seis operaciones con validación estricta de campos:
+
+- `createHomecareEpisodeDraft`: organizationId, patientId (paciente del programa), requestKey
+- `assignHomecareCareTeamMember`: organizationId, episodeId, professionalId
+- `createHomecarePlanDraft`: organizationId, episodeId, requestKey
+- `scheduleHomecareCoverage`: organizationId, episodeId, professionalId, carePlanVersion (entero positivo), serviceKind = VISIT|SHIFT, scheduledStart, scheduledEnd, requestKey
+- `requestHomecareHandover`: organizationId, outgoingCoverageId, incomingCoverageId
+- `acknowledgeHomecareHandover`: organizationId, handoverId
+
+La creación de episodios, planes y permisos no implica atención activa. **No existe** comando para aprobar indicaciones, verificar matrículas, activar internaciones, confirmar emergencias ni cerrar documentos clínicos firmados. `scheduleHomecareCoverage` será rechazado por PostgreSQL si el caso no está ACTIVE con plan APPROVED y profesional autorizado. Los casos y planes aprobados de CI son exclusivamente simulaciones.
+
+**Las rutas antiguas de SUPA-02 quedan como interfaces históricas incompatibles con la nueva integridad longitudinal; no utilizarlas en una app clínica.** Se retirarán formalmente al estabilizar el protocolo de HC-02C.
+
 No se acepta ningún otro campo. Fechas ISO 8601, UUIDs válidos, cuerpos hasta 32 KiB. Las respuestas son JSON con `Cache-Control: no-store`. Las credenciales nunca se registran en logs.
 
 ## Arquitectura
@@ -41,5 +56,5 @@ No se acepta ningún otro campo. Fechas ISO 8601, UUIDs válidos, cuerpos hasta 
 - Mantener CI PostgreSQL SUPA-01/SUPA-02 y app React Native.
 - PR y post-merge CI verdes en SHA exacto. No significa app instalada ni Supabase configurado.
 
-## Próximo Gate: MOB-ADMIN-01
-Construir en el móvil el módulo administrativo con interfaz verde institucional, formularios para altas de pacientes/profesionales y agenda con fixtures ficticios; autenticación/llamadas reales bloqueadas hasta instancia staging certificada.
+## Próximo Gate: HC-02C (autorización clínica)
+MOB-ADMIN-01 ya se implementó como prototipo visual aislado. Antes de conectar la app, validar el circuito de habilitación de profesionales/planes y activación del episodio por responsables médicos; ninguna aprobación puede depender de un rol ADMIN ni de un campo editable desde el teléfono.

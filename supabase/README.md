@@ -1,4 +1,4 @@
-# Supabase independiente — SUPA-01/02/03, HC-01 y HC-02A
+# Supabase independiente — SUPA-01/02/03, HC-01, HC-02A y HC-02B
 
 **Estado:** migraciones SUPA-01/02 y HC-01 con RLS, comandos backend-only de prototipo y pruebas en PostgreSQL; Edge SUPA-03 desarrollada por separado. Sin proyecto Supabase real instalado.
 **Decisión:** [ADR-002](../docs/adr/ADR-002-supabase-autonomo.md). **Prohibida** la conexión con el servidor de Pediatrics/CONSULTLAN.
@@ -29,6 +29,8 @@ psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261010020000_homecare_episodes.
 psql -v ON_ERROR_STOP=1 -f supabase/tests/homecare_episode_isolation.sql
 psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261010030000_homecare_coverage.sql
 psql -v ON_ERROR_STOP=1 -f supabase/tests/homecare_coverage_handover.sql
+psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261010040000_homecare_controlled_commands.sql
+psql -v ON_ERROR_STOP=1 -f supabase/tests/homecare_controlled_commands.sql
 ```
 El stub `postgres_auth_stub.sql` simula exclusivamente el esquema de autenticación y roles de Supabase dentro del Postgres de CI. **No debe ejecutarse en Supabase real.**
 
@@ -51,7 +53,19 @@ La migración `20261010020000_homecare_episodes.sql` añade episodios propios de
 
 La migración `20261010030000_homecare_coverage.sql` crea un roster único con `VISIT` y `SHIFT`, previene superposiciones entre ambos tipos para un profesional y documenta un relevo sin atribuir recepción automática. Cada nueva visita exige su cobertura `VISIT` canónica; las antiguas filas de demostración sin roster quedan ocultas.
 
-Las notas clínicas continúan reservadas al profesional asignado, y ninguna función administra turnos ni valida relevos todavía. `service_role` tiene solo SELECT sobre nuevas tablas: queda bloqueado el agendamiento operativo hasta que HC-02B implemente acciones auditadas y autorizadas. Ver [SPEC HC-02A](../docs/specs/HC-02A-coverage-handover.md).
+Las notas clínicas continúan reservadas al profesional asignado. **HC-02B** agrega comandos restringidos para la planificación y la recepción de relevos; sin conceder escrituras directas a `service_role`. No implica aprobación clínica, firma válida ni agenda productiva. Ver [SPEC HC-02A](../docs/specs/HC-02A-coverage-handover.md).
+
+## HC-02B — Operaciones transaccionales limitadas (sin aprobación médica)
+
+La migración `20261010040000_homecare_controlled_commands.sql` crea operaciones con `SECURITY DEFINER` y `EXECUTE` exclusivo del rol `service_role`; no concede escrituras directas en las nuevas tablas. La Edge SUPA-03 verifica el usuario de este Supabase e inyecta `p_actor`; las funciones SQL comprueban de nuevo membresía, organización, profesional, episodio y plan. Solo el backend mantiene la clave privilegiada.
+
+- Crea episodio **DRAFT** de paciente del programa, incorpora miembros de equipo (sin elevar a jefe médico) y metadatos de plan **DRAFT**, con claves de reintento y auditoría.
+- Programa `VISIT` o `SHIFT` **solamente** si el episodio ya está ACTIVE y existe plan APPROVED por un mecanismo clínico externo todavía pendiente. La visita puntual y su cobertura se crean en una única transacción.
+- Pide relevos entre guardias consecutivas y permite al profesional receptor registrar únicamente recepción. No representa firma, consentimiento ni intercambio médico.
+- Corrige el control de vigencia: se verifica **inicio y fin** de la cobertura con respecto al plan.
+- **No existe ninguna acción para aprobar planes ni activar episodios**, de modo que los episodios nuevos no pueden transformarse automáticamente en prestaciones clínicas operativas.
+
+La prueba SQL usa episodios y planes sintéticos previamente aprobados como fixtures del entorno de CI; estos estados no prueban acreditación profesional. Véase [HC-02B](../docs/specs/HC-02B-controlled-planning-commands.md).
 
 ## Puesta en marcha posterior (NO realizada)
 1. La administración propietaria de Pediatrics crea un **proyecto Supabase nuevo y separado**, comprueba responsabilidad contractual, región de residencia de datos, privacidad, backup/restore y política de retención. Nunca usar el proyecto SICOM ni un entorno de CONSULTLAN.
