@@ -1,0 +1,23 @@
+{
+  "expo": {
+    "name": "Pediatrics Visitas (DEMO)",
+    "slug": "consultlan-visitas-medicas",
+    "version": "0.1.0",
+    "orientation": "default",
+    "userInterfaceStyle": "light",
+    "scheme": "pediatrics-visitas-demo",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "predictiveBackGestureEnabled": false
+    },
+    "updates": {
+      "enabled": false
+    },
+    "extra": {
+      "demoOnly": true,
+      "clinicalAccessEnabled": false
+    }
+  }
+}
