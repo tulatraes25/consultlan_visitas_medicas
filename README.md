@@ -22,6 +22,8 @@ Aplicación móvil para la **continuidad de cuidados domiciliarios pediátricos*
 - [MOB-ROSTER-02 coberturas flexibles](docs/specs/MOB-ROSTER-02-flexible-coverage.md) — reemplaza slots de 40 minutos por fechas, guardias y visitas variables, exclusión de superposiciones y continuidad no confirmada.
 - [FORM-001](docs/specs/FORM-001-inventario-clinico.md) — planillas de origen inventariadas sin datos de pacientes.
 - [Supabase: migración y pruebas RLS](supabase/README.md) — instalación pendiente de proyecto en la nube, prueba en PostgreSQL sintético.
+- [STAGING-01A preflight](docs/specs/STAGING-01A-safe-preflight.md) — inspección offline del esquema y controles de destino; las pruebas negativas remotas son **opcionales** y requieren staging independiente expresamente autorizado.
+- [STAGING-01 runbook](docs/operations/STAGING-01-runbook.md) — creación manual de Supabase, controles de seguridad/privacidad, staging sin datos reales, recuperación y no-go clínicos.
 - [App móvil](apps/mobile/README.md) — demo Android/iOS y tests de UI.
 - [Política de episodio domiciliario](src/domain/homecare-policy.mjs) — reglas de integridad para servicio, episodio, paciente y plan, probadas con datos sintéticos; todavía no conectadas al backend.
 - [Contratos históricos de visita](src/domain/visit-policy.mjs) — reglas auxiliares de estado/firma; no middleware real.
