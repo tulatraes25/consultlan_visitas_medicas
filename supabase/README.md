@@ -85,6 +85,8 @@ El modo opcional `--probe` es **posterior** a crear y asegurar un proyecto stagi
 
 Runbook: [STAGING-01](../docs/operations/STAGING-01-runbook.md) · SPEC: [STAGING-01A](../docs/specs/STAGING-01A-safe-preflight.md). No usar reset remoto/destructivo; no aplicar el shim sintético de auth en Supabase.
 
+**STAGING-01B:** `node scripts/staging-rls-verify.mjs --ci` funciona sin red, y las pruebas negativas con mocks forman parte del Quality Gate. `--check-env` y `--probe` requieren dos organizaciones, dos usuarios y dos episodios sintéticos de staging con JWT de usuario y token revocado (ninguna credencial en el repo). La prueba en red es GET-only; exige **lectura positiva no vacía** de episodios propios y deniega casos ajenos, anónimo y token revocado. Se ejecutará solo con un proyecto independiente autorizado. [SPEC STAGING-01B](../docs/specs/STAGING-01B-cross-tenant-rls.md).
+
 ## Puesta en marcha posterior (NO realizada)
 1. La administración propietaria de Pediatrics crea un **proyecto Supabase nuevo y separado**, comprueba responsabilidad contractual, región de residencia de datos, privacidad, backup/restore y política de retención. Nunca usar el proyecto SICOM ni un entorno de CONSULTLAN.
 2. Configura Supabase Auth con registro abierto/usuarios anónimos deshabilitados; define invitaciones, MFA, rotación, recuperación y control de sesiones. **No** desplegar con pacientes reales sin una revisión de cumplimiento sanitario/contractual.
