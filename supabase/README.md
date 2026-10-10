@@ -1,4 +1,4 @@
-# Supabase independiente — SUPA-01/02/03 y HC-01
+# Supabase independiente — SUPA-01/02/03, HC-01 y HC-02A
 
 **Estado:** migraciones SUPA-01/02 y HC-01 con RLS, comandos backend-only de prototipo y pruebas en PostgreSQL; Edge SUPA-03 desarrollada por separado. Sin proyecto Supabase real instalado.
 **Decisión:** [ADR-002](../docs/adr/ADR-002-supabase-autonomo.md). **Prohibida** la conexión con el servidor de Pediatrics/CONSULTLAN.
@@ -27,6 +27,8 @@ psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261010010000_operational_comman
 psql -v ON_ERROR_STOP=1 -f supabase/tests/operational_commands.sql
 psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261010020000_homecare_episodes.sql
 psql -v ON_ERROR_STOP=1 -f supabase/tests/homecare_episode_isolation.sql
+psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261010030000_homecare_coverage.sql
+psql -v ON_ERROR_STOP=1 -f supabase/tests/homecare_coverage_handover.sql
 ```
 El stub `postgres_auth_stub.sql` simula exclusivamente el esquema de autenticación y roles de Supabase dentro del Postgres de CI. **No debe ejecutarse en Supabase real.**
 
@@ -44,6 +46,12 @@ La migración `20261010020000_homecare_episodes.sql` añade episodios propios de
 - La agenda anterior de SUPA-02 no acepta episodio y se **rechaza por diseño**; HC-02 implementará nuevos comandos de planificación con plan y equipo vigentes. No instalar aplicaciones esperando que la agenda antigua siga funcionando.
 - El plan aprobado es **solo un estado de fixture SQL en GitHub**: cualquier aprobación válida requiere futura verificación de la habilitación profesional, indicación concreta y circuito médico.
 - Ver [SPEC HC-01](../docs/specs/HC-01-episode-schema-and-rls.md).
+
+## HC-02A — Coberturas prolongadas y relevos (no conectado)
+
+La migración `20261010030000_homecare_coverage.sql` crea un roster único con `VISIT` y `SHIFT`, previene superposiciones entre ambos tipos para un profesional y documenta un relevo sin atribuir recepción automática. Cada nueva visita exige su cobertura `VISIT` canónica; las antiguas filas de demostración sin roster quedan ocultas.
+
+Las notas clínicas continúan reservadas al profesional asignado, y ninguna función administra turnos ni valida relevos todavía. `service_role` tiene solo SELECT sobre nuevas tablas: queda bloqueado el agendamiento operativo hasta que HC-02B implemente acciones auditadas y autorizadas. Ver [SPEC HC-02A](../docs/specs/HC-02A-coverage-handover.md).
 
 ## Puesta en marcha posterior (NO realizada)
 1. La administración propietaria de Pediatrics crea un **proyecto Supabase nuevo y separado**, comprueba responsabilidad contractual, región de residencia de datos, privacidad, backup/restore y política de retención. Nunca usar el proyecto SICOM ni un entorno de CONSULTLAN.

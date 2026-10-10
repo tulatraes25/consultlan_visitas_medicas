@@ -123,6 +123,10 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261010020000_homecare_episodes.sql
       - name: Validate episode/patient/plan/team security and legacy isolation
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/homecare_episode_isolation.sql
+      - name: Apply canonical homecare visit/shift roster migration
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261010030000_homecare_coverage.sql
+      - name: Test shift handovers, mixed coverage overlaps and clinical isolation
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/homecare_coverage_handover.sql
 
   edge-functions:
     name: Deno Edge JWT boundary and request validation
