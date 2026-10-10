@@ -36,8 +36,12 @@ jobs:
           fi
       - name: Reject committed environment secrets and private keys
         run: |
-          if git ls-files | grep -Ei '(^|/)\.env($|\.(local|production|staging)$)|\.(pem|p12|pfx|key)$'; then
-            echo 'Environment secrets or private keys must not be committed.'
+          if git ls-files | grep -Ei '(^|/)\.env($|\.)' | grep -Eiv '(^|/)\.env\.(example|sample|template)$'; then
+            echo 'Environment files must not be committed.'
+            exit 1
+          fi
+          if git ls-files | grep -Eiq '\.(pem|p12|pfx|key)$'; then
+            echo 'Private keys and certificates must not be committed.'
             exit 1
           fi
       - name: Syntax checks
