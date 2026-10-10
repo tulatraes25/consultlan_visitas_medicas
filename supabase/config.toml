@@ -1,0 +1,4 @@
+# Standalone, unpublished Supabase function policy.
+# Both Supabase gateway and the handler verify a *user JWT*.
+[functions.visits]
+verify_jwt = true
