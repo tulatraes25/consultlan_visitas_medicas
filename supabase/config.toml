@@ -1,3 +1,6 @@
+# Local CLI identifier only. NOT an online Supabase project ref or deployment ID.
+project_id = "consultlan-visitas-medicas-local"
+
 # Standalone, unpublished Supabase function policy.
 # Both Supabase gateway and the handler verify a *user JWT*.
 [functions.visits]

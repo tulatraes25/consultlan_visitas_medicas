@@ -34,15 +34,29 @@ jobs:
             echo 'Clinical documents or database dumps must never be committed.'
             exit 1
           fi
+      - name: Reject committed environment secrets and private keys
+        run: |
+          if git ls-files | grep -Ei '(^|/)\.env($|\.)' | grep -Eiv '(^|/)\.env\.(example|sample|template)$'; then
+            echo 'Environment files must not be committed.'
+            exit 1
+          fi
+          if git ls-files | grep -Eiq '\.(pem|p12|pfx|key)$'; then
+            echo 'Private keys and certificates must not be committed.'
+            exit 1
+          fi
       - name: Syntax checks
         run: |
           node --check src/domain/visit-policy.mjs
           node --check src/domain/homecare-policy.mjs
           node --check src/domain/homecare-form-contracts.mjs
           node --check src/domain/clinical-authorization-policy.mjs
+          node --check src/operations/staging-policy.mjs
+          node --check scripts/staging-preflight.mjs
           for test_file in test/*.test.mjs; do
             node --check "$test_file"
           done
+      - name: Validate staging source offline (no network or secrets)
+        run: node scripts/staging-preflight.mjs --ci
       - name: Domain security and API contract tests
         run: npm test
 
