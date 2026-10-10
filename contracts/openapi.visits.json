@@ -3,7 +3,7 @@
   "info": {
     "title": "CONSULTLAN Visitas Domiciliarias - Draft API",
     "version": "0.1.0-draft",
-    "description": "Contrato inicial sin servidor implementado. Solo ilustrativo; NO representa mecanismo legal certificado de firma ni permiso clínico validado. Identidades, roles, servicios de confianza, permisos y evidencias se resuelven en backend; nunca provienen sin validación del cuerpo de peticiones móviles."
+    "description": "Contrato de diseño HISTORICO y no implementado; NO corresponde a ninguna API del servidor Pediatrics/CONSULTLAN. Arquitectura definitiva: proyecto Supabase independiente (ADR-002). Los endpoints operativos serán Supabase Data API bajo RLS y Edge Functions autenticadas para mutaciones y firmas. Este JSON solo documenta conceptos, no endpoints desplegados."
   },
   "tags": [
     {
@@ -677,5 +677,6 @@
     "PDF version and digest precede caregiver capture and professional signature.",
     "Never store professional private signing keys on mobile.",
     "No identifying patient data, real signatures or production credentials in repository or CI logs."
-  ]
+  ],
+  "x-contract-status": "CONCEPT_ONLY_SUPERSEDED_BY_ADR_002"
 }
