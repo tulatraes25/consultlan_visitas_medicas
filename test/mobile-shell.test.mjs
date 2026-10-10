@@ -35,3 +35,13 @@ test('home, agenda, detail and explicit non-operational clinical messages exist'
   assert.match(app,/No es posible iniciar una visita real/i);
   assert.match(app,/isTablet/);
 });
+
+test('signature sketch is explicitly discarded and cannot persist or claim legal signing', () => {
+  const signature = read('apps/mobile/src/AttendanceSignatureDemo.tsx');
+  assert.match(signature,/if \(!visible\) return null/);
+  assert.match(signature,/Trazos: /);
+  assert.match(signature,/no se transmiten, autentican ni incorporan a documentos/);
+  assert.match(signature,/SIMULACIÓN SIN VALIDEZ LEGAL/);
+  assert.doesNotMatch(signature,/\bfetch\s*\(|AsyncStorage|SecureStore|FileSystem|expo-file-system|axios|upload|saveAsync|createDocument/);
+  assert.equal(packageJson.dependencies['react-native-svg'], '15.15.4');
+});
