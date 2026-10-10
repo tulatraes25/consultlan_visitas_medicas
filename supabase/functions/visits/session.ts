@@ -2,7 +2,7 @@
  * SEC-SESSION-01: pure claim extraction AFTER Supabase Auth has verified JWT.
  * This function alone must never be used as authentication or authorization.
  */
-const UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
+const UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 const SEGMENT = /^[A-Za-z0-9_-]+$/;
 
 export function sessionIdFromVerifiedUserJwt(
