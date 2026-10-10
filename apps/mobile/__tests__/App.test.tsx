@@ -108,4 +108,27 @@ describe('Pediatrics mobile demo interactions — synthetic data only', () => {
     expect(screen.getByText('Registro clínico y firma válida no disponibles')).toBeTruthy();
     expect(screen.getAllByRole('button', { name: 'Volver a la agenda' }).length).toBeGreaterThan(0);
   });
+
+  test('review queue on phone is read-only, synthetic and never approves plans', () => {
+    render(<App />);
+    fireEvent.press(screen.getByRole('tab', { name: 'Gestión' }));
+    fireEvent.press(screen.getByRole('tab', { name: 'Módulo Revisiones' }));
+    expect(screen.getByText('Solicitudes de revisión')).toBeTruthy();
+    expect(screen.getAllByText('PENDIENTE')).toHaveLength(2);
+    expect(screen.getByText('Episodio: CASO-DEMO-A')).toBeTruthy();
+    expect(screen.getByText('SIN APROBACIONES NI ACTIVACIÓN CLÍNICA')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /Aprobar|Firmar|Activar/i })).toBeNull();
+    expect(screen.queryByPlaceholderText('Código (por ejemplo G)')).toBeNull();
+  });
+
+  test('review queue is navigable on wide tablet without clinical actions', () => {
+    setViewport(1280, 900);
+    render(<App />);
+    fireEvent.press(screen.getByRole('tab', { name: 'Gestión' }));
+    fireEvent.press(screen.getByRole('tab', { name: 'Módulo Revisiones' }));
+    expect(screen.getByTestId('plan-review-demo')).toBeTruthy();
+    expect(screen.getByText('Episodio: CASO-DEMO-B')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /Aprobar|Validar firma|Activar caso/i })).toBeNull();
+  });
+
 });
