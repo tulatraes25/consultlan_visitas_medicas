@@ -9,9 +9,10 @@ import {
   resolveDemoWindow, type DemoCoverageKind,
 } from "./coverageDemo";
 import { PrimaryAction, ScreenHeading } from "./ui";
+import { PlanReviewQueueDemo } from "./PlanReviewQueueDemo";
 import { corners, palette, spacing, touchSize } from "./theme";
 
-type Section = "patients" | "professionals" | "assignments";
+type Section = "patients" | "professionals" | "assignments" | "reviews";
 
 function Choice({
   label, selected, onPress, accessibilityLabel,
@@ -62,6 +63,7 @@ export function AdminWorkspaceDemo({
     { id: "patients", label: "Pacientes" },
     { id: "professionals", label: "Profesionales" },
     { id: "assignments", label: "Asignaciones" },
+    { id: "reviews", label: "Revisiones" },
   ];
 
   function changeSection(next: Section) {
@@ -305,6 +307,12 @@ export function AdminWorkspaceDemo({
             </View>
           ) : null}
           <PrimaryAction label="Consultar agenda simulada" outline onPress={onOpenAgenda} />
+        </View>
+      )}
+
+      {section === "reviews" && (
+        <View style={styles.panel}>
+          <PlanReviewQueueDemo />
         </View>
       )}
 
