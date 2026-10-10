@@ -67,7 +67,7 @@ describe('Pediatrics mobile demo interactions — synthetic data only', () => {
     expect(screen.getByText('Prestación domiciliaria')).toBeTruthy();
     fireEvent.press(screen.getByRole('button', { name: /Ver detalle de Paciente ficticio D/ }));
     expect(screen.getAllByText('Paciente ficticio D').length).toBeGreaterThan(1);
-    expect(screen.getByText('Fonoaudiología')).toBeTruthy();
+    expect(screen.getAllByText('Fonoaudiología').length).toBeGreaterThan(1);
   });
 
   test('medium tablet shows focused visit detail with a back action', () => {
