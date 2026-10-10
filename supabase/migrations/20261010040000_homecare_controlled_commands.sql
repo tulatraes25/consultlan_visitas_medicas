@@ -253,7 +253,8 @@ begin
   perform pg_catalog.pg_advisory_xact_lock(
     pg_catalog.hashtextextended('handover'||p_outgoing::text||p_incoming::text,0));
   select id into v_id from public.homecare_shift_handovers
-    where from_assignment_id=p_outgoing and to_assignment_id=p_incoming;
+    where organization_id=p_org
+      and from_assignment_id=p_outgoing and to_assignment_id=p_incoming;
   if v_id is not null then return v_id; end if;
   select * into v_out from public.homecare_coverage_assignments
     where id=p_outgoing and organization_id=p_org;
