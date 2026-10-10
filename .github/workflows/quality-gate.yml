@@ -38,6 +38,7 @@ jobs:
         run: |
           node --check src/domain/visit-policy.mjs
           node --check src/domain/homecare-policy.mjs
+          node --check src/domain/homecare-form-contracts.mjs
           for test_file in test/*.test.mjs; do
             node --check "$test_file"
           done
