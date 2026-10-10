@@ -54,5 +54,11 @@ Las evoluciones y constancias se vincularán al **episodio** y, según correspon
 - Qué documentación en papel permanece como fuente primaria de atención en el domicilio y cómo se referencia sin suplantarla.
 - Qué canales humanos, tiempos y registros de recepción se requieren en contingencias; la app no actúa como central de emergencia.
 
+## Trazabilidad de implementación HC-03A (sin capturar datos clínicos)
+
+El archivo `src/domain/homecare-form-contracts.mjs` representa **solo los campos fuente confirmados en esta matriz**, con contrato inmutable y prueba automatizada en `test/homecare-form-contracts.test.mjs`. El diseño y sus límites figuran en [HC-03A](HC-03A-source-form-contracts.md).
+
+La existencia de un campo «firma» no habilita una firma digital, y los cuatro documentos domiciliarios se tratan como referencias al papel físico, no como formularios activos. El PDF escaneado de 56 páginas todavía requiere cotejo integral si se pretende reconstruir la rendición documental. **No se ha aprobado ni digitalizado clínicamente este material**.
+
 ## Condición de aceptación
 Aprobación del responsable médico y de administración de Pediatrics antes de implementar captura y almacenamiento definitivo de cada formulario clínico.
