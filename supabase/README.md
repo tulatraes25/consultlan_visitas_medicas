@@ -35,6 +35,8 @@ psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261010050000_homecare_review_re
 psql -v ON_ERROR_STOP=1 -f supabase/tests/homecare_plan_review_requests.sql
 psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261010060000_revoke_legacy_clinical_rpc.sql
 psql -v ON_ERROR_STOP=1 -f supabase/tests/revoke_legacy_clinical_rpc.sql
+psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261010070000_live_auth_session_gate.sql
+psql -v ON_ERROR_STOP=1 -f supabase/tests/live_auth_session_gate.sql
 ```
 El stub `postgres_auth_stub.sql` simula exclusivamente el esquema de autenticación y roles de Supabase dentro del Postgres de CI. **No debe ejecutarse en Supabase real.**
 
@@ -86,6 +88,12 @@ El modo opcional `--probe` es **posterior** a crear y asegurar un proyecto stagi
 Runbook: [STAGING-01](../docs/operations/STAGING-01-runbook.md) · SPEC: [STAGING-01A](../docs/specs/STAGING-01A-safe-preflight.md). No usar reset remoto/destructivo; no aplicar el shim sintético de auth en Supabase.
 
 **STAGING-01B:** `node scripts/staging-rls-verify.mjs --ci` funciona sin red, y las pruebas negativas con mocks forman parte del Quality Gate. `--check-env` y `--probe` requieren dos organizaciones, dos usuarios y dos episodios sintéticos de staging con JWT de usuario y JWT vencido (ninguna credencial en el repo). La prueba en red es GET-only; exige **lectura positiva no vacía** de episodios propios y deniega casos ajenos, anónimo y JWT vencido. Se ejecutará solo con un proyecto independiente autorizado. [SPEC STAGING-01B](../docs/specs/STAGING-01B-cross-tenant-rls.md).
+
+## SEC-SESSION-01 — sesión Auth viva además de JWT firmado
+
+La migración `20261010070000_live_auth_session_gate.sql` incorpora RPC exclusiva del backend `api_is_live_session(p_user,p_session)`, que comprueba la fila de `auth.sessions` del Supabase autónomo. La Edge verifica primero el JWT con Auth, compara `sub` con el usuario verificado y extrae `session_id`; **solo entonces** consulta la RPC. Sin sesión activa no despacha acciones. La migración no crea ni elimina sesiones reales, y el stub `auth.sessions` utilizado por PostgreSQL CI **nunca se aplica al Supabase real**.
+
+Esta protección responde al hecho de que `signOut` puede dejar access JWT válidos hasta expiración. **Aún requiere validación contra el esquema Auth administrado en un staging real**, además de las políticas de autorización médica que siguen bloqueadas. [SPEC SEC-SESSION-01](../docs/specs/SEC-SESSION-01-live-session-gate.md).
 
 ## Puesta en marcha posterior (NO realizada)
 1. La administración propietaria de Pediatrics crea un **proyecto Supabase nuevo y separado**, comprueba responsabilidad contractual, región de residencia de datos, privacidad, backup/restore y política de retención. Nunca usar el proyecto SICOM ni un entorno de CONSULTLAN.
