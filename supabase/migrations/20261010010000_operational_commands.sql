@@ -30,6 +30,8 @@ alter table public.clinical_records
 
 -- Narrow explicit database privileges for backend role only.
 grant usage on schema private to service_role;
+-- AUTH is a private schema: only this backend role can check account existence.
+grant usage on schema auth to service_role;
 grant select on auth.users to service_role;
 grant select,insert,update on public.organizations,public.memberships,public.professionals,
   public.patients,public.visits,public.clinical_records,public.attendance_evidence,
