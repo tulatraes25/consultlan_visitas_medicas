@@ -163,7 +163,8 @@ alter table public.visits
 alter table public.visits
   add constraint visit_coverage_required
     check (homecare_coverage_id is not null) not valid;
-create index visits_by_coverage on public.visits(homecare_coverage_id);
+create unique index visits_one_visit_per_canonical_coverage on public.visits(homecare_coverage_id)
+  where homecare_coverage_id is not null;
 
 create function private.validate_visit_coverage()
 returns trigger language plpgsql security invoker set search_path = ''
@@ -179,7 +180,15 @@ begin
       and c.care_plan_version=new.care_plan_version
       and c.scheduled_start=new.scheduled_start
       and c.scheduled_end=new.scheduled_end
-      and c.coverage_state not in ('CANCELLED','NOT_PERFORMED')
+      and (
+        (new.state in ('PLANNED','ASSIGNED')
+          and c.coverage_state in ('PLANNED','ASSIGNED'))
+        or (new.state='IN_PROGRESS' and c.coverage_state='ACTIVE')
+        or (new.state in ('PENDING_REVIEW','PENDING_SIGNATURE','CLOSED_VERIFIED')
+          and c.coverage_state='COMPLETED')
+        or (new.state='CANCELLED' and c.coverage_state='CANCELLED')
+        or (new.state='NOT_PERFORMED' and c.coverage_state='NOT_PERFORMED')
+      )
   ) then
     raise exception 'VISIT_WITHOUT_MATCHING_CANONICAL_COVERAGE'
       using errcode='42501';
@@ -189,7 +198,7 @@ end; $$;
 create trigger validate_visit_coverage
   before insert or update of homecare_coverage_id,homecare_episode_id,
     patient_id,organization_id,professional_id,care_plan_version,
-    scheduled_start,scheduled_end
+    scheduled_start,scheduled_end,state
   on public.visits
   for each row execute function private.validate_visit_coverage();
 
