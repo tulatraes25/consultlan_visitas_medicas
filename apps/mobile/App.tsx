@@ -322,7 +322,7 @@ export default function App() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar style="light" backgroundColor={palette.deep} />
+      <StatusBar style="light" />
       <View style={[styles.layout, isTablet && styles.layoutTablet]}>
         {isTablet ? (
           <View style={styles.sidebar}>
