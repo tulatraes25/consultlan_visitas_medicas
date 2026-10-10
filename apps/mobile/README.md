@@ -19,7 +19,7 @@ Usar el emulador/dispositivo compatible con Expo SDK 57. Para producir bundles e
 1. Inicio: jornada, métricas ilustrativas y dos próximas visitas.
 2. Agenda: búsqueda local y filtros por estado.
 3. Detalle: prestación ficticia y explicación del circuito de documentación y firmas.
-4. Adaptación: navegación inferior en teléfonos; barra lateral y panel de detalle en pantallas >=900 dp.
+4. Adaptación: navegación inferior en teléfonos; barra lateral desde 900 dp; panel lateral de detalle solo a partir de 1180 dp, con detalle a pantalla completa en tamaños intermedios.
 
 ## Límites y seguridad
 - Se muestra siempre **MODO DEMO · datos ficticios**.
