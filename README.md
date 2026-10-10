@@ -7,7 +7,7 @@ Aplicación móvil para la **continuidad de cuidados domiciliarios pediátricos*
 ## Estado
 - Frontend React Native/Expo: navegación, agenda y firmas táctiles **solo de demostración**, con datos sintéticos y sin transmisión de trazos.
 - Backend: migraciones SUPA-01/02, HC-01 (episodios/planes/equipo), HC-02A (roster visitas/guardias/relevos) y **HC-02B** (comandos administrativos con auditoría y autorización del backend). **Solo se crean episodios y metadatos de plan en DRAFT; la aprobación médica, activación de casos y firmas siguen bloqueadas**. Agenda futura requiere plan aprobado de un circuito clínico todavía no implementado. **Sin proyecto Supabase desplegado ni pacientes reales, sin órdenes médicas ni servicios asistenciales activos.**
-- Documentación clínica: **HC-03A** inventaría en código siete plantillas de asistencia/evolución verificadas en los archivos de Pediatrics. Son contratos de **previsualización** sin escritura ni firmas operativas. Kardex, signos vitales, procedimientos y crisis permanecen en el domicilio.
+- Documentación clínica: **HC-03A** inventaría siete plantillas verificadas y **HC-03B** las presenta en teléfonos/tablets como estructuras no editables, con navegación por especialidad y desde la visita ficticia **sin transmitir datos del paciente**. Kardex, signos vitales, procedimientos y crisis permanecen en el domicilio. No se generan documentos ni firmas.
 - Integración clínica y firmas: **no implementadas**. Supabase no aporta por sí solo firma digital certificada.
 
 ## Documentación y código
@@ -18,6 +18,7 @@ Aplicación móvil para la **continuidad de cuidados domiciliarios pediátricos*
 - [HC-02A coberturas y relevos](docs/specs/HC-02A-coverage-handover.md) — visitas puntuales y guardias extensas con prevención de superposición; todavía no hay altas operativas.
 - [HC-02B operaciones controladas](docs/specs/HC-02B-controlled-planning-commands.md) — admisión en borrador, integrantes del equipo, planificación condicional y recepción de relevos, sin simular aprobaciones clínicas.
 - [HC-03A contratos de formularios](docs/specs/HC-03A-source-form-contracts.md) — fieles a los campos verificados del material recibido, con prohibición expresa de captura clínica real y firma simulada.
+- [HC-03B pantallas de previsualización](docs/specs/HC-03B-mobile-form-preview.md) — pestaña Planillas, seis especialidades, evolución separada, hojas físicas y tests de paridad documental.
 - [FORM-001](docs/specs/FORM-001-inventario-clinico.md) — planillas de origen inventariadas sin datos de pacientes.
 - [Supabase: migración y pruebas RLS](supabase/README.md) — instalación pendiente de proyecto en la nube, prueba en PostgreSQL sintético.
 - [App móvil](apps/mobile/README.md) — demo Android/iOS y tests de UI.
