@@ -3,7 +3,7 @@
  * It has no Supabase dependencies and is exercised with synthetic JWT fixtures.
  * Only the runtime adapter is allowed to touch secrets or make network requests.
  */
-type FieldKind = "uuid" | "name" | "specialty" | "narrative" | "dateTime" | "cancelReason";
+type FieldKind = "uuid" | "name" | "specialty" | "narrative" | "dateTime" | "cancelReason" | "coverageKind" | "positiveInt";
 type CommandSpec = {
   rpc: string;
   fields: Record<string, { db: string; kind: FieldKind }>;
@@ -19,6 +19,58 @@ export type TrustedServices = {
   command: (rpc: string, args: Record<string, unknown>) => Promise<CommandResult>;
 };
 const COMMANDS: Record<string, CommandSpec> = {
+  createHomecareEpisodeDraft: {
+    rpc: "api_hc_create_episode_draft",
+    fields: {
+      organizationId: { db: "p_org", kind: "uuid" },
+      patientId: { db: "p_patient", kind: "uuid" },
+      requestKey: { db: "p_request_key", kind: "uuid" },
+    },
+  },
+  assignHomecareCareTeamMember: {
+    rpc: "api_hc_assign_team_member",
+    fields: {
+      organizationId: { db: "p_org", kind: "uuid" },
+      episodeId: { db: "p_episode", kind: "uuid" },
+      professionalId: { db: "p_professional", kind: "uuid" },
+    },
+  },
+  createHomecarePlanDraft: {
+    rpc: "api_hc_create_plan_draft",
+    fields: {
+      organizationId: { db: "p_org", kind: "uuid" },
+      episodeId: { db: "p_episode", kind: "uuid" },
+      requestKey: { db: "p_request_key", kind: "uuid" },
+    },
+  },
+  scheduleHomecareCoverage: {
+    rpc: "api_hc_schedule_coverage",
+    fields: {
+      organizationId: { db: "p_org", kind: "uuid" },
+      episodeId: { db: "p_episode", kind: "uuid" },
+      professionalId: { db: "p_professional", kind: "uuid" },
+      carePlanVersion: { db: "p_plan_version", kind: "positiveInt" },
+      serviceKind: { db: "p_kind", kind: "coverageKind" },
+      scheduledStart: { db: "p_start", kind: "dateTime" },
+      scheduledEnd: { db: "p_end", kind: "dateTime" },
+      requestKey: { db: "p_request_key", kind: "uuid" },
+    },
+  },
+  requestHomecareHandover: {
+    rpc: "api_hc_request_handover",
+    fields: {
+      organizationId: { db: "p_org", kind: "uuid" },
+      outgoingCoverageId: { db: "p_outgoing", kind: "uuid" },
+      incomingCoverageId: { db: "p_incoming", kind: "uuid" },
+    },
+  },
+  acknowledgeHomecareHandover: {
+    rpc: "api_hc_ack_handover",
+    fields: {
+      organizationId: { db: "p_org", kind: "uuid" },
+      handoverId: { db: "p_handover", kind: "uuid" },
+    },
+  },
   createPatient: {
     rpc: "api_create_patient",
     fields: {
@@ -100,6 +152,8 @@ function record(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 function checkField(value: unknown, kind: FieldKind): boolean {
+  if (kind === "positiveInt") return typeof value === "number" &&
+    Number.isSafeInteger(value) && value >= 1 && value <= 1000000;
   if (typeof value !== "string") return false;
   switch (kind) {
     case "uuid": return UUID.test(value);
@@ -108,6 +162,8 @@ function checkField(value: unknown, kind: FieldKind): boolean {
     case "narrative": return value === value.trim() && value.length >= 1 && value.length <= 20000;
     case "dateTime": return DATE_TIME.test(value) && Number.isFinite(Date.parse(value));
     case "cancelReason": return REASONS.has(value);
+    case "coverageKind": return value === "VISIT" || value === "SHIFT";
+    case "positiveInt": return false;
   }
 }
 function sanitize(
