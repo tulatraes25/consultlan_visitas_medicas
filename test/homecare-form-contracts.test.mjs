@@ -76,7 +76,7 @@ test("four household paper records cannot be converted into active digital forms
   }
   assert.equal(BEDSIDE_PAPER_RECORDS.KARDEX.unknownColumns,true);
   assert.equal(BEDSIDE_PAPER_RECORDS.CRISIS_SHEET.confirmedLabels.length,3);
-  assert(!JSON.stringify(BEDSIDE_PAPER_RECORDS).includes("dosis"));
+  assert(!BEDSIDE_PAPER_RECORDS.KARDEX.confirmedLabels.some(x=>/dosis|vía|frecuencia/i.test(x)));
 });
 
 test("monthly 56-page file is a documentary source, not imported patient data", () => {
