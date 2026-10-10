@@ -3,6 +3,10 @@
   "compilerOptions": {
     "strict": true,
     "noEmit": true,
-    "allowJs": false
+    "allowJs": false,
+    "types": [
+      "expo/types",
+      "jest"
+    ]
   }
 }
