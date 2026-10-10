@@ -6,13 +6,14 @@ Aplicación móvil para la **continuidad de cuidados domiciliarios pediátricos*
 
 ## Estado
 - Frontend React Native/Expo: navegación, agenda y firmas táctiles **solo de demostración**, con datos sintéticos y sin transmisión de trazos.
-- Backend: migraciones SUPA-01/02 y Edge SUPA-03 con RLS y operaciones transaccionales probadas mediante CI, **sin proyecto Supabase desplegado ni pacientes reales**. La estructura actual de `visits` debe adecuarse a los episodios longitudinales antes de uso asistencial (HC-01).
+- Backend: migraciones SUPA-01/02 y **HC-01** con episodios propios, integrantes de equipo y versiones de plan de cuidados; Edge SUPA-03 y tests de RLS/SQL ejecutados en CI. Las visitas antiguas quedan **sin episodio y ocultas**, y los comandos antiguos de agendamiento quedan bloqueados por integridad de datos hasta HC-02. **Sin proyecto Supabase desplegado, sin pacientes reales, sin órdenes médicas ni funciones clínicas operativas.**
 - Integración clínica y firmas: **no implementadas**. Supabase no aporta por sí solo firma digital certificada.
 
 ## Documentación y código
 - [ADR-002 arquitectura autónoma](docs/adr/ADR-002-supabase-autonomo.md) — decisión de infraestructura.
 - [ADR-003 internación domiciliaria](docs/adr/ADR-003-homecare-case-first.md) — población diferenciada y episodio asistencial longitudinal; diseño rector del producto.
 - [SPEC-001](docs/specs/SPEC-001-visitas-domiciliarias.md) — requisitos y pendientes.
+- [HC-01 episodio, equipo y RLS](docs/specs/HC-01-episode-schema-and-rls.md) — migración PostgreSQL y controles de seguridad; sin aprobación clínica real.
 - [FORM-001](docs/specs/FORM-001-inventario-clinico.md) — planillas de origen inventariadas sin datos de pacientes.
 - [Supabase: migración y pruebas RLS](supabase/README.md) — instalación pendiente de proyecto en la nube, prueba en PostgreSQL sintético.
 - [App móvil](apps/mobile/README.md) — demo Android/iOS y tests de UI.
