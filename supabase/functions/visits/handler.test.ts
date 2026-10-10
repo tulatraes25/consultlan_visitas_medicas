@@ -113,32 +113,19 @@ Deno.test("large streamed payload rejected before business processing", async ()
   equal(h.calls.length, 0, "large body cannot reach RPC");
 });
 
-Deno.test("all operational actions route to exact RPC with checked arguments", async () => {
-  const pairs = [
-    ["registerProfessional", { organizationId: ORG, authUserId: ACTOR, specialty: "Enfermería" }, "api_register_professional"],
-    ["scheduleVisit", {
-      organizationId: ORG, patientId: PATIENT, professionalId: PROFESSIONAL,
-      scheduledStart: "2026-10-11T10:00:00Z", scheduledEnd: "2026-10-11T11:00:00Z",
-      requestKey: REQUEST,
-    }, "api_schedule_visit"],
-    ["beginVisit", { organizationId: ORG, visitId: VISIT }, "api_begin_visit"],
-    ["addClinicalNote", {
-      organizationId: ORG, visitId: VISIT, narrative: "Texto sintético de revisión",
-      requestKey: REQUEST,
-    }, "api_add_clinical_note"],
-    ["submitVisitReview", { organizationId: ORG, visitId: VISIT }, "api_submit_visit_review"],
-    ["cancelVisit", {
-      organizationId: ORG, visitId: VISIT, reasonCode: "PATIENT_UNAVAILABLE",
-    }, "api_cancel_visit"],
-  ] as const;
+Deno.test("safe administrative provisioning commands use exact SQL RPC and verified actor", async () => {
   const h = harness();
-  for (const [action, fields, rpc] of pairs) {
+  const routes = [
+    ["createPatient", { organizationId: ORG, displayName: "Paciente ficticio de CI", requestKey: REQUEST }, "api_create_patient"],
+    ["registerProfessional", { organizationId: ORG, authUserId: ACTOR, specialty: "Enfermería" }, "api_register_professional"],
+  ] as const;
+  for (const [action, fields, rpc] of routes) {
     const response = await h.handle(post({ action, ...fields }));
-    equal(response.status, 200, action + " response");
-    equal(h.calls[h.calls.length - 1].rpc, rpc, action + " mapping");
-    equal(h.calls[h.calls.length - 1].args.p_actor, ACTOR, "identity not client-defined");
+    equal(response.status, 200, "synthetic administrative route");
+    equal(h.calls[h.calls.length - 1].rpc, rpc, "fixed operation mapping");
+    equal(h.calls[h.calls.length - 1].args.p_actor, ACTOR, "verified identity from Auth");
   }
-  equal(h.calls.length, pairs.length, "must send exactly one RPC per request");
+  equal(h.calls.length, routes.length, "only expected administrative RPCs dispatched");
 });
 
 Deno.test("SQL errors map to safe HTTP outcomes without leaking clinical text", async () => {
@@ -160,22 +147,30 @@ Deno.test("SQL errors map to safe HTTP outcomes without leaking clinical text", 
   assert(!(await outage.text()).includes("Secret backend address"), "no backend error leaks");
 });
 
-Deno.test("requires exact cancellation reason and sane timestamps", async () => {
+Deno.test("SUPA-04 blocks obsolete clinical actions at Edge even with seemingly valid arguments", async () => {
   const h = harness();
-  const badCancel = await h.handle(post({
-    action: "cancelVisit", organizationId: ORG, visitId: VISIT,
-    reasonCode: "patient did not answer at home",
-  }));
-  equal(badCancel.status, 422, "unstructured cancellation rejected");
-  const badDates = await h.handle(post({
-    action: "scheduleVisit", organizationId: ORG, patientId: PATIENT,
-    professionalId: PROFESSIONAL, scheduledStart: "tomorrow",
-    scheduledEnd: "2026-10-11T12:00:00Z", requestKey: REQUEST,
-  }));
-  equal(badDates.status, 422, "free-text dates rejected");
-  equal(h.calls.length, 0, "invalid schedule must not reach SQL");
+  const obsolete = [
+    "scheduleVisit", "beginVisit", "addClinicalNote",
+    "submitVisitReview", "cancelVisit",
+    "approveHomecareCarePlan", "activateHomecareEpisode",
+  ];
+  for (const action of obsolete) {
+    const response = await h.handle(post({
+      action,
+      organizationId: ORG,
+      patientId: PATIENT,
+      professionalId: PROFESSIONAL,
+      visitId: VISIT,
+      scheduledStart: "2026-10-11T10:00:00Z",
+      scheduledEnd: "2026-10-11T11:00:00Z",
+      narrative: "Texto de muestra",
+      reasonCode: "OTHER",
+      requestKey: REQUEST,
+    }));
+    equal(response.status, 422, action + " must be absent from Edge allowlist");
+  }
+  equal(h.calls.length, 0, "retired clinical actions cannot reach any RPC");
 });
-
 
 Deno.test("HC-02B operations preserve verified actor and dispatch only fixed RPC names", async () => {
   const e = "e1000000-0000-4000-8000-000000000001";
