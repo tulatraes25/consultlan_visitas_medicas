@@ -18,7 +18,7 @@ Desde el repositorio limpio con Node >=22:
 node scripts/staging-preflight.mjs --ci
 npm test
 ```
-El comando `--ci` no usa internet: comprueba el identificador **local** `project_id = "consultlan-visitas-medicas-local"`, `[functions.visits] verify_jwt = true`, las siete migraciones SQL y que se hayan retirado tanto las rutas Edge como los permisos SQL de cinco RPC clínicas históricas. Este identificador local **no** es una referencia de proyecto online.
+El comando `--ci` no usa internet: comprueba el identificador **local** `project_id = "consultlan-visitas-medicas-local"`, `[functions.visits] verify_jwt = true`, las ocho migraciones SQL y que se hayan retirado tanto las rutas Edge como los permisos SQL de cinco RPC clínicas históricas. Este identificador local **no** es una referencia de proyecto online.
 
 GitHub Actions realiza además los tests RLS PostgreSQL 16 con Auth sintético, tests Edge Deno y typecheck/UI/exportación JS Android e iOS. No confundir bundles JS con un APK/IPA.
 
@@ -44,7 +44,7 @@ Resultado favorable = formato y declaraciones aceptados, **no** independencia/id
 ## 3. Instalación inicial del proyecto staging (MANUAL, bloqueada)
 Solo con autorizaciones y revisión de seguridad: crear un proyecto Supabase **nuevo**, habilitar Auth según política, verificar región, destinatarios, backups, restauración y políticas de Storage privado. No desplegar el proyecto SICOM, el servidor de Pediatrics ni los datos de consultorio.
 
-Revisar las siete migraciones en orden y en staging vacío. No ejecutar `supabase db reset --linked`: es destructivo sobre el proyecto enlazado. No ejecutar `supabase db push` sin cotejo explícito de la referencia enlazada, revisión de cambios pendientes, backup de staging y aprobación del operador. Los datos sintéticos de `supabase/tests/postgres_auth_stub.sql` son **solo para PostgreSQL aislado de CI**; nunca aplicar ese shim en una base real Supabase.
+Revisar las ocho migraciones en orden y en staging vacío. No ejecutar `supabase db reset --linked`: es destructivo sobre el proyecto enlazado. No ejecutar `supabase db push` sin cotejo explícito de la referencia enlazada, revisión de cambios pendientes, backup de staging y aprobación del operador. Los datos sintéticos de `supabase/tests/postgres_auth_stub.sql` son **solo para PostgreSQL aislado de CI**; nunca aplicar ese shim en una base real Supabase.
 
 Validar que el esquema `private` no esté expuesto; verificar `SECURITY DEFINER`, propietario/search_path, GRANT/REVOKE, RLS, auditoría, Auth, funciones Edge, cifrado, redes y separación de cuentas. No activar ningún documento clínico, permiso médico, firma o paciente real.
 
@@ -93,6 +93,12 @@ La validación de Auth por dos cuentas y un JWT vencido requiere credenciales re
 
 **Advertencia sobre cierre de sesión:** Supabase puede mantener válido un JWT de acceso hasta su vencimiento aunque se haya ejecutado `signOut()`. Esta verificación **no** demuestra cierre inmediato de sesiones. Para comandos clínicos sensibles será necesaria una comprobación server-side de sesión activa (por ejemplo, con `session_id` y el estado autorizado de `auth.sessions`), estrategia de expiración y pruebas específicas antes de pacientes reales. No pedir JWT en chats ni almacenar token de prueba en repositorios. Ver [documentación oficial de sesiones](https://supabase.com/docs/guides/auth/sessions).
 
+
+## 4C. SEC-SESSION-01 — Validación de sesión activa (código sintético, pendiente de staging)
+
+Una sesión cerrada puede conservar un JWT de acceso formalmente válido hasta `exp`. Por eso la Edge ahora exige, después de verificar identidad en `/auth/v1/user`, una comprobación confiable de presencia del `session_id` del JWT para el mismo usuario en la tabla administrada `auth.sessions`. El verificador `api_is_live_session` es exclusivo de `service_role`. Si falta sesión, se revocó, el actor es distinto o el servicio de verificación falla, no se despacha el comando.
+
+**Gate real pendiente:** verificar en Supabase staging la semántica actual de `auth.sessions`, ejecutar pruebas positivas con dos sesiones ficticias, terminar una de ellas y exigir rechazo con JWT todavía no expirado; repetir con membresía revocada. La prueba local en PostgreSQL usa un stub sintético, no el servicio Auth administrado. No se utilizarán datos de pacientes ni tokens reales en GitHub. [SPEC SEC-SESSION-01](../docs/specs/SEC-SESSION-01-live-session-gate.md).
 
 ## 5. Aceptación de STAGING-01B/01C (todavía NO cumplida)
 - Mostrar evidencia de proyecto autónomo, titularidad, región, políticas y datos ficticios. Confirmar identidad contra proyectos excluidos por medios independientes.
