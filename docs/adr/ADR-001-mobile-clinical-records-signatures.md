@@ -12,8 +12,9 @@ Lectura programatica de texto y celdas de tablas (sin datos reales ni scans en G
 - CONTROL PROCEDIMIENTOS: PACIENTE, OS; FECHA, HORARIO, PROCEDIMIENTO, FIRMA PROFESIONAL; menciona canula E.T., boton, SNG, otros.
 - HOJA DE CRISIS: FECHA, TIPO DE CRISIS, DURACION.
 - HOJA DE EVOLUCION: PACIENTE, FECHA, OS; area de evolucion sin campo estructurado en texto.
-- KARDEX.ID y SIGNOS VITALES: contenido principal embebido graficamente, no puede darse por inventariado a partir de texto DOCX. Requiere inspeccion visual.
-- CARDOZO SEPTIEMBRE.pdf: documento escaneado real; no debe publicarse ni incorporarse a fixtures, requiere evaluacion visual en entorno privado.
+- SIGNOS VITALES (inspeccion visual): Paciente; FECHA, HORARIO, SPO2, FC, FR, T°, T/A, FIRMA Y SELLO. Dos paginas con grillas legibles.
+- KARDEX.ID (inspeccion visual directa de EMF): Paciente, Medicacion, grilla de columnas restantes sin rotulos confiables. La conversion DOCX->PDF de LibreOffice produce solapamientos; el archivo EMF aislado permite recuperar la estructura. No inventar campos de dosis/horario/via.
+- PDF mensual original (56 paginas A4): todas rasterizadas, con planillas, evoluciones y firmas/sellos de ejemplo real; inspeccion de estructura completada sin OCR. Solo fuente de proceso. No extraer ni copiar datos personales, contenido clinico, nombres o firmas. Inventario desidentificado: docs/specs/FORM-001-inventario-clinico.md.
 Conclusiones: NO inferir valores clinicos concretos ni obligatoriedad de todos los campos basados solo en nombres de documentos. Muchos impresos acreditan asistencia, no describen necesariamente acto clinico completo.
 
 ## Recomendacion de producto
@@ -24,9 +25,9 @@ Modelar ambos bajo Visit ID, con documentos y ciclos de vida independientes.
 
 ## Flujo / maquina de estados
 Visita: PLANNED -> ASSIGNED -> IN_PROGRESS -> PENDING_REVIEW -> PENDING_SIGNATURE -> CLOSED_VERIFIED.
-Alternativas: CANCELLED, NOT_PERFORMED, SIGNATURE_REFUSED, SIGNER_UNAVAILABLE, SYNC_PENDING, REOPEN_REQUESTED (solo addendum; no edicion del documento cerrado).
+Estados terminales/alternativos de VISITA: CANCELLED y NOT_PERFORMED. SIGNATURE_REFUSED y SIGNER_UNAVAILABLE son resultados de conformidad, no estados de visita. SYNC_PENDING pertenece a la cola de sincronizacion offline, no a la visita. REOPEN_REQUESTED pertenece a solicitud de addendum y nunca altera un registro cerrado.
 Un dispositivo offline puede guardar borrador, pero nunca asignar CLOSED_VERIFIED ni timestamp/validacion central.
-Firma familiar: REQUESTED -> PRESENTED -> ACCEPTED | REFUSED | UNAVAILABLE | EXPIRED. Debe verse claramente a que evidencia esta vinculada, con identificacion de quien firma y calidad invocada (padre, madre, tutor, cuidador autorizado). Ser cuidador no implica automatico ser representante legal.
+Conformidad familiar: REQUESTED -> PRESENTED -> SIGNED | REFUSED | UNAVAILABLE | EXPIRED. Debe verse claramente a que evidencia esta vinculada, con identificacion de quien firma y calidad invocada (padre, madre, tutor, cuidador autorizado). Ser cuidador no implica automatico ser representante legal.
 
 ## Seguridad obligatoria
 - Matriz RBAC + ABAC (profesional solo visita asignada, equipo coordinador segun jurisdiccion, auditor lectura controlada); bloqueo de acceso entre pacientes.
