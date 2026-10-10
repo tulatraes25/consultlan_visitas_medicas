@@ -1,6 +1,6 @@
 # Supabase independiente — GATE SUPA-01
 
-**Estado:** migración y controles RLS en GitHub, sin instalación en cuenta Supabase real.
+**Estado:** migraciones SUPA-01 y SUPA-02 con RLS, comandos backend-only y pruebas en PostgreSQL real; sin instalación en ninguna cuenta Supabase.
 **Decisión:** [ADR-002](../docs/adr/ADR-002-supabase-autonomo.md). **Prohibida** la conexión con el servidor de Pediatrics/CONSULTLAN.
 
 ## Modelo inicial
@@ -23,10 +23,15 @@ En GitHub CI se inicia un servicio `postgres:16-alpine` sin datos externos:
 psql -v ON_ERROR_STOP=1 -f supabase/tests/postgres_auth_stub.sql
 psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261010000000_standalone_foundation.sql
 psql -v ON_ERROR_STOP=1 -f supabase/tests/rls_isolation.sql
+psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261010010000_operational_commands.sql
+psql -v ON_ERROR_STOP=1 -f supabase/tests/operational_commands.sql
 ```
 El stub `postgres_auth_stub.sql` simula exclusivamente el esquema de autenticación y roles de Supabase dentro del Postgres de CI. **No debe ejecutarse en Supabase real.**
 
 Se prueban usuarios asignados y no asignados, aislamiento entre organizaciones, lectura administrativa sin notas clínicas, auditoría separada, usuarios inactivos, usuarios anónimos, mutaciones directas rechazadas, integridad referencial y revocación de membresía.
+
+## SUPA-02 — Operaciones sin permisos de escritura móviles
+La migración `20261010010000_operational_commands.sql` agrega RPC `api_*` **solo para `service_role`**, para crear pacientes, registrar profesionales asociados a Auth propio, agendar sin superposiciones, iniciar visitas, agregar notas versionadas, enviar a revisión y cancelar. Las claves UUID de reintento evitan duplicaciones. Estos RPC NO son directamente accesibles por clientes autenticados o anónimos. Aún no existe Edge Function verificada, así que siguen **inutilizables desde la app**. Ver [SUPA-02](../docs/specs/SUPA-02-operational-commands.md).
 
 ## Puesta en marcha posterior (NO realizada)
 1. La administración propietaria de Pediatrics crea un **proyecto Supabase nuevo y separado**, comprueba responsabilidad contractual, región de residencia de datos, privacidad, backup/restore y política de retención. Nunca usar el proyecto SICOM ni un entorno de CONSULTLAN.

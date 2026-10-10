@@ -4,6 +4,8 @@
 \set ON_ERROR_STOP on
 create role authenticated nologin;
 create role anon nologin;
+-- Simulates the trusted backend role provided by Supabase, never a mobile login.
+create role service_role nologin bypassrls;
 create schema auth;
 grant usage on schema auth to authenticated;
 create table auth.users (id uuid primary key);
