@@ -212,6 +212,11 @@ export function inspectFormPreviewRequest(request) {
       Object.hasOwn(request, "rawInk")) {
     return { allowed: false, code: "IDENTIFIABLE_OR_SIGNATURE_DATA_NOT_ACCEPTED" };
   }
+  // Preview is a schema lookup only. No arbitrary fields may carry real data.
+  const keys = Object.keys(request);
+  if (keys.length !== 2 || keys.some(key => key !== "templateId" && key !== "action")) {
+    return { allowed: false, code: "EXTRA_PREVIEW_FIELDS_NOT_ACCEPTED" };
+  }
   if (Object.hasOwn(BEDSIDE_PAPER_RECORDS, templateId)) {
     return action === "REFERENCE_PAPER_RECORD"
       ? { allowed: true, code: "PAPER_REFERENCE_ONLY" }
