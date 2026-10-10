@@ -28,6 +28,9 @@ Referencia: https://supabase.com/docs/guides/auth/sessions
 6. `session.test.ts`: pruebas Deno negativas, desajuste, expiry y escenario sintético permitido.
 7. CI: migración y tests SQL después de SUPA-04B, typecheck/test Deno, Node/Expo existentes; actualizar secuencia de migraciones y runbook.
 
+## Integración reforzada (SEC-SESSION-02)
+La validación de sesión y JWT ahora se prueba también como recorrido completo Auth → RPC de sesión → handler Edge antes de un comando, con fetch inyectado y fallos simulados. Ver [SPEC SEC-SESSION-02](SEC-SESSION-02-integrated-edge-auth-test.md). No equivale a staging real.
+
 ## Gate
 El código puede quedar `GITHUB_TESTED` tras CI. **No** `CLOSED_CERTIFIED` sin push CI verificable y **no** `STAGING_VERIFIED` sin validar tablas/sesiones reales de la versión Supabase elegida. `CLINICALLY_READY` sigue bloqueado por autorizaciones médicas, legal/privacidad, identidad de responsables y firmas.
 
