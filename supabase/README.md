@@ -77,6 +77,14 @@ La revisión de metadatos de un plan domiciliario ahora se solicita mediante `re
 
 **SUPA-04:** la Edge deja de exponer las rutas clínicas heredadas `scheduleVisit`, `beginVisit`, `addClinicalNote`, `submitVisitReview` y `cancelVisit`. Las definiciones RPC históricas de SUPA-02 permanecen en la base para las pruebas originales, pero SUPA-04B **revoca su permiso EXECUTE a service_role** tras dichas pruebas. Por tanto ya no son un contrato operativo para el móvil ni el servidor. Se debe evitar cualquier acceso público directo a operaciones que utilicen `service_role`. No habilitar toma de notas, inicio de atención o cierre hasta definir y aprobar los circuitos clínicos.
 
+## STAGING-01A — Preflight sin credenciales y runbook (aún no conectado)
+
+El comando `node scripts/staging-preflight.mjs --ci` comprueba sin conexión externa la consistencia mínima del repositorio: siete migraciones, id local de CLI, JWT obligatorio en Edge, revisión administrativa PENDING y bloqueo de RPC clínicas históricas. También se ejecuta automáticamente en GitHub Actions.
+
+El modo opcional `--probe` es **posterior** a crear y asegurar un proyecto staging nuevo de internación domiciliaria. Exige aprobación explícita y una clave **publicable**, nunca secreta, y solo realiza pruebas negativas sin JWT ni mutaciones. No equivale a aprobación de seguridad, RLS, identidad o clínica.
+
+Runbook: [STAGING-01](../docs/operations/STAGING-01-runbook.md) · SPEC: [STAGING-01A](../docs/specs/STAGING-01A-safe-preflight.md). No usar reset remoto/destructivo; no aplicar el shim sintético de auth en Supabase.
+
 ## Puesta en marcha posterior (NO realizada)
 1. La administración propietaria de Pediatrics crea un **proyecto Supabase nuevo y separado**, comprueba responsabilidad contractual, región de residencia de datos, privacidad, backup/restore y política de retención. Nunca usar el proyecto SICOM ni un entorno de CONSULTLAN.
 2. Configura Supabase Auth con registro abierto/usuarios anónimos deshabilitados; define invitaciones, MFA, rotación, recuperación y control de sesiones. **No** desplegar con pacientes reales sin una revisión de cumplimiento sanitario/contractual.
