@@ -59,7 +59,7 @@ begin
     )
   );
 
-  return pg_catalog.coalesce(v_result,'[]'::jsonb);
+  return coalesce(v_result,'[]'::jsonb);
 end;
 $$;
 
