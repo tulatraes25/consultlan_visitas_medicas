@@ -63,4 +63,50 @@ describe("MOB-HC-EPISODE-01 synthetic case-first timeline", () => {
     expect(screen.getByText("Guardias")).toBeTruthy();
     expect(screen.getByText("GUA-DEMO-SHIFT-01")).toBeTruthy();
   });
+  test("adjacent overnight shifts show a possible handover only inside the selected patient episode", () => {
+    const outgoing = { ...visits[0], id: "DEMO-SHIFT-A-1",
+      reference: "GUA-DEMO-A-1", serviceKind: "SHIFT" as const,
+      date: "2026-10-11", startTime: "20:00", endTime: "08:00",
+      professionalRef: "DEMO-PRO-2" };
+    const incoming = { ...visits[0], id: "DEMO-SHIFT-A-2",
+      reference: "GUA-DEMO-A-2", serviceKind: "SHIFT" as const,
+      date: "2026-10-12", startTime: "08:00", endTime: "20:00",
+      professionalRef: "DEMO-PRO-3" };
+    // Same episode string but a DIFFERENT patient: must never be displayed
+    // or counted as clinical/staffing continuity.
+    const forged = { ...incoming, id: "DEMO-SHIFT-BOGUS",
+      reference: "GUA-DEMO-FORGED", patientRef: patients[1].id,
+      date: "2026-10-12", startTime: "20:00", endTime: "08:00" };
+
+    render(<EpisodeOverviewDemo
+      patients={patients} professionals={professionals}
+      visits={[...visits, outgoing, incoming, forged]}
+    />);
+    expect(screen.getByTestId("episode-continuity-list")).toBeTruthy();
+    expect(screen.getByTestId("episode-continuity-DEMO-SHIFT-A-1")).toBeTruthy();
+    expect(screen.getAllByText("HORARIOS CONSECUTIVOS · SIN RELEVO ACREDITADO")).toHaveLength(1);
+    expect(screen.getByText("GUA-DEMO-A-1 → GUA-DEMO-A-2")).toBeTruthy();
+    expect(screen.queryByText("GUA-DEMO-FORGED")).toBeNull();
+    expect(screen.queryByRole("button", {name:/Aceptar relevo|Confirmar relevo|Firmar relevo/i})).toBeNull();
+
+    fireEvent.press(screen.getByRole("button", { name: "Ver episodio de Paciente ficticio B" }));
+    expect(screen.queryByTestId("episode-continuity-list")).toBeNull();
+    expect(screen.getByTestId("episode-continuity-empty")).toBeTruthy();
+    expect(screen.queryByText("GUA-DEMO-A-1 → GUA-DEMO-A-2")).toBeNull();
+  });
+
+  test("same episode label with mismatched patient never creates a handover suggestion", () => {
+    const first={ ...visits[0], id:"DEMO-FIRST-SHIFT", reference:"GUA-FIRST",
+      serviceKind:"SHIFT" as const, date:"2026-10-11",startTime:"08:00",
+      endTime:"20:00",professionalRef:"DEMO-PRO-2" };
+    const mismatched={ ...first,id:"DEMO-WRONG-PATIENT",reference:"GUA-WRONG",
+      patientRef:patients[1].id, episodeRef:patients[0].episodeRef,
+      startTime:"20:00",endTime:"08:00",professionalRef:"DEMO-PRO-3" };
+    render(<EpisodeOverviewDemo patients={patients}
+      professionals={professionals} visits={[first,mismatched]} />);
+    expect(screen.getByTestId("episode-continuity-empty")).toBeTruthy();
+    expect(screen.queryByText("GUA-WRONG")).toBeNull();
+    expect(screen.queryByTestId("episode-continuity-list")).toBeNull();
+  });
+
 });
