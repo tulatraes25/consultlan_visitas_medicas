@@ -250,6 +250,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: web-coord-qa-${{ github.run_id }}
-          path: artifacts/web-coord/*.png
+          path: |
+            artifacts/web-coord/*.png
+            apps/web-prototypes/preview.html
           if-no-files-found: ignore
           retention-days: 14

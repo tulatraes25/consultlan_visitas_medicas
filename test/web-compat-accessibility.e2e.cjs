@@ -119,7 +119,11 @@ async function wcagAudit(){
                 process.stderr.write("AXE_FINDING "+JSON.stringify({
                   viewport:viewport.width,variant,section,id:v.id,
                   impact:v.impact,description:v.description,
-                  samples:v.nodes.slice(0,6).map(n=>({target:n.target,summary:n.failureSummary})),
+                  samples:v.nodes.map(n=>({
+                    target:n.target,
+                    summary:n.failureSummary,
+                    ratio:n.any.find(f=>f.id==="color-contrast")?.data?.contrastRatio,
+                  })).slice(0,120),
                 })+"\n");
               }
             }
