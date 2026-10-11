@@ -167,6 +167,10 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261010070000_live_auth_session_gate.sql
       - name: Validate session presence, actor isolation and termination
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/live_auth_session_gate.sql
+      - name: Apply service-only roster read and revoke direct JWT table access
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261010080000_homecare_roster_edge_read.sql
+      - name: Verify exact roster projection, cross-tenant/role denial and revocations
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/homecare_roster_edge_read.sql
 
   edge-functions:
     name: Deno Edge JWT boundary and request validation
