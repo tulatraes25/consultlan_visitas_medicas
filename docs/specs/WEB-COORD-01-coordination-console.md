@@ -1,6 +1,6 @@
 # WEB-COORD-01 — Especificación de consola web de coordinación
 
-**Fecha:** 2026-10-11. **Estado:** SPEC/CONCEPTUAL, solo mocks sintéticos; no implementada. **Inspiración:** CONSULTLAN en diseño institucional; Folk Care en módulos; CommandCare en calendario semanal; Avni/CHT en tareas del trabajador; Medplum/OpenMRS en separación clínica. Consultar [OSS-HC-ARCH-01](../research/OSS-HC-ARCH-01-github-benchmark.md) y [ADR-004](../adr/ADR-004-benchmark-driven-homecare-platform.md).
+**Fecha:** 2026-10-11. **Estado:** SPEC/CONCEPTUAL, solo mocks sintéticos; no implementada. **Inspiración:** CONSULTLAN en diseño institucional; Folk Care en módulos; CommandCare en calendario semanal; CareShift (MIT) en cambios de guardia, aprobaciones y auditoría; Avni/CHT en tareas del trabajador; Medplum/OpenMRS en separación clínica. Consultar [OSS-HC-ARCH-01](../research/OSS-HC-ARCH-01-github-benchmark.md) y [ADR-004](../adr/ADR-004-benchmark-driven-homecare-platform.md).
 
 ## Objetivo
 
@@ -23,7 +23,7 @@ Diseñar un backoffice **web separado** para coordinar episodios domiciliarios, 
 2. **Planificador semanal 24/7:** filas por profesional/rol, columnas día/horario, tarjetas diferenciadas para VISIT de corta duración y SHIFT nocturna; cola de no asignadas, filtros de especialidad y episodio, conflictos y huecos explícitos. Hora civil de servicio con zona IANA y offset cuando sea relevante.
 3. **Episodio domiciliario:** pestañas Resumen, Coberturas, Equipo, Planes/versiones, Documentación autorizada, Incidencias y Auditoría; en vista operativa solo metadatos. El soporte físico en domicilio se indica sin simular copia digital del Kardex/hoja de crisis/controles.
 4. **Profesionales:** especialidad, habilitación/credenciales por verificar, disponibilidad, límites de jornada acordados, vigencia de pertenencia al equipo y carga operativa. No determinar por algoritmo una habilitación profesional.
-5. **Relevos y contingencias:** anterior/nuevo profesional, evento de entrega, hora, continuidad sin confirmar, faltantes de guardia y respuesta humana; incidentes críticos no sustituyen telefonía/circuito asistencial.
+5. **Relevos y contingencias:** anterior/nuevo profesional, propuesta de intercambio con doble comprobación humana (solicitud y autorización), evento de entrega, hora, continuidad sin confirmar, faltantes de guardia y respuesta humana; incidentes críticos no sustituyen telefonía/circuito asistencial.
 6. **Revisión clínica de planes:** lista por episodio/versión, estados de borrador y pendientes; acciones de aprobación **deshabilitadas** hasta definir Dirección Médica y normativa de firma.
 7. **Rendición y reportes:** períodos, prestaciones, coberturas, documentación exigible por financiador, inconsistencias y exportación futura; separar facturable de clínicamente realizado.
 

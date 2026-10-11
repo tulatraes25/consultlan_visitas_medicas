@@ -42,7 +42,7 @@ Los directorios marcados PENDIENTE **son propuesta, no código creado**. No migr
 ## Invariantes y límites operativos
 
 1. **Episode-first:** todas las visitas, guardias y registros sanitarios pertenecen a un episodio del mismo paciente del programa domiciliario; no son pacientes del CONSULTLAN ambulatorio.
-2. **Cobertura no es acto clínico:** distinguir asignada/confirmada/iniciada/finalizada/relevada de evolución/atención validada; registrar cambios y causal de excepciones. Nombres de estados finales requieren aprobación institucional.
+2. **Cobertura no es acto clínico:** distinguir asignada/confirmada/iniciada/finalizada/relevada de evolución/atención validada; registrar cambios y causal de excepciones. Inspirarse en [CareShift](https://github.com/yitmeng00/clinical-scheduler-platform) para intercambio de turno con aprobación humana en dos fases y auditoría, sin copiar automáticamente permisos ni decisiones. Los nombres de estados finales requieren aprobación institucional.
 3. **Continuidad sin ficción:** una guardia nocturna, relevo o ausencia debe estar explícitamente reportada; faltante o hueco de cobertura no debe desaparecer bajo un resumen de calendario.
 4. **Planes versionados:** plan/orden DRAFT, aprobación clínica pendiente; no permitir formularios médicos definitivos sin fundamento, rol y versión inmutable.
 5. **Interoperabilidad incremental:** mapeo orientativo FHIR solo para objetos clínicos que existan y estén aprobados. Sin declarar FHIR completo.
