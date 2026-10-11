@@ -60,6 +60,8 @@ jobs:
           node --check scripts/staging-session-verify.mjs
           node --check src/operations/staging-integrated-policy.mjs
           node --check scripts/staging-integrated-verify.mjs
+          node --check apps/web-prototypes/scenario.js
+          node --check apps/web-prototypes/app.js
           for test_file in test/*.test.mjs; do
             node --check "$test_file"
           done

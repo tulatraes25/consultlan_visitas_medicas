@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="description" content="Tres propuestas de consola web de internación domiciliaria. Solo datos sintéticos, sin conexión.">
+  <title>Pediatrics · Laboratorio de coordinación domiciliaria | Diseño</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="concept-strip">
+    <div class="concept-heading">
+      <span class="concept-icon" aria-hidden="true">✚</span>
+      <div>
+        <strong>Laboratorio de interfaces</strong>
+        <small>CONSULTLAN · VISITAS DOMICILIARIAS</small>
+      </div>
+    </div>
+    <nav class="variants" aria-label="Comparar las tres propuestas visuales">
+      <button type="button" data-variant="a" class="variant-btn" aria-pressed="false"><span class="number">01</span> A · Institucional</button>
+      <button type="button" data-variant="b" class="variant-btn" aria-pressed="false"><span class="number">02</span> B · Operativa</button>
+      <button type="button" data-variant="c" class="variant-btn is-selected" aria-pressed="true"><span class="number">03</span> C · Híbrida</button>
+    </nav>
+    <div class="concept-state"><span class="live-dot" aria-hidden="true"></span> DEMO SIN CONEXIÓN</div>
+  </header>
+  <div class="viewport">
+    <div class="viewport-note">
+      <span id="current-style">C · Híbrido</span>
+      <span>Escenario ficticio · 12–18 octubre de 2026 · No habilitado para pacientes reales</span>
+    </div>
+    <div class="canvas">
+      <main id="app">
+        <p style="padding: 32px; font-family: sans-serif">Inicializando escenario sintético…</p>
+      </main>
+    </div>
+    <footer class="mock-footer">
+      <span><strong>WEB-COORD-01A</strong> · Tres alternativas navegables · Identidad visual CONSULTLAN</span>
+      <span>Sin red, sin autenticación y sin información sanitaria · Diseño conceptual</span>
+    </footer>
+  </div>
+  <dialog id="episode-modal" class="modal-frame" aria-label="Detalle del episodio sintético">
+    <button type="button" class="modal-close" data-close aria-label="Cerrar detalle">×</button>
+    <div id="episode-modal-content"></div>
+  </dialog>
+  <noscript>Esta demostración necesita JavaScript habilitado; no se realizan llamadas a servidores.</noscript>
+  <script defer src="./scenario.js"></script>
+  <script defer src="./app.js"></script>
+</body>
+</html>

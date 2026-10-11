@@ -15,7 +15,8 @@ Aplicación móvil para la **continuidad de cuidados domiciliarios pediátricos*
 - [ADR-003 internación domiciliaria](docs/adr/ADR-003-homecare-case-first.md) — población diferenciada y episodio asistencial longitudinal; diseño rector del producto.
 - [OSS-HC-ARCH-01 benchmark de arquitecturas públicas](docs/research/OSS-HC-ARCH-01-github-benchmark.md) — comparación verificable de sistemas homecare/EHR/campo en GitHub, licencias y límites de reutilización.
 - [ADR-004 plataforma basada en benchmark](docs/adr/ADR-004-benchmark-driven-homecare-platform.md) — preservar Supabase/Expo y preparar web de coordinación independiente, sin importar código ajeno.
-- [WEB-COORD-01 consola web futura](docs/specs/WEB-COORD-01-coordination-console.md) — especificación de tres opciones de diseño, permisos y pantallas; todavía no implementada.
+- [WEB-COORD-01 consola web futura](docs/specs/WEB-COORD-01-coordination-console.md) — especificación de roles, permisos y pantallas administrativas.
+- [WEB-COORD-01A laboratorio visual navegable](docs/specs/WEB-COORD-01A-three-visual-prototypes.md) — tres propuestas web A/B/C con el mismo roster inventado; [preview autónoma sin dependencias](apps/web-prototypes/preview.html). No es un panel web clínico desplegado.
 - [SPEC-001](docs/specs/SPEC-001-visitas-domiciliarias.md) — requisitos y pendientes.
 - [HC-01 episodio, equipo y RLS](docs/specs/HC-01-episode-schema-and-rls.md) — migración PostgreSQL y controles de seguridad; sin aprobación clínica real.
 - [HC-02A coberturas y relevos](docs/specs/HC-02A-coverage-handover.md) — visitas puntuales y guardias extensas con prevención de superposición; todavía no hay altas operativas.
