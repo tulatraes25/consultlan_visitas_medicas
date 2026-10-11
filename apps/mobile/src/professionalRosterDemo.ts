@@ -43,7 +43,7 @@ export function projectDemoOwnRoster(
   professional: DemoProfessional | undefined,
   visits: readonly DemoVisit[],
 ): readonly DemoOwnRosterItem[] {
-  if (!isDemoProfessional(professional)) return [];
+  if (!professional || !isDemoProfessional(professional)) return [];
   const seen = new Set<string>();
   const result: DemoOwnRosterItem[] = [];
   for (const visit of visits) {
