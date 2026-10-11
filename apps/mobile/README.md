@@ -29,6 +29,7 @@ Usar el emulador/dispositivo compatible con Expo SDK 57. Para producir bundles e
 11. **Profesionales vinculados a coberturas de muestra (MOB-HC-TEAM-01)**: muestra especialidad y cantidades VISIT/SHIFT por profesional sintético solo del episodio seleccionado, sin nombres proporcionados externamente. No representa un equipo asistencial habilitado.
 12. **Borradores de planes de cuidados (MOB-HC-PLAN-01)**: metadatos DEMO de versión DRAFT y cantidad de versiones, siempre bajo el mismo paciente y episodio. Sin aprobación profesional, tratamientos, medicación, firma ni registros reales.
 13. **Solicitudes de revisión coherentes (MOB-HC-REVIEW-02)**: cada solicitud pendiente DEMO aparece solo si existe una versión DRAFT válida del mismo paciente y episodio; no hay aprobación ni firma.
+14. **Vista profesional de muestra (MOB-HC-PRO-01)**: seleccioná un profesional ficticio en Gestión → Vista profesional para consultar solo sus coberturas DEMO, ordenadas incluso con guardias nocturnas. El selector no autentica y nunca concede permisos clínicos.
 
 ## Adaptador de lectura futura (MOB-DATA-01)
 
