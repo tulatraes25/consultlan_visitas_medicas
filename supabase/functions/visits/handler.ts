@@ -3,7 +3,7 @@
  * It has no Supabase dependencies and is exercised with synthetic JWT fixtures.
  * Only the runtime adapter is allowed to touch secrets or make network requests.
  */
-type FieldKind = "uuid" | "name" | "specialty" | "dateTime" | "coverageKind" | "positiveInt";
+type FieldKind = "uuid" | "name" | "specialty" | "dateTime" | "utcInstant" | "coverageKind" | "positiveInt";
 type CommandSpec = {
   rpc: string;
   fields: Record<string, { db: string; kind: FieldKind }>;
@@ -34,6 +34,25 @@ const COMMANDS: Record<string, CommandSpec> = {
   listMyHomecareCoverages: {
     rpc: "api_hc_list_my_coverages",
     fields: {},
+  },
+  // HC-READ-02: keyset pages never accept actor, organization, episode or
+  // professional from mobile. Two action names avoid optional-parameter
+  // ambiguity: first and subsequent page both use the SAME backend RPC.
+  listMyHomecareCoveragesPage: {
+    rpc: "api_hc_list_my_coverages_page",
+    fields: {
+      windowStart: {db:"p_window_start",kind:"utcInstant"},
+      windowEnd: {db:"p_window_end",kind:"utcInstant"},
+    },
+  },
+  listMyHomecareCoveragesNextPage: {
+    rpc: "api_hc_list_my_coverages_page",
+    fields: {
+      windowStart: {db:"p_window_start",kind:"utcInstant"},
+      windowEnd: {db:"p_window_end",kind:"utcInstant"},
+      cursorStart: {db:"p_after_start",kind:"utcInstant"},
+      cursorId: {db:"p_after_id",kind:"uuid"},
+    },
   },
   createHomecareEpisodeDraft: {
     rpc: "api_hc_create_episode_draft",
@@ -118,6 +137,14 @@ const COMMANDS: Record<string, CommandSpec> = {
 const UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 const JWT = /^Bearer ([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)$/;
 const DATE_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2})$/;
+const UTC_MICROS = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?Z$/;
+/** Reject Date.parse normalization (e.g. 2026-02-30) and local offsets. */
+function strictUtcInstant(value:string):boolean {
+  if (!UTC_MICROS.test(value)) return false;
+  const millis=Date.parse(value);
+  return Number.isFinite(millis) &&
+    new Date(millis).toISOString().slice(0,19) === value.slice(0,19);
+}
 const MAX_BODY_BYTES = 32768;
 const HEADERS = {
   "content-type": "application/json; charset=utf-8",
@@ -140,6 +167,7 @@ function checkField(value: unknown, kind: FieldKind): boolean {
     case "name": return value === value.trim() && value.length >= 2 && value.length <= 160;
     case "specialty": return value === value.trim() && value.length >= 2 && value.length <= 100;
     case "dateTime": return DATE_TIME.test(value) && Number.isFinite(Date.parse(value));
+    case "utcInstant": return strictUtcInstant(value);
     case "coverageKind": return value === "VISIT" || value === "SHIFT";
   }
 }

@@ -89,7 +89,7 @@ La revisión de metadatos de un plan domiciliario ahora se solicita mediante `re
 
 ## STAGING-01A — Preflight sin credenciales y runbook (aún no conectado)
 
-El comando `node scripts/staging-preflight.mjs --ci` comprueba sin conexión externa la consistencia mínima del repositorio: once migraciones, id local de CLI, JWT obligatorio en Edge, revisión administrativa PENDING y bloqueo de RPC clínicas históricas. También se ejecuta automáticamente en GitHub Actions.
+El comando `node scripts/staging-preflight.mjs --ci` comprueba sin conexión externa la consistencia mínima del repositorio: doce migraciones, id local de CLI, JWT obligatorio en Edge, revisión administrativa PENDING y bloqueo de RPC clínicas históricas. También se ejecuta automáticamente en GitHub Actions.
 
 El modo opcional `--probe` es **posterior** a crear y asegurar un proyecto staging nuevo de internación domiciliaria. Exige aprobación explícita y una clave **publicable**, nunca secreta, y solo realiza pruebas negativas sin JWT ni mutaciones. No equivale a aprobación de seguridad, RLS, identidad o clínica.
 
@@ -113,7 +113,7 @@ La migración `20261010080000_homecare_roster_edge_read.sql` revoca SELECT direc
 
 ## SEC-SURFACE-01 — Control de regresiones de permisos ante nuevas migraciones
 
-Tras las once migraciones, el Quality Gate recorre **dinámicamente** los objetos del catálogo de PostgreSQL: deniega a `authenticated` y `anon` permisos de SELECT/escritura sobre cualquier tabla o vista pública nueva, permisos de secuencias y EXECUTE sobre RPC `api_*` y funciones `SECURITY DEFINER` públicas. Así no depende únicamente del inventario fijo de catorce tablas conocido hoy. Valida también el `search_path` fijado en funciones privilegiadas. La auditoría es sintética; el ensayo contra Supabase alojado sigue pendiente. [SPEC SEC-SURFACE-01](../docs/specs/SEC-SURFACE-01-dynamic-privilege-guard.md).
+Tras las doce migraciones, el Quality Gate recorre **dinámicamente** los objetos del catálogo de PostgreSQL: deniega a `authenticated` y `anon` permisos de SELECT/escritura sobre cualquier tabla o vista pública nueva, permisos de secuencias y EXECUTE sobre RPC `api_*` y funciones `SECURITY DEFINER` públicas. Así no depende únicamente del inventario fijo de catorce tablas conocido hoy. Valida también el `search_path` fijado en funciones privilegiadas. La auditoría es sintética; el ensayo contra Supabase alojado sigue pendiente. [SPEC SEC-SURFACE-01](../docs/specs/SEC-SURFACE-01-dynamic-privilege-guard.md).
 
 ## STAGING-01E — Historial registrado por Supabase (no desplegado)
 
@@ -135,3 +135,9 @@ El comando `scripts/staging-integrated-verify.mjs` compone las pruebas HTTP de 0
 ## Variables de la app (futuro)
 La app podrá recibir URL del **Supabase propio** y su clave **publicable**, más el JWT de la sesión autenticada. La clave `service_role` y secretos de firma **nunca** pueden estar en el bundle móvil, secretos públicos del build ni repositorios.
 No se configura ninguna URL real en este gate. La demo sigue ejecutándose 100% con datos sintéticos en memoria.
+
+## HC-READ-02 — Lectura paginada acotada (solo GitHub, no desplegada)
+
+La migración número 12, `20261011100000_homecare_roster_keyset_read.sql`, agrega una RPC **solo para service_role** con ventana de UTC máxima de 32 días, 100 coberturas por página y cursor compuesto `scheduled_start + id`. Incluye coberturas largas que comenzaron antes pero siguen abiertas dentro de la ventana. La Edge reconoce rutas de primera/siguiente página tras Auth y verificación de sesión activa; nunca acepta identidad u organización elegidas por la app.
+
+Las primeras once migraciones **no se modifican**. GitHub CI aplica esta última después de los tests anteriores y verifica con 105 coberturas sintéticas que no hay saltos, duplicados ni accesos cruzados. `hasMore=false` significa solamente que esa consulta no halló más filas al ejecutarse: **no es snapshot consistente entre requests**, ni evidencia de cobertura clínica completa. El cliente móvil paginado se implementa en gate separado sin enlazar a pacientes reales. [SPEC HC-READ-02](../docs/specs/HC-READ-02-keyset-roster.md).

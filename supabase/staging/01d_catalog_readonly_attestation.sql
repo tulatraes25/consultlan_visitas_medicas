@@ -1,5 +1,5 @@
 -- STAGING-01D: standalone read-only PostgreSQL catalog attestation.
--- Run ONLY after all 11 versioned migrations are applied on an independently
+-- Run ONLY after all 12 versioned migrations are applied on an independently
 -- verified Supabase STAGING project. It reads NO rows from patient tables,
 -- auth.users, auth.sessions, clinical notes or other application content.
 --
@@ -111,11 +111,15 @@ BEGIN
      OR NOT pg_catalog.has_function_privilege(
       'service_role','public.api_hc_list_my_coverages(uuid)','EXECUTE')
      OR NOT pg_catalog.has_function_privilege(
+      'service_role','public.api_hc_list_my_coverages_page(uuid,timestamptz,timestamptz,timestamptz,uuid)','EXECUTE')
+     OR NOT pg_catalog.has_function_privilege(
       'service_role','public.api_hc_episode_scope(uuid,uuid)','EXECUTE')
      OR pg_catalog.has_function_privilege(
       'authenticated','public.api_is_live_session(uuid,uuid)','EXECUTE')
      OR pg_catalog.has_function_privilege(
       'anon','public.api_hc_episode_scope(uuid,uuid)','EXECUTE')
+     OR pg_catalog.has_function_privilege(
+      'authenticated','public.api_hc_list_my_coverages_page(uuid,timestamptz,timestamptz,timestamptz,uuid)','EXECUTE')
   THEN
     RAISE EXCEPTION 'STAGING01D_REQUIRED_BACKEND_GATE_INVALID';
   END IF;

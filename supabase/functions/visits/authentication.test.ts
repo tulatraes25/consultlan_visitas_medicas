@@ -263,3 +263,40 @@ Deno.test("SEC-READ-02B: invalid or revoked session cannot inspect any episode",
     equal(s.commands.length,0,"must not touch scoped RPC after auth denial");
   }
 });
+
+Deno.test("HC-READ-02: Auth and live-session gate run before EVERY paginated read",async()=>{
+  const first={
+    action:"listMyHomecareCoveragesPage",
+    windowStart:"2026-11-02T00:00:00Z",windowEnd:"2026-11-05T00:00:00Z",
+  };
+  const next={
+    action:"listMyHomecareCoveragesNextPage",
+    windowStart:first.windowStart,windowEnd:first.windowEnd,
+    cursorStart:"2026-11-03T00:45:00.123456Z",
+    cursorId:"c0000099-0000-4000-8000-000000000099",
+  };
+  const s=system({commandData:{rows:[],hasMore:false,nextCursor:null}});
+  for (const request of [first,next]) {
+    const result=await s.handle(post(token(),request));
+    equal(result.status,200,"synthetic page allowed only after checks");
+  }
+  equal(s.calls.length,4,"Auth and session checked separately for every page");
+  equal(s.commands.length,2,"each bounded page dispatches once");
+  equal(s.commands[0].name,"api_hc_list_my_coverages_page","fixed page RPC");
+  equal(s.commands[1].name,"api_hc_list_my_coverages_page","same RPC on cursor");
+  equal(s.commands[0].args.p_actor,ACTOR,"first actor verified");
+  equal(s.commands[1].args.p_actor,ACTOR,"next actor independently verified");
+  for(const [settings,jwt,status] of [
+    [{sessionActive:false},token(),401],
+    [{authId:OTHER},token(),401],
+    [{sessionStatus:503},token(),503],
+    [{},token({exp:1}),401],
+  ] as const){
+    for(const request of [first,next]){
+      const denied=system(settings);
+      const response=await denied.handle(post(jwt,request));
+      equal(response.status,status,"invalid or revoked pagination blocked");
+      equal(denied.commands.length,0,"no SQL on invalid page identity");
+    }
+  }
+});

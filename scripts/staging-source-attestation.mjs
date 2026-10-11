@@ -63,7 +63,7 @@ async function sourceState() {
     edgeHandler: get("supabase/functions/visits/handler.ts"),
     revokeMigration: get("supabase/migrations/20261010060000_revoke_legacy_clinical_rpc.sql"),
   });
-  if (!check.ok || REQUIRED_MIGRATIONS.length !== 11) {
+  if (!check.ok || REQUIRED_MIGRATIONS.length !== 12) {
     block("STAGING_SOURCE_PRECHECK_FAILED");
   }
   return buildStagingSourceAttestation(commit, blobs);

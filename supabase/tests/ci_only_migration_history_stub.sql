@@ -17,5 +17,6 @@ insert into supabase_migrations.schema_migrations(version) values
   ('20261010070000'),
   ('20261010080000'),
   ('20261010090000'),
-  ('20261010100000');
+  ('20261010100000'),
+  ('20261011100000');
 commit;

@@ -307,3 +307,65 @@ Deno.test("HC-02C1B allows only administrative PENDING review intake, never clin
   }
   equal(h.calls.length, 1, "attempts to submit clinical approvals never dispatch");
 });
+
+Deno.test("HC-READ-02: exact first/next page allowlist injects verified actor",async()=>{
+  const h=harness();
+  const first={
+    action:"listMyHomecareCoveragesPage",
+    windowStart:"2026-11-02T00:00:00Z",
+    windowEnd:"2026-11-05T00:00:00Z",
+  };
+  const result=await h.handle(post(first));
+  equal(result.status,200,"first bounded window accepted");
+  equal(h.calls.length,1,"exactly one command");
+  equal(h.calls[0].rpc,"api_hc_list_my_coverages_page","new service-only RPC");
+  equal(JSON.stringify(h.calls[0].args),JSON.stringify({
+    p_window_start:first.windowStart,p_window_end:first.windowEnd,p_actor:ACTOR,
+  }),"actor always server-injected");
+  const next=await h.handle(post({
+    action:"listMyHomecareCoveragesNextPage",
+    windowStart:first.windowStart,windowEnd:first.windowEnd,
+    cursorStart:"2026-11-03T00:45:00.123456Z",
+    cursorId:"c0000099-0000-4000-8000-000000000099",
+  }));
+  equal(next.status,200,"next page accepted");
+  equal(h.calls.length,2,"one RPC per explicit request");
+  equal(h.calls[1].args.p_after_start,"2026-11-03T00:45:00.123456Z",
+    "microseconds must remain intact");
+  equal(h.calls[1].args.p_after_id,"c0000099-0000-4000-8000-000000000099",
+    "cursor UUID kept only as keyset position");
+});
+
+Deno.test("HC-READ-02: invalid dates/cursors and impersonation are rejected before RPC",async()=>{
+  const h=harness();
+  const valid={
+    action:"listMyHomecareCoveragesPage",
+    windowStart:"2026-11-02T00:00:00Z",windowEnd:"2026-11-05T00:00:00Z",
+  };
+  const invalid=[
+    {...valid,windowStart:"2026-02-30T00:00:00Z"},
+    {...valid,windowStart:"2026-11-02T00:00:00-03:00"},
+    {...valid,windowStart:"2026-11-02T24:00:00Z"},
+    {...valid,windowStart:"2026-11-02T00:00:00.1234567Z"},
+    {...valid,windowEnd:"invalid"},
+    {...valid,cursorStart:"2026-11-02T00:00:00Z"},
+    {...valid,actorId:ACTOR},
+    {...valid,organizationId:ORG},
+    {...valid,patientId:PATIENT},
+    {...valid,professionalId:PROFESSIONAL},
+    {...valid,service_role:"bogus"},
+    {...valid,includeClinical:true},
+    {...valid,windowStart:null},
+    {...valid,action:"listMyHomecareCoveragesNextPage"},
+    {...valid,action:"listMyHomecareCoveragesNextPage",
+      cursorStart:"2026-11-02T00:00:00Z",cursorId:"wrong"},
+    {...valid,action:"listMyHomecareCoveragesNextPage",
+      cursorStart:"2026-11-02T00:00:00Z",
+      cursorId:"c0000099-0000-4000-8000-000000000099",appRole:"ADMIN"},
+  ];
+  for(const payload of invalid){
+    const response=await h.handle(post(payload));
+    equal(response.status,422,"malformed or forged page request rejected");
+  }
+  equal(h.calls.length,0,"no unauthorized pagination reaches database");
+});
