@@ -26,6 +26,7 @@ Aplicación móvil para la **continuidad de cuidados domiciliarios pediátricos*
 - [STAGING-01B dos organizaciones](docs/specs/STAGING-01B-cross-tenant-rls.md) — test positivo/negativo de RLS con cuentas y episodios ficticios, solo lectura; sin ejecución real hasta que se prepare Supabase staging.
 - [SEC-SESSION-01 sesión activa](docs/specs/SEC-SESSION-01-live-session-gate.md) — la Edge verifica también que `session_id` siga presente en Auth; pendiente validación real en staging, sin pacientes.
 - [SEC-SESSION-02 integración Edge](docs/specs/SEC-SESSION-02-integrated-edge-auth-test.md) — tests Deno completos de Auth → sesión activa → comando, con fallos bloqueantes y sin nube.
+- [STAGING-01C sesiones revocadas](docs/specs/STAGING-01C-session-revocation-probe.md) — verificador offline-first que contrasta sesión activa vs. cerrada con JWT aún válido, usando únicamente acciones Edge desconocidas y un staging autónomo previamente autorizado; no ejecutado contra la nube.
 - [STAGING-01 runbook](docs/operations/STAGING-01-runbook.md) — creación manual de Supabase, controles de seguridad/privacidad, staging sin datos reales, recuperación y no-go clínicos.
 - [App móvil](apps/mobile/README.md) — demo Android/iOS y tests de UI.
 - [Política de episodio domiciliario](src/domain/homecare-policy.mjs) — reglas de integridad para servicio, episodio, paciente y plan, probadas con datos sintéticos; todavía no conectadas al backend.
