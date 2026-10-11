@@ -18,13 +18,13 @@ Desde el repositorio limpio con Node >=22:
 node scripts/staging-preflight.mjs --ci
 npm test
 ```
-El comando `--ci` no usa internet: comprueba el identificador **local** `project_id = "consultlan-visitas-medicas-local"`, `[functions.visits] verify_jwt = true`, las once migraciones SQL y que se hayan retirado tanto las rutas Edge como los permisos SQL de cinco RPC clínicas históricas. Este identificador local **no** es una referencia de proyecto online.
+El comando `--ci` no usa internet: comprueba el identificador **local** `project_id = "consultlan-visitas-medicas-local"`, `[functions.visits] verify_jwt = true`, las doce migraciones SQL y que se hayan retirado tanto las rutas Edge como los permisos SQL de cinco RPC clínicas históricas. Este identificador local **no** es una referencia de proyecto online.
 
 GitHub Actions realiza además los tests RLS PostgreSQL 16 con Auth sintético, tests Edge Deno y typecheck/UI/exportación JS Android e iOS. No confundir bundles JS con un APK/IPA.
 
 ## 1D. STAGING-01D — huella de fuente y auditoría de catálogo (sin instalación)
 
-Antes de que un operador toque un Supabase real, obtener un checkout Git **limpio** del commit aprobado de `main`. El script STAGING-01D no lee variables de credenciales ni contacta a Supabase: exige que las once migraciones sean exactamente las esperadas, valida los archivos Edge/config y crea SHA-256 por archivo ligados al commit exacto.
+Antes de que un operador toque un Supabase real, obtener un checkout Git **limpio** del commit aprobado de `main`. El script STAGING-01D no lee variables de credenciales ni contacta a Supabase: exige que las doce migraciones sean exactamente las esperadas, valida los archivos Edge/config y crea SHA-256 por archivo ligados al commit exacto.
 
 ```bash
 node scripts/staging-source-attestation.mjs --ci
@@ -32,17 +32,17 @@ node scripts/staging-source-attestation.mjs --emit > /tmp/visitas-staging-source
 node scripts/staging-source-attestation.mjs --verify /tmp/visitas-staging-source.json
 ```
 
-Guardar el manifiesto fuera del repo bajo control institucional. Nunca usar el manifiesto de un commit diferente ni confundirlo con comprobante de instalación. Tras la instalación supervisada de las once migraciones, el operador podrá ejecutar **solo en el Supabase staging cuya identidad fue comprobada** el SQL `supabase/staging/01d_catalog_readonly_attestation.sql`. Es transacción `READ ONLY`, inspecciona `pg_catalog`, compatibilidad de estructura Auth, RLS y privilegios; no extrae filas de pacientes ni sesiones. Un PASS significa **únicamente** que coincide la estructura observada, no que el ambiente esté aprobado o haya probado backups/Storage y Auth reales.
+Guardar el manifiesto fuera del repo bajo control institucional. Nunca usar el manifiesto de un commit diferente ni confundirlo con comprobante de instalación. Tras la instalación supervisada de las doce migraciones, el operador podrá ejecutar **solo en el Supabase staging cuya identidad fue comprobada** el SQL `supabase/staging/01d_catalog_readonly_attestation.sql`. Es transacción `READ ONLY`, inspecciona `pg_catalog`, compatibilidad de estructura Auth, RLS y privilegios; no extrae filas de pacientes ni sesiones. Un PASS significa **únicamente** que coincide la estructura observada, no que el ambiente esté aprobado o haya probado backups/Storage y Auth reales.
 
 [SPEC STAGING-01D](../specs/STAGING-01D-source-and-catalog-attestation.md). Staging sigue pendiente de creación y autorización.
 
 ## 1E. STAGING-01E — Historia exacta de migraciones y aprobación previa
 
-El SQL `supabase/staging/01e_migration_history_readonly.sql` verifica exclusivamente metadatos de `supabase_migrations.schema_migrations`: deben estar las **once versiones exactas**, sin ninguna extra. GitHub lo ensaya con una tabla ficticia y fallos intencionales por versiones faltantes, extras y reemplazos. **No instala migraciones ni inspecciona pacientes.**
+El SQL `supabase/staging/01e_migration_history_readonly.sql` verifica exclusivamente metadatos de `supabase_migrations.schema_migrations`: deben estar las **doce versiones exactas**, sin ninguna extra. GitHub lo ensaya con una tabla ficticia y fallos intencionales por versiones faltantes, extras y reemplazos. **No instala migraciones ni inspecciona pacientes.**
 
 Una vez que el operador institucional haya identificado y aprobado un proyecto **nuevo** en el Dashboard, debe comprobar localmente la referencia enlazada y, sin mutar nada, ejecutar `supabase migration list --linked` y `supabase db push --dry-run`. Registrar el cotejo del destino y la revisión de cambios en un acta segura. No ejecutar `supabase db push`, `supabase functions deploy`, `db reset`, `migration repair` ni crear cuentas/pacientes antes de la autorización específica y del control de datos.
 
-Solo **después** de la instalación supervisada de las once migraciones, ejecutar el SQL de historial por una conexión segura al staging correcto, seguido del SQL STAGING-01D de catálogo. La coincidencia de versiones no acredita igualdad criptográfica de los scripts ejecutados: correlacionar con el manifiesto SHA-256 fuente, el dry-run revisado, el registro de aplicación y las pruebas de Auth/Edge. [SPEC STAGING-01E](../specs/STAGING-01E-migration-history-readiness.md).
+Solo **después** de la instalación supervisada de las doce migraciones, ejecutar el SQL de historial por una conexión segura al staging correcto, seguido del SQL STAGING-01D de catálogo. La coincidencia de versiones no acredita igualdad criptográfica de los scripts ejecutados: correlacionar con el manifiesto SHA-256 fuente, el dry-run revisado, el registro de aplicación y las pruebas de Auth/Edge. [SPEC STAGING-01E](../specs/STAGING-01E-migration-history-readiness.md).
 
 ## 1F. STAGING-01F — Suite integrada de seguridad (no ejecutada en Supabase remoto)
 
@@ -76,7 +76,7 @@ Resultado favorable = formato y declaraciones aceptados, **no** independencia/id
 ## 3. Instalación inicial del proyecto staging (MANUAL, bloqueada)
 Solo con autorizaciones y revisión de seguridad: crear un proyecto Supabase **nuevo**, habilitar Auth según política, verificar región, destinatarios, backups, restauración y políticas de Storage privado. No desplegar el proyecto SICOM, el servidor de Pediatrics ni los datos de consultorio.
 
-Revisar las once migraciones en orden y en staging vacío. No ejecutar `supabase db reset --linked`: es destructivo sobre el proyecto enlazado. No ejecutar `supabase db push` sin cotejo explícito de la referencia enlazada, revisión de cambios pendientes, backup de staging y aprobación del operador. Los datos sintéticos de `supabase/tests/postgres_auth_stub.sql` son **solo para PostgreSQL aislado de CI**; nunca aplicar ese shim en una base real Supabase.
+Revisar las doce migraciones en orden y en staging vacío. No ejecutar `supabase db reset --linked`: es destructivo sobre el proyecto enlazado. No ejecutar `supabase db push` sin cotejo explícito de la referencia enlazada, revisión de cambios pendientes, backup de staging y aprobación del operador. Los datos sintéticos de `supabase/tests/postgres_auth_stub.sql` son **solo para PostgreSQL aislado de CI**; nunca aplicar ese shim en una base real Supabase.
 
 Validar que el esquema `private` no esté expuesto; verificar `SECURITY DEFINER`, propietario/search_path, GRANT/REVOKE, RLS, auditoría, Auth, funciones Edge, cifrado, redes y separación de cuentas. No activar ningún documento clínico, permiso médico, firma o paciente real.
 

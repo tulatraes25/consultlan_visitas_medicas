@@ -21,14 +21,14 @@ function rejected(run, code) {
   assert.throws(run, err => err?.code === code);
 }
 
-test("STAGING-01D creates a deterministic, ordered 11-migration manifest without refs or secrets", () => {
-  assert.equal(REQUIRED_MIGRATIONS.length,11);
-  assert.equal(ATTESTED_FILES.length,16);
+test("STAGING-01D creates a deterministic, ordered 12-migration manifest without refs or secrets", () => {
+  assert.equal(REQUIRED_MIGRATIONS.length,12);
+  assert.equal(ATTESTED_FILES.length,17);
   const manifest=buildStagingSourceAttestation(COMMIT,blobs());
   assert.equal(manifest.format,STAGING_ATTESTATION_FORMAT);
   assert.equal(manifest.sourceCommit,COMMIT);
-  assert.equal(manifest.migrationCount,11);
-  assert.equal(manifest.fileCount,16);
+  assert.equal(manifest.migrationCount,12);
+  assert.equal(manifest.fileCount,17);
   assert.deepEqual(manifest.files.map(x=>x.path),ATTESTED_FILES);
   const samplePath=ATTESTED_FILES[0];
   const bytes=blobs().get(samplePath);
@@ -97,7 +97,7 @@ test("STAGING-01D CLI emits/validates only source fingerprints, with zero networ
   const emitted=run(["--emit"]);
   assert.equal(emitted.status,0,emitted.stderr);
   const manifest=JSON.parse(emitted.stdout);
-  assert.equal(manifest.files.length,16);
+  assert.equal(manifest.files.length,17);
   assert.match(manifest.sourceCommit,/^[a-f0-9]{40}$/);
 
   const temp=mkdtempSync(join(tmpdir(),"staging01d-"));

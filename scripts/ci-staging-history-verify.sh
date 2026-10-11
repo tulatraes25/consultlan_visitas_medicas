@@ -30,7 +30,7 @@ psql -v ON_ERROR_STOP=1 -c "insert into $ledger(version) values ('20990101000000
 expect_rejected
 psql -v ON_ERROR_STOP=1 -c "delete from $ledger where version='20990101000000'" >/dev/null
 
-# A missing version, even with the other ten still applied, MUST fail.
+# A missing version, even with the other eleven still applied, MUST fail.
 psql -v ON_ERROR_STOP=1 -c "delete from $ledger where version='20261010060000'" >/dev/null
 expect_rejected
 psql -v ON_ERROR_STOP=1 -c "insert into $ledger(version) values ('20261010060000')" >/dev/null
@@ -40,6 +40,6 @@ psql -v ON_ERROR_STOP=1 -c "update $ledger set version='20261010061000' where ve
 expect_rejected
 psql -v ON_ERROR_STOP=1 -c "update $ledger set version='20261010060000' where version='20261010061000'" >/dev/null
 
-# Restore and prove 11/11 exact match, with a constant public-safe marker.
+# Restore and prove 12/12 exact match, with a constant public-safe marker.
 psql -v ON_ERROR_STOP=1 -f "$check" >/dev/null
 printf '%s\n' "STAGING01E_CI_HISTORY_POSITIVE_AND_THREE_NEGATIVE_TESTS_PASS"
