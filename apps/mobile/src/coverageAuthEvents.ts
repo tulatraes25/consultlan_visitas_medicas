@@ -5,9 +5,7 @@
  * The caller must supply an Auth provider from the NEW independent Supabase
  * project. No keys, user identities or Auth session payloads are handled here.
  */
-import type { createCoverageSessionController } from "./coverageSessionController";
-
-type CoverageController = ReturnType<typeof createCoverageSessionController>;
+type CoverageController = Readonly<{clear:()=>void}>;
 
 export type SupabaseLikeAuthEvents = Readonly<{
   onAuthStateChange: (listener: (
