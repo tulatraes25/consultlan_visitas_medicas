@@ -106,6 +106,10 @@ async function runViewport(browser,width,height) {
       await page.keyboard.press("Escape");
       assert.equal(await page.locator("dialog[open]").count(),0);
       await checkVariant(page,"c");
+      // Switching theme must preserve the existing module and day mode.
+      await visible(page,".shell--c .episode-grid","module survives layout switch");
+      await page.locator(".shell--c .nav-item[data-section='agenda']").click();
+      await page.locator(".shell--c [data-mode='semana']").click();
       await visible(page,".shell--c .week-grid","hybrid weekly screen");
     }else if(width===1024){
       await checkVariant(page,"b");
