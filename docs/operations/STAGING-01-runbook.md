@@ -100,6 +100,29 @@ Una sesión cerrada puede conservar un JWT de acceso formalmente válido hasta `
 
 **Gate real pendiente:** verificar en Supabase staging la semántica actual de `auth.sessions`, ejecutar pruebas positivas con dos sesiones ficticias, terminar una de ellas y exigir rechazo con JWT todavía no expirado; repetir con membresía revocada. La prueba local en PostgreSQL usa un stub sintético, no el servicio Auth administrado. No se utilizarán datos de pacientes ni tokens reales en GitHub. [SPEC SEC-SESSION-01](../docs/specs/SEC-SESSION-01-live-session-gate.md).
 
+## 4D. STAGING-01C — Prueba de revocación de sesión (solo mecanismo preparado)
+
+El gate **STAGING-01C no se ha ejecutado contra un proyecto real**. Un operador autorizado deberá crear en el Supabase nuevo, aislado y sin datos de pacientes, una única cuenta ficticia con dos sesiones A/B distintas. Mantener A activa; terminar B deliberadamente antes de que venza su JWT de acceso, y verificar fuera de la aplicación que la sesión B ya no figura como activa. Conservar además un tercer JWT de ensayo que ya haya vencido. **No revocar ni editar manualmente filas internas de `auth.sessions` desde la CLI.** La validación de identidad y el cierre de sesión deben usar mecanismos soportados por el proveedor.
+
+Además de las variables generales del paso 2, configurar temporalmente, por un gestor seguro y **nunca en GitHub ni en chats**:
+
+- `STAGING_SYNTHETIC_FIXTURES=YES`, `STAGING_SESSION_E2E=YES`, `STAGING_SESSION_REVOCATION_CONFIRMED=YES`.
+- `STAGING_SESSION_USER_ID`: UUID de la única cuenta ficticia de ensayo.
+- `STAGING_SESSION_ACTIVE_JWT`: JWT de la sesión A, con al menos 120 segundos hasta vencimiento.
+- `STAGING_SESSION_REVOKED_JWT`: JWT todavía no vencido de la sesión B que se cerró.
+- `STAGING_SESSION_EXPIRED_JWT`: JWT antiguo de la misma cuenta, ya vencido hace al menos 120 segundos.
+
+```bash
+node scripts/staging-session-verify.mjs --ci
+node scripts/staging-session-verify.mjs --check-env
+# SOLO en el Supabase aislado, con STAGING_ALLOW_NETWORK=YES:
+node scripts/staging-session-verify.mjs --probe
+```
+
+`--probe` realiza dos **GET de Auth** y cuatro POST Edge con acción deliberadamente desconocida, nunca un comando real: comprueba que A llegue al validador de acción, mientras B, JWT vencido y sesión anónima son rechazados. Si Supabase Auth **ya rechaza B**, el resultado queda **inconcluso para el control adicional de sesión**, aunque sea seguro: no declarar una prueba positiva del chequeo de `auth.sessions` sin evidencia. No se envían indicaciones, nombres de menores, firmas ni registros médicos.
+
+SPEC: [STAGING-01C](../specs/STAGING-01C-session-revocation-probe.md). Esta prueba tampoco demuestra por sí sola RLS completo, backups/restauración ni aptitud clínica.
+
 ## 5. Aceptación de STAGING-01B/01C (todavía NO cumplida)
 - Mostrar evidencia de proyecto autónomo, titularidad, región, políticas y datos ficticios. Confirmar identidad contra proyectos excluidos por medios independientes.
 - Ejecutar RLS real con **dos organizaciones y usuarios ficticios distintos**: lectura permitida para el propio equipo; lectura de otro caso, usuarios desactivados, anon y acceso transversal denegados. Usar casos con filas sintéticas para evitar falsos verdes por tablas vacías.
