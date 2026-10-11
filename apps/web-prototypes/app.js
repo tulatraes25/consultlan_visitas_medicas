@@ -398,7 +398,10 @@
       if (valid.includes(event.target.value)) state.specialty = event.target.value;
       render();
     } else if (event.target.id === "day-filter") {
-      if (data.DAYS.some(function (d) { return d.date === event.target.value; })) state.day = event.target.value;
+      if (data.DAYS.some(function (d) { return d.date === event.target.value; })) {
+        state.day = event.target.value;
+        state.mode = "dia"; // selecting a jornada must navigate to that day, not look inert
+      }
       render();
     }
   });

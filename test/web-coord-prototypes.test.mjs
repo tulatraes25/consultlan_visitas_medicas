@@ -167,6 +167,12 @@ test("WEB-COORD-01A: offline DOM harness switches three real layouts and retains
   assert.match(root.innerHTML,/Sin asignar/);
   handlers.change({target:{id:"specialty-filter",value:"Fonoaudiología"}});
   assert.equal((root.innerHTML.match(/class="event-card /g)||[]).length,1);
+  // The day selector is a navigation control, including from week mode.
+  handlers.change({target:{id:"day-filter",value:"2026-10-14"}});
+  assert.match(root.innerHTML,/class="timeline"/);
+  assert.match(root.innerHTML,/Miércoles 14/);
+  click({"data-mode":"semana"});
+  assert.match(root.innerHTML,/week-grid--b/);
   click({"data-mode":"dia"});
   assert.match(root.innerHTML,/class="timeline"/);
   click({"data-section":"relevos"});
