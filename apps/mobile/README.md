@@ -63,3 +63,11 @@ El código `src/readonlyCoverageClient.ts` prepara una futura consulta **POST a 
 - No publicar en stores ni conectar con API real desde este prototipo.
 - Los colores provienen del sistema institucional: `#166534`, `#0B3D2A`, `#DDF5E6`.
 - Próximos gates: HC-02C (aprobación/activación clínica con responsables habilitados), HC-03C (flujo seguro de evidencias y firmas), más staging Supabase independiente con RLS real y pruebas físicas. No introducir service_role ni otros secretos en el móvil.
+
+## HC-READ-02B — Consulta paginada de staging, aislada de App
+
+`pagedCoverageClient.ts` consulta solamente `listMyHomecareCoveragesPage` y `listMyHomecareCoveragesNextPage` sobre la Edge del proyecto Supabase **independiente**, con JWT de usuario obtenido al hacer la solicitud. Exige ventana UTC explícita máximo 32 días, cursor microsegundo + UUID, validación estricta de seis atributos por cobertura, orden, límites, duplicados y `hasMore`. No usa PostgREST directo, `service_role` ni AsyncStorage; actor/organización se verifican exclusivamente del lado del servidor.
+
+`pagedCoverageController.ts` conserva únicamente datos en memoria, cancela operaciones vencidas, descarta todas las páginas ante cambio de Auth/ventana y exige una nueva lectura manual; cada página comprueba otra vez la sesión y no reutiliza tokens si cambiaron. Se limita a 2000 tarjetas en una misma consulta; si hay más registros se deberá reducir la ventana en un futuro staging autorizado. `StagingPagedRosterPreview.tsx` protege el primer render antes del enlace Auth, presenta timestamps en zona IANA explícita y permite cargar la siguiente página **solo con pulsación**.
+
+**No está importado desde `App.tsx`**: todavía no existe Supabase remoto institucional autorizado ni usuarios reales de internación domiciliaria. Las pruebas son exclusivamente ficticias (100+5 filas, guardias, revocación y respuesta malformada). La interfaz no valida prestaciones, órdenes, firmas, consentimiento, urgencias ni completitud real. Un `hasMore=false` refleja únicamente esa consulta, no un snapshot consistente bajo cambios simultáneos.
