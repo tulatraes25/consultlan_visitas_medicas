@@ -282,9 +282,18 @@ describe("MOB-TIME-01 explicit service timezone and overnight shifts",()=>{
     expect(calls).toBe(1);
     expect(screen.getByTestId("staging-roster-list")).toBeTruthy();
     view.rerender(<StagingOwnRosterPreview controller={ctrl}
+      authEvents={authEvents} serviceTimeZone="America/New_York"/>);
+    expect(ctrl.getSnapshot()).toMatchObject({state:"idle",rows:[]});
+    expect(screen.queryByTestId("staging-roster-list")).toBeNull();
+    view.rerender(<StagingOwnRosterPreview controller={ctrl}
       authEvents={authEvents} serviceTimeZone="Mars/Olympus"/>);
+    expect(ctrl.getSnapshot()).toMatchObject({state:"idle",rows:[]});
     expect(screen.queryByTestId("staging-roster-list")).toBeNull();
     expect(screen.getByTestId("staging-roster-zone-blocked")).toBeTruthy();
+    view.rerender(<StagingOwnRosterPreview controller={ctrl}
+      authEvents={authEvents} serviceTimeZone="America/Argentina/Buenos_Aires"/>);
+    expect(screen.getByTestId("staging-roster-idle")).toBeTruthy();
+    expect(calls).toBe(1); // no automatic fetch across binding changes
     view.unmount();
   });
 });

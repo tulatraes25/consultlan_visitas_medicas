@@ -123,4 +123,57 @@ describe("MOB-AUTH-01 Auth provider integration clears staged roster",()=>{
     expect(events.listenerCount).toBe(0);
     expect(ctrl.getSnapshot().rows).toEqual([]);
   });
+
+  test("never renders preloaded rows before establishing an Auth subscription",async()=>{
+    const provider=fakeProvider(),ctrl=createCoverageSessionController(config());
+    expect(await ctrl.refresh()).toBe(true); // prior session's synthetic roster
+    expect(ctrl.getSnapshot().rows).toHaveLength(1);
+    const view=render(<StagingOwnRosterPreview controller={ctrl}
+      serviceTimeZone="America/Argentina/Buenos_Aires" authEvents={provider.auth}/>);
+    expect(provider.listenerCount).toBe(1);
+    expect(ctrl.getSnapshot().rows).toEqual([]);
+    expect(screen.queryByTestId("staging-roster-list")).toBeNull();
+    expect(screen.getByTestId("staging-roster-idle")).toBeTruthy();
+    view.unmount();
+    expect(provider.unsubscribeCount).toBe(1);
+  });
+
+  test("provider replacement erases old roster and does not reuse its Auth binding",async()=>{
+    const previous=fakeProvider(),replacement=fakeProvider();
+    const ctrl=createCoverageSessionController(config());
+    const view=render(<StagingOwnRosterPreview controller={ctrl}
+      serviceTimeZone="America/Argentina/Buenos_Aires" authEvents={previous.auth}/>);
+    await act(async()=>{fireEvent.press(screen.getByRole("button",{
+      name:"Consultar mis coberturas de prueba",
+    }));});
+    expect(screen.getByTestId("staging-roster-list")).toBeTruthy();
+    view.rerender(<StagingOwnRosterPreview controller={ctrl}
+      serviceTimeZone="America/Argentina/Buenos_Aires" authEvents={replacement.auth}/>);
+    expect(previous.listenerCount).toBe(0);
+    expect(previous.unsubscribeCount).toBe(1);
+    expect(replacement.listenerCount).toBe(1);
+    expect(ctrl.getSnapshot()).toMatchObject({state:"idle",rows:[]});
+    expect(screen.queryByTestId("staging-roster-list")).toBeNull();
+    view.unmount();
+    expect(replacement.unsubscribeCount).toBe(1);
+  });
+
+  test("broken Auth subscription fails closed even when a snapshot was preloaded",async()=>{
+    let network=0;
+    const ctrl=createCoverageSessionController(config(async()=>{
+      network++;
+      return {status:200,json:async()=>({ok:true,result:[row()]})};
+    }));
+    expect(await ctrl.refresh()).toBe(true);
+    expect(network).toBe(1);
+    const invalid={onAuthStateChange:()=>({data:{subscription:{}}})};
+    const view=render(<StagingOwnRosterPreview controller={ctrl}
+      serviceTimeZone="America/Argentina/Buenos_Aires" authEvents={invalid as never}/>);
+    expect(screen.getByTestId("staging-roster-auth-blocked")).toBeTruthy();
+    expect(screen.queryByTestId("staging-roster-list")).toBeNull();
+    expect(ctrl.getSnapshot().rows).toEqual([]);
+    fireEvent.press(screen.getByRole("button",{name:"Consultar mis coberturas de prueba"}));
+    expect(network).toBe(1);
+    view.unmount();
+  });
 });
