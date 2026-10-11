@@ -28,6 +28,7 @@ Usar el emulador/dispositivo compatible con Expo SDK 57. Para producir bundles e
 10. **Continuidades de guardia (MOB-HC-HANDOVER-01)**: vista informativa de turnos SHIFT consecutivos y profesionales ficticios distintos, siempre del **mismo paciente y episodio**. Mensaje visible «SIN RELEVO ACREDITADO»; no se acepta, firma ni transmite información clínica.
 11. **Profesionales vinculados a coberturas de muestra (MOB-HC-TEAM-01)**: muestra especialidad y cantidades VISIT/SHIFT por profesional sintético solo del episodio seleccionado, sin nombres proporcionados externamente. No representa un equipo asistencial habilitado.
 12. **Borradores de planes de cuidados (MOB-HC-PLAN-01)**: metadatos DEMO de versión DRAFT y cantidad de versiones, siempre bajo el mismo paciente y episodio. Sin aprobación profesional, tratamientos, medicación, firma ni registros reales.
+13. **Solicitudes de revisión coherentes (MOB-HC-REVIEW-02)**: cada solicitud pendiente DEMO aparece solo si existe una versión DRAFT válida del mismo paciente y episodio; no hay aprobación ni firma.
 
 ## Adaptador de lectura futura (MOB-DATA-01)
 

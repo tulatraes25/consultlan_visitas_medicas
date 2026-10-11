@@ -1,18 +1,15 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { ScreenHeading } from "./ui";
+import { projectDemoPendingReviews } from "./reviewQueueDemo";
 import { palette, corners, spacing } from "./theme";
 
 /**
  * MOB-HC-REVIEW-01: read-only synthetic view.
  * No Supabase calls, patients, approval, credentials, consent or signatures.
  */
-const sampleRequests = Object.freeze([
-  { code: "CASO-DEMO-A", version: 1, request: "REV-DEMO-01" },
-  { code: "CASO-DEMO-B", version: 2, request: "REV-DEMO-02" },
-]);
-
 export function PlanReviewQueueDemo() {
+  const requests = projectDemoPendingReviews();
   return (
     <View style={styles.root} testID="plan-review-demo">
       <ScreenHeading
@@ -27,16 +24,21 @@ export function PlanReviewQueueDemo() {
           una firma profesional ni el inicio de una internación domiciliaria.
         </Text>
       </View>
-      <Text style={styles.sectionTitle}>Solicitudes de ejemplo · {sampleRequests.length}</Text>
-      {sampleRequests.map(item => (
-        <View key={item.request} style={styles.card} testID={"review-" + item.request}>
+      <Text style={styles.sectionTitle}>Solicitudes de ejemplo · {requests.length}</Text>
+      {requests.length === 0 ? (
+        <Text style={styles.detail} testID="review-queue-empty">
+          No hay solicitudes ficticias vinculadas a un borrador válido.
+        </Text>
+      ) : null}
+      {requests.map(item => (
+        <View key={item.id} style={styles.card} testID={"review-" + item.id}>
           <View style={styles.row}>
-            <Text style={styles.reference}>{item.request}</Text>
+            <Text style={styles.reference}>{item.id}</Text>
             <View style={styles.status}>
-              <Text style={styles.statusText}>PENDIENTE</Text>
+              <Text style={styles.statusText}>{item.state}</Text>
             </View>
           </View>
-          <Text style={styles.detail}>Episodio: {item.code}</Text>
+          <Text style={styles.detail}>Episodio: {item.episodeRef}</Text>
           <Text style={styles.detail}>Versión de plan: {item.version}</Text>
           <Text style={styles.detail}>Sin revisión clínica efectuada ni identidad médica validada.</Text>
         </View>

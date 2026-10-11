@@ -136,7 +136,7 @@ describe('Pediatrics mobile demo interactions — synthetic data only', () => {
     fireEvent.press(screen.getByRole('tab', { name: 'Módulo Revisiones' }));
     expect(screen.getByText('Solicitudes de revisión')).toBeTruthy();
     expect(screen.getAllByText('PENDIENTE')).toHaveLength(2);
-    expect(screen.getByText('Episodio: CASO-DEMO-A')).toBeTruthy();
+    expect(screen.getByText('Episodio: DEMO-EPI-A')).toBeTruthy();
     expect(screen.getByText('SIN APROBACIONES NI ACTIVACIÓN CLÍNICA')).toBeTruthy();
     expect(screen.queryByRole('button', { name: /Aprobar|Firmar|Activar/i })).toBeNull();
     expect(screen.queryByPlaceholderText('Código (por ejemplo G)')).toBeNull();
@@ -148,7 +148,7 @@ describe('Pediatrics mobile demo interactions — synthetic data only', () => {
     fireEvent.press(screen.getByRole('tab', { name: 'Gestión' }));
     fireEvent.press(screen.getByRole('tab', { name: 'Módulo Revisiones' }));
     expect(screen.getByTestId('plan-review-demo')).toBeTruthy();
-    expect(screen.getByText('Episodio: CASO-DEMO-B')).toBeTruthy();
+    expect(screen.getByText('Episodio: DEMO-EPI-B')).toBeTruthy();
     expect(screen.queryByRole('button', { name: /Aprobar|Validar firma|Activar caso/i })).toBeNull();
   });
 
