@@ -18,6 +18,7 @@ Aplicación móvil para la **continuidad de cuidados domiciliarios pediátricos*
 - [WEB-COORD-01 consola web futura](docs/specs/WEB-COORD-01-coordination-console.md) — especificación de roles, permisos y pantallas administrativas.
 - [WEB-COORD-01A laboratorio visual navegable](docs/specs/WEB-COORD-01A-three-visual-prototypes.md) — tres propuestas web A/B/C con el mismo roster inventado; [preview autónoma sin dependencias](apps/web-prototypes/preview.html). No es un panel web clínico desplegado.
 - [WEB-COORD-01B-QA navegador real](docs/specs/WEB-COORD-01B-browser-qa.md) — pruebas A/B/C en Chrome, teclado, filtros, continuidad nocturna, 1440/1024/768 px y capturas PNG en GitHub Actions; revisión funcional de Coordinación pendiente.
+- [WEB-COORD-01C compatibilidad y accesibilidad](docs/specs/WEB-COORD-01C-crossbrowser-wcag.md) — Firefox/WebKit y auditoría automatizada de WCAG para los tres prototipos, sin pacientes ni servidor.
 - [SPEC-001](docs/specs/SPEC-001-visitas-domiciliarias.md) — requisitos y pendientes.
 - [HC-01 episodio, equipo y RLS](docs/specs/HC-01-episode-schema-and-rls.md) — migración PostgreSQL y controles de seguridad; sin aprobación clínica real.
 - [HC-02A coberturas y relevos](docs/specs/HC-02A-coverage-handover.md) — visitas puntuales y guardias extensas con prevención de superposición; todavía no hay altas operativas.
