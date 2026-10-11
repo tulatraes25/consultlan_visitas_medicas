@@ -128,13 +128,13 @@ describe("MOB-DATA-01 dormant staging-only coverage client", () => {
   });
 
 
-  test("future Edge read command is explicitly unsupported until server authorization exists", async () => {
+  test("rejected Edge roster requests fail closed without claiming an empty agenda", async () => {
     const client = createReadOnlyCoverageClient(good(async (url, options) => {
       expect(url).toBe(`https://${PROJECT}.supabase.co/functions/v1/visits`);
       expect(options.method).toBe("POST");
       return { status: 422, json: async () => ({error: "INVALID_OPERATION_OR_FIELDS"}) };
     }));
-    await expect(client.list()).rejects.toMatchObject({code:"ROSTER_EDGE_READ_NOT_IMPLEMENTED"});
+    await expect(client.list()).rejects.toMatchObject({code:"ROSTER_OPERATION_REJECTED"});
   });
 
   test("rejects successful HTTP responses without the exact Edge envelope", async () => {
