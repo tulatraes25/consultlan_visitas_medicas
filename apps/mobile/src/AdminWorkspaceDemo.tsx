@@ -10,9 +10,10 @@ import {
 } from "./coverageDemo";
 import { PrimaryAction, ScreenHeading } from "./ui";
 import { PlanReviewQueueDemo } from "./PlanReviewQueueDemo";
+import { EpisodeOverviewDemo } from "./EpisodeOverviewDemo";
 import { corners, palette, spacing, touchSize } from "./theme";
 
-type Section = "patients" | "professionals" | "assignments" | "reviews";
+type Section = "patients" | "professionals" | "assignments" | "reviews" | "episodes";
 
 function Choice({
   label, selected, onPress, accessibilityLabel,
@@ -60,6 +61,7 @@ export function AdminWorkspaceDemo({
   const [feedback, setFeedback] = useState("");
 
   const sections: readonly { id: Section; label: string }[] = [
+    { id: "episodes", label: "Episodios" },
     { id: "patients", label: "Pacientes" },
     { id: "professionals", label: "Profesionales" },
     { id: "assignments", label: "Asignaciones" },
@@ -307,6 +309,12 @@ export function AdminWorkspaceDemo({
             </View>
           ) : null}
           <PrimaryAction label="Consultar agenda simulada" outline onPress={onOpenAgenda} />
+        </View>
+      )}
+
+      {section === "episodes" && (
+        <View style={styles.panel}>
+          <EpisodeOverviewDemo patients={patients} professionals={professionals} visits={visits} />
         </View>
       )}
 
