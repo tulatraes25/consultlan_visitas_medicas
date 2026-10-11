@@ -1,4 +1,4 @@
-import React, { useEffect, useSyncExternalStore } from "react";
+import React, { useEffect, useState, useSyncExternalStore } from "react";
 import { AppState, Pressable, StyleSheet, Text, View } from "react-native";
 import { ScreenHeading } from "./ui";
 import { corners, palette, spacing, touchSize } from "./theme";
@@ -28,24 +28,58 @@ export function StagingOwnRosterPreview({ controller, authEvents, serviceTimeZon
   serviceTimeZone: string; // required IANA identifier approved for staging
 }) {
   const validServiceTimeZone = isCoverageServiceTimeZone(serviceTimeZone);
+  // Never trust a preloaded snapshot on first paint. React effects (including
+  // Auth subscription) run after render, so visibility needs an explicit
+  // identity barrier tied to the exact Auth provider, controller AND timezone.
+  const [binding, setBinding] = useState<{
+    controller: CoverageController;
+    authEvents: SupabaseLikeAuthEvents;
+    serviceTimeZone: string;
+  } | null>(null);
+  const authBound = validServiceTimeZone && binding !== null &&
+    binding.controller === controller && binding.authEvents === authEvents &&
+    binding.serviceTimeZone === serviceTimeZone;
   const current = useSyncExternalStore(
     controller.subscribe, controller.getSnapshot, controller.getSnapshot,
   );
 
   useEffect(() => {
-    // An Auth provider from the independent project is mandatory. The
-    // subscription clears stale rows on logout, login and token refresh.
-    const unsubscribeAuth = bindCoverageAuthEvents(controller, authEvents);
-    const listener = AppState.addEventListener("change", state => {
-      if (state !== "active") controller.clear();
-    });
+    // A changed timezone or Auth provider must erase any previous roster, not
+    // relabel or redisplay it under a different context.
+    if (!isCoverageServiceTimeZone(serviceTimeZone)) {
+      controller.clear();
+      setBinding(null);
+      return () => controller.clear();
+    }
+    let unsubscribeAuth: () => void;
+    try {
+      // The provider is REQUIRED to return a valid unsubscribe handle. A
+      // failure leaves the UI inert instead of crashing/leaking stale cards.
+      unsubscribeAuth = bindCoverageAuthEvents(controller, authEvents);
+    } catch {
+      controller.clear();
+      setBinding(null);
+      return () => controller.clear();
+    }
+    let listener: {remove: () => void};
+    try {
+      listener = AppState.addEventListener("change", state => {
+        if (state !== "active") controller.clear();
+      });
+    } catch {
+      unsubscribeAuth();
+      controller.clear();
+      setBinding(null);
+      return () => controller.clear();
+    }
+    setBinding({controller, authEvents, serviceTimeZone});
     return () => {
       listener.remove();
       unsubscribeAuth();
-      // Remove rows and abort pending requests on navigation away.
+      // Cancel in-flight work, forget rows and remove provider subscription.
       controller.clear();
     };
-  }, [controller, authEvents]);
+  }, [controller, authEvents, serviceTimeZone]);
 
   return (
     <View style={styles.root} testID="staging-own-roster-screen">
@@ -66,35 +100,40 @@ export function StagingOwnRosterPreview({ controller, authEvents, serviceTimeZon
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Consultar mis coberturas de prueba"
-        disabled={current.state === "loading" || !validServiceTimeZone}
-        style={[styles.button,(current.state === "loading" || !validServiceTimeZone) && styles.disabled]}
-        onPress={() => { if (validServiceTimeZone) void controller.refresh(); }}
+        disabled={!authBound || current.state === "loading"}
+        style={[styles.button,(!authBound || current.state === "loading") && styles.disabled]}
+        onPress={() => { if (authBound) void controller.refresh(); }}
       >
         <Text style={styles.buttonText}>
-          {current.state === "loading" ? "Consultando…" : "Consultar mis coberturas de prueba"}
+          {authBound && current.state === "loading" ? "Consultando…" : "Consultar mis coberturas de prueba"}
         </Text>
       </Pressable>
-      {current.state === "idle" ? (
+      {validServiceTimeZone && !authBound ? (
+        <Text testID="staging-roster-auth-blocked" style={styles.warning}>
+          Agenda bloqueada hasta vincular y verificar el proveedor de Auth de staging.
+        </Text>
+      ) : null}
+      {authBound && current.state === "idle" ? (
         <Text testID="staging-roster-idle" style={styles.help}>
           Sin consulta activa. No se conservan coberturas entre sesiones.
         </Text>
       ) : null}
-      {current.state === "loading" ? (
+      {authBound && current.state === "loading" ? (
         <Text testID="staging-roster-loading" style={styles.help}>
           Verificando la sesión y el acceso a la agenda de prueba…
         </Text>
       ) : null}
-      {current.state === "error" ? (
+      {authBound && current.state === "error" ? (
         <Text testID="staging-roster-error" style={styles.help}>
           Consulta no disponible o sesión modificada. No se muestran registros.
         </Text>
       ) : null}
-      {current.state === "ready" && !validServiceTimeZone ? (
+      {!validServiceTimeZone ? (
         <Text style={styles.warning} testID="staging-roster-zone-blocked">
           No se muestran coberturas sin la zona horaria del servicio.
         </Text>
       ) : null}
-      {current.state === "ready" && validServiceTimeZone ? (
+      {authBound && current.state === "ready" ? (
         <View style={styles.list} testID="staging-roster-list">
           <Text style={styles.help}>
             {current.rows.length} coberturas de muestra, únicamente metadatos.
