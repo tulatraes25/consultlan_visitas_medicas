@@ -175,7 +175,8 @@ test("WEB-COORD-01A: offline DOM harness switches three real layouts and retains
   click({"data-episode":"EPI-101"});
   assert.equal(modal.open,true);
   assert.match(detail.innerHTML,/EPI-101/);
-  assert.doesNotMatch(detail.innerHTML,/Paciente real|diagnóstico/i);
+  assert.doesNotMatch(detail.innerHTML,/<(?:input|textarea|form)\b|patient_id=|data-patient/i);
+  assert.match(detail.innerHTML,/Sin identidad de paciente, historia clínica, diagnósticos, órdenes ni firmas/);
   click({"data-close":""});
   assert.equal(modal.open,false);
 });
