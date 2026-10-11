@@ -15,7 +15,7 @@ La migración `migrations/20261010000000_standalone_foundation.sql` crea:
 
 Los roles funcionales se guardan en la base (membership); el cliente nunca puede editarlos ni atribuirse privilegios a partir de `user_metadata`. Los nombres de especialidades no elevan permisos.
 
-**Todas las tablas tienen RLS habilitado. Solo se concede SELECT restringido a `authenticated`; NO se concede INSERT/UPDATE/DELETE desde dispositivos.** Para altas de usuarios, agenda, asignaciones y evolución clínica se implementarán funciones futuras con autorización y auditoría transaccional. La autorización externa de usuario debe construirse en el servidor, no a partir del payload móvil.
+**Las tablas clínicas tienen RLS habilitado y ninguna concede INSERT/UPDATE/DELETE directamente a los dispositivos. HC-READ-01 revoca además el SELECT móvil directo de coberturas/relevos:** todas las lecturas futuras de esa agenda pasan por Edge con verificación de sesión activa. Otras tablas aún exponen SELECT restringido por RLS; pendiente endurecimiento SEC-READ-02 antes de pacientes reales. Para altas de usuarios, agenda, asignaciones y evolución clínica se implementarán funciones futuras con autorización y auditoría transaccional. La autorización externa de usuario debe construirse en el servidor, no a partir del payload móvil.
 
 ## Prueba local sin Supabase
 En GitHub CI se inicia un servicio `postgres:16-alpine` sin datos externos:
@@ -37,6 +37,8 @@ psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261010060000_revoke_legacy_clin
 psql -v ON_ERROR_STOP=1 -f supabase/tests/revoke_legacy_clinical_rpc.sql
 psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261010070000_live_auth_session_gate.sql
 psql -v ON_ERROR_STOP=1 -f supabase/tests/live_auth_session_gate.sql
+psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261010080000_homecare_roster_edge_read.sql
+psql -v ON_ERROR_STOP=1 -f supabase/tests/homecare_roster_edge_read.sql
 ```
 El stub `postgres_auth_stub.sql` simula exclusivamente el esquema de autenticación y roles de Supabase dentro del Postgres de CI. **No debe ejecutarse en Supabase real.**
 
@@ -81,7 +83,7 @@ La revisión de metadatos de un plan domiciliario ahora se solicita mediante `re
 
 ## STAGING-01A — Preflight sin credenciales y runbook (aún no conectado)
 
-El comando `node scripts/staging-preflight.mjs --ci` comprueba sin conexión externa la consistencia mínima del repositorio: siete migraciones, id local de CLI, JWT obligatorio en Edge, revisión administrativa PENDING y bloqueo de RPC clínicas históricas. También se ejecuta automáticamente en GitHub Actions.
+El comando `node scripts/staging-preflight.mjs --ci` comprueba sin conexión externa la consistencia mínima del repositorio: nueve migraciones, id local de CLI, JWT obligatorio en Edge, revisión administrativa PENDING y bloqueo de RPC clínicas históricas. También se ejecuta automáticamente en GitHub Actions.
 
 El modo opcional `--probe` es **posterior** a crear y asegurar un proyecto staging nuevo de internación domiciliaria. Exige aprobación explícita y una clave **publicable**, nunca secreta, y solo realiza pruebas negativas sin JWT ni mutaciones. No equivale a aprobación de seguridad, RLS, identidad o clínica.
 
@@ -94,6 +96,12 @@ Runbook: [STAGING-01](../docs/operations/STAGING-01-runbook.md) · SPEC: [STAGIN
 La migración `20261010070000_live_auth_session_gate.sql` incorpora RPC exclusiva del backend `api_is_live_session(p_user,p_session)`, que comprueba la fila de `auth.sessions` del Supabase autónomo. La Edge verifica primero el JWT con Auth, compara `sub` con el usuario verificado y extrae `session_id`; **solo entonces** consulta la RPC. Sin sesión activa no despacha acciones. La migración no crea ni elimina sesiones reales, y el stub `auth.sessions` utilizado por PostgreSQL CI **nunca se aplica al Supabase real**.
 
 Esta protección responde al hecho de que `signOut` puede dejar access JWT válidos hasta expiración. **Aún requiere validación contra el esquema Auth administrado en un staging real**, además de las políticas de autorización médica que siguen bloqueadas. [SPEC SEC-SESSION-01](../docs/specs/SEC-SESSION-01-live-session-gate.md).
+
+## HC-READ-01 — Lectura mínima de coberturas con sesión verificada (sin desplegar)
+
+La migración `20261010080000_homecare_roster_edge_read.sql` revoca SELECT directo a `authenticated` y `anon` en `homecare_coverage_assignments` y `homecare_shift_handovers`, cerrando la vía de JWT firmado pero sesión cerrada que el gate Edge no puede controlar si se usa PostgREST directamente. La RPC `api_hc_list_my_coverages(p_actor)` es exclusiva de `service_role`; consulta **solo** seis campos de hasta 100 coberturas del profesional autorizado, con pertenencia activa a equipo, organización y episodio. La Edge añade el actor obtenido de Auth y exige sesión viva antes de invocarla. No se aceptan filtros de paciente/organización indicados por la app. Sin proyecto staging real la consulta no está habilitada para uso clínico.
+
+**Riesgo residual**: todavía hay SELECT por JWT directo sobre otras tablas clínicas y administrativas, incluidos pacientes, episodios y visitas. Este gate NO certifica revocación inmediata de accesos sobre todo el expediente; SEC-READ-02 debe auditar/cerrar las otras rutas antes de pacientes reales. [SPEC HC-READ-01](../docs/specs/HC-READ-01-session-scoped-roster.md).
 
 ## Puesta en marcha posterior (NO realizada)
 1. La administración propietaria de Pediatrics crea un **proyecto Supabase nuevo y separado**, comprueba responsabilidad contractual, región de residencia de datos, privacidad, backup/restore y política de retención. Nunca usar el proyecto SICOM ni un entorno de CONSULTLAN.
