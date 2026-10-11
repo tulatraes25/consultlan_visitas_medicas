@@ -101,6 +101,28 @@ function parseCoverage(row: unknown): PublicCoverage {
   };
 }
 
+/**
+ * The service RPC orders by PostgreSQL timestamptz then UUID. Validate that
+ * contract instead of silently sorting server data in the client.
+ * JavaScript Date drops microseconds, so compare the whole 6-digit fraction
+ * separately to avoid rejecting correctly ordered PostgreSQL timestamps.
+ */
+function compareChronology(a: PublicCoverage, b: PublicCoverage): number {
+  const key = (iso: string): readonly [number, number] => {
+    const p = DATE.exec(iso);
+    if (!p) return fail("ROSTER_INVALID_WINDOW"); // already validated above
+    const seconds = `${p[1]}-${p[2]}-${p[3]}T${p[4]}:${p[5]}:${p[6]}${p[8]}`;
+    const epochMillis = Date.parse(seconds);
+    if (!Number.isFinite(epochMillis)) return fail("ROSTER_INVALID_WINDOW");
+    return [epochMillis, Number((p[7] ?? "").padEnd(6, "0"))];
+  };
+  const l = key(a.scheduledStart), r = key(b.scheduledStart);
+  if (l[0] !== r[0]) return l[0] < r[0] ? -1 : 1;
+  if (l[1] !== r[1]) return l[1] < r[1] ? -1 : 1;
+  const leftId = a.id.toLowerCase(), rightId = b.id.toLowerCase();
+  return leftId < rightId ? -1 : leftId > rightId ? 1 : 0;
+}
+
 export function createReadOnlyCoverageClient(config: ReadOnlyCoverageConfig) {
   // No network is possible until the caller supplies an explicit staging gate,
   // a project NOT in the real-project exclusion list and an Auth token source.
@@ -169,6 +191,13 @@ export function createReadOnlyCoverageClient(config: ReadOnlyCoverageConfig) {
       // Duplicate IDs must not masquerade as multiple visits or UI cards.
       if (new Set(rows.map(row => row.id.toLowerCase())).size !== rows.length) {
         return fail("ROSTER_DUPLICATE_COVERAGE_ID");
+      }
+      // Never claim the cards follow the service timeline when the Edge
+      // response violates SQL's (scheduled_start, id) ascending contract.
+      for (let i = 1; i < rows.length; i++) {
+        if (compareChronology(rows[i - 1], rows[i]) >= 0) {
+          return fail("ROSTER_NOT_CHRONOLOGICAL");
+        }
       }
       return { rows, possiblyTruncated: rows.length === 100 };
     },
