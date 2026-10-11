@@ -3,6 +3,7 @@ import { AppState, Pressable, StyleSheet, Text, View } from "react-native";
 import { ScreenHeading } from "./ui";
 import { corners, palette, spacing, touchSize } from "./theme";
 import type { createCoverageSessionController } from "./coverageSessionController";
+import { bindCoverageAuthEvents, type SupabaseLikeAuthEvents } from "./coverageAuthEvents";
 
 type CoverageController = ReturnType<typeof createCoverageSessionController>;
 
@@ -20,23 +21,28 @@ const STATUS_LABELS = Object.freeze({
  * because no authorized independent Supabase staging/auth provider exists.
  * No patient details, raw IDs, locations, clinical content or write controls.
  */
-export function StagingOwnRosterPreview({ controller }: {
+export function StagingOwnRosterPreview({ controller, authEvents }: {
   controller: CoverageController;
+  authEvents: SupabaseLikeAuthEvents;
 }) {
   const current = useSyncExternalStore(
     controller.subscribe, controller.getSnapshot, controller.getSnapshot,
   );
 
   useEffect(() => {
+    // An Auth provider from the independent project is mandatory. The
+    // subscription clears stale rows on logout, login and token refresh.
+    const unsubscribeAuth = bindCoverageAuthEvents(controller, authEvents);
     const listener = AppState.addEventListener("change", state => {
       if (state !== "active") controller.clear();
     });
     return () => {
       listener.remove();
+      unsubscribeAuth();
       // Remove rows and abort pending requests on navigation away.
       controller.clear();
     };
-  }, [controller]);
+  }, [controller, authEvents]);
 
   return (
     <View style={styles.root} testID="staging-own-roster-screen">
