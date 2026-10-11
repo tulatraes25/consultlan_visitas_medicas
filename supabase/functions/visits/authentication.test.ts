@@ -35,6 +35,7 @@ type StubOptions = {
   sessionActive?: unknown;
   throwAuth?: boolean;
   throwSession?: boolean;
+  commandData?: unknown;
 };
 
 function system(settings: StubOptions = {}) {
@@ -67,7 +68,7 @@ function system(settings: StubOptions = {}) {
     }),
     command: async (name, args) => {
       commands.push({ name, args });
-      return { ok: true, data: "synthetic-only" };
+      return { ok: true, data: settings.commandData ?? "synthetic-only" };
     },
   };
   return { handle: createVisitHandler(services), calls, commands };
@@ -139,4 +140,66 @@ Deno.test("SEC-SESSION-02: session verifier must return exact boolean true", asy
   const response = await s.handle(post(token()));
   equal(response.status, 401, "object truthiness must not authorize");
   equal(s.commands.length, 0, "no operation for non-boolean response");
+});
+
+Deno.test("HC-READ-01: real Edge orchestration dispatches the fixed scoped roster RPC only after Auth and live session", async () => {
+  const onlyMetadata = [{
+    id: "d1000000-0000-4000-8000-000000000001",
+    episode_id: "e1000000-0000-4000-8000-000000000001",
+    service_kind: "VISIT", coverage_state: "ASSIGNED",
+    scheduled_start: "2026-10-19T11:00:00Z",
+    scheduled_end: "2026-10-19T12:00:00Z",
+  }];
+  const s = system({ commandData: onlyMetadata });
+  const response = await s.handle(post(token(), { action: "listMyHomecareCoverages" }));
+  equal(response.status, 200, "authenticated active user can request own roster");
+  equal(s.calls.length, 2, "Auth and live-session checks precede roster");
+  equal(s.calls[0].url, authUrl, "Auth verified first");
+  equal(s.calls[1].url, sessionRpcUrl, "live session verified second");
+  equal(s.commands.length, 1, "exactly one server-only read dispatched");
+  equal(s.commands[0].name, "api_hc_list_my_coverages", "SQL function is fixed");
+  equal(JSON.stringify(s.commands[0].args), JSON.stringify({ p_actor: ACTOR }),
+    "only actor from Auth is forwarded, never a mobile scope");
+  const body = await response.json();
+  equal(body.ok, true, "Edge success envelope");
+  equal(JSON.stringify(body.result), JSON.stringify(onlyMetadata),
+    "payload is returned only after SQL's own authorization checks");
+  equal(response.headers.get("cache-control"), "no-store",
+    "roster responses must not be cached");
+});
+
+Deno.test("HC-READ-01: mobile cannot choose another tenant, patient, scope or acting user", async () => {
+  const s = system();
+  for (const added of [
+    { p_actor: OTHER },
+    { actorId: OTHER },
+    { organizationId: ORG },
+    { patientId: PATIENT },
+    { episodeId: "e1000000-0000-4000-8000-000000000001" },
+    { includeClinical: true },
+    { appRole: "ADMIN" },
+    { service_role: "fake" },
+    { limit: 10000 },
+  ]) {
+    const result = await s.handle(post(token(), {
+      action: "listMyHomecareCoverages", ...added,
+    }));
+    equal(result.status, 422, "unexpected client scope must be rejected");
+  }
+  equal(s.commands.length, 0, "none of the forged scope requests reaches SQL");
+});
+
+Deno.test("HC-READ-01: revoked, stale and unavailable session cannot execute roster reads", async () => {
+  for (const [settings, jwt, expected] of [
+    [{ sessionActive: false }, token(), 401],
+    [{ sessionActive: { active: true } }, token(), 401],
+    [{ sessionStatus: 503 }, token(), 503],
+    [{ authStatus: 403 }, token(), 401],
+    [{}, token({ exp: 1 }), 401],
+  ] as const) {
+    const s = system(settings);
+    const result = await s.handle(post(jwt, { action: "listMyHomecareCoverages" }));
+    equal(result.status, expected, "reject unavailable or stale user session");
+    equal(s.commands.length, 0, "no roster RPC on failed authentication");
+  }
 });
