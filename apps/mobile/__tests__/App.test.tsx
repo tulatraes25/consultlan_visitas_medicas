@@ -109,6 +109,27 @@ describe('Pediatrics mobile demo interactions — synthetic data only', () => {
     expect(screen.getAllByRole('button', { name: 'Volver a la agenda' }).length).toBeGreaterThan(0);
   });
 
+  test('episode-centered administration is reachable from phone navigation', () => {
+    render(<App />);
+    fireEvent.press(screen.getByRole('tab', { name: 'Gestión' }));
+    fireEvent.press(screen.getByRole('tab', { name: 'Módulo Episodios' }));
+    expect(screen.getByTestId('demo-homecare-episodes')).toBeTruthy();
+    expect(screen.getByText('VIS-DEMO-0001')).toBeTruthy();
+    fireEvent.press(screen.getByRole('button', { name: 'Ver episodio de Paciente ficticio C' }));
+    expect(screen.getByText('VIS-DEMO-0003')).toBeTruthy();
+    expect(screen.queryByText('VIS-DEMO-0001')).toBeNull();
+    expect(screen.queryByRole('button', { name: /Aprobar plan|Activar internación/i })).toBeNull();
+  });
+
+  test('episode-centered administration is accessible on wide tablets', () => {
+    setViewport(1280, 900);
+    render(<App />);
+    fireEvent.press(screen.getByRole('tab', { name: 'Gestión' }));
+    fireEvent.press(screen.getByRole('tab', { name: 'Módulo Episodios' }));
+    expect(screen.getByText('Episodios domiciliarios')).toBeTruthy();
+    expect(screen.getByText('Sin autorización médica ni estado ACTIVE confirmado')).toBeTruthy();
+  });
+
   test('review queue on phone is read-only, synthetic and never approves plans', () => {
     render(<App />);
     fireEvent.press(screen.getByRole('tab', { name: 'Gestión' }));
