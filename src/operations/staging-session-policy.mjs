@@ -1,5 +1,5 @@
 /**
- * STAGING-01C — read-only evidence about live vs terminated Supabase Auth sessions.
+ * STAGING-01C — non-mutating challenge for live vs terminated Supabase Auth sessions.
  * No provisioning, refresh, sign-out or clinical actions. Network only with --probe
  * and operator attestation for a completely separate, synthetic staging project.
  */
@@ -151,6 +151,6 @@ export async function verifySyntheticSessionRevocation(env, request = fetch) {
     signedOutSession: "UNEXPIRED_JWT_AUTH_ACCEPTED_BUT_EDGE_DENIED",
     expiredJwt: "DENIED",
     missingJwt: "DENIED",
-    writes: 0,
+    noAllowlistedCommandRequested: true,
   };
 }
