@@ -15,7 +15,7 @@ La migración `migrations/20261010000000_standalone_foundation.sql` crea:
 
 Los roles funcionales se guardan en la base (membership); el cliente nunca puede editarlos ni atribuirse privilegios a partir de `user_metadata`. Los nombres de especialidades no elevan permisos.
 
-**Las tablas clínicas tienen RLS habilitado y ninguna concede INSERT/UPDATE/DELETE directamente a los dispositivos. HC-READ-01 revoca además el SELECT móvil directo de coberturas/relevos:** todas las lecturas futuras de esa agenda pasan por Edge con verificación de sesión activa. Otras tablas aún exponen SELECT restringido por RLS; pendiente endurecimiento SEC-READ-02 antes de pacientes reales. Para altas de usuarios, agenda, asignaciones y evolución clínica se implementarán funciones futuras con autorización y auditoría transaccional. La autorización externa de usuario debe construirse en el servidor, no a partir del payload móvil.
+**Las 14 tablas públicas de la aplicación conservan RLS y no conceden SELECT ni escrituras directas a `authenticated`/`anon`, después de HC-READ-01 y SEC-READ-02A/B.** Las lecturas mínimas autorizadas pasan exclusivamente por Edge con Auth y verificación de sesión vigente. SEC-SURFACE-01 rechaza nuevas exposiciones a medida que se añadan migraciones. Los comandos de cambio clínico permanecen bloqueados; no hay autorización clínica ni pacientes reales. La identidad y los roles se comprueban del lado del servidor, nunca desde datos del móvil.
 
 ## Prueba local sin Supabase
 En GitHub CI se inicia un servicio `postgres:16-alpine` sin datos externos:
@@ -43,6 +43,8 @@ psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261010090000_close_direct_sensi
 psql -v ON_ERROR_STOP=1 -f supabase/tests/close_direct_sensitive_reads.sql
 psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261010100000_episode_scope_edge_read.sql
 psql -v ON_ERROR_STOP=1 -f supabase/tests/episode_scope_edge_read.sql
+psql -v ON_ERROR_STOP=1 -f supabase/tests/dynamic_public_surface_guard.sql
+psql -v ON_ERROR_STOP=1 -f supabase/staging/01d_catalog_readonly_attestation.sql
 ```
 El stub `postgres_auth_stub.sql` simula exclusivamente el esquema de autenticación y roles de Supabase dentro del Postgres de CI. **No debe ejecutarse en Supabase real.**
 
