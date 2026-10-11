@@ -5,6 +5,7 @@ import { formatDemoDate, statusLabel } from "./demoData";
 import type { DemoPatient, DemoProfessional } from "./adminDemoData";
 import { coverageKindLabel, findDemoContinuityHints, formatDemoTimeRange } from "./coverageDemo";
 import { ScreenHeading } from "./ui";
+import { demoPlanDraftSummary } from "./planDraftDemo";
 import { corners, palette, spacing, touchSize } from "./theme";
 
 /**
@@ -97,6 +98,7 @@ export function EpisodeOverviewDemo({
   const shifts = coverages.filter(item => item.serviceKind === "SHIFT").length;
   const visitsCount = coverages.length - shifts;
   const participants = demoEpisodeParticipants(patient, professionals, coverages);
+  const planDraft = demoPlanDraftSummary(patient);
   // The only permissible source is the already patient+episode-scoped list.
   const continuity = findDemoContinuityHints(coverages);
 
@@ -162,6 +164,27 @@ export function EpisodeOverviewDemo({
               <Text style={styles.metricLabel}>Guardias</Text>
             </View>
           </View>
+
+          <Text style={styles.sectionHeading}>
+            Plan de cuidados · vista estructural
+          </Text>
+          {planDraft ? (
+            <View style={styles.planCard} testID="episode-plan-draft">
+              <Text style={styles.planStatus}>{planDraft.status}</Text>
+              <Text style={styles.coverageName}>Versión de muestra {planDraft.latestVersion}</Text>
+              <Text style={styles.help}>
+                {planDraft.draftVersions} {planDraft.draftVersions === 1 ? "versión de borrador" : "versiones de borrador"} de muestra
+              </Text>
+            </View>
+          ) : (
+            <Text style={styles.help} testID="episode-plan-empty">
+              No hay metadatos de borrador ficticio para este episodio.
+            </Text>
+          )}
+          <Text style={styles.help}>
+            No incluye indicaciones, diagnósticos, medicación, revisión médica,
+            aprobación ni autorización para iniciar prestaciones.
+          </Text>
 
           <Text style={styles.sectionHeading}>
             Profesionales con coberturas ficticias
@@ -301,6 +324,11 @@ const styles = StyleSheet.create({
   },
   metricValue: { fontSize: 20, fontWeight: "800", color: palette.deep },
   metricLabel: { fontSize: 11, color: palette.textSecondary, fontWeight: "700" },
+  planCard: {
+    padding: spacing.md, borderWidth: 1, borderColor: palette.border,
+    borderRadius: corners.medium, backgroundColor: palette.primarySubtle, gap: spacing.xs,
+  },
+  planStatus: { color: "#92400E", fontSize: 12, fontWeight: "800" },
   participantList: { gap: spacing.sm },
   participantCard: {
     padding: spacing.md, borderWidth: 1, borderColor: palette.border,
