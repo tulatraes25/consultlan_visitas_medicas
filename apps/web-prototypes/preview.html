@@ -1,0 +1,981 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="description" content="Tres propuestas de consola web de internación domiciliaria. Solo datos sintéticos, sin conexión.">
+  <title>Pediatrics · Laboratorio de coordinación domiciliaria | Diseño</title>
+  <style>
+/* WEB-COORD-01A · Three offline visual alternatives · no external assets. */
+:root {
+  color-scheme: light;
+  --green-950:#0B3D2A; --green-850:#12563A; --green-700:#166534;
+  --green-100:#DDF5E6; --green-50:#F2FAF5;
+  --navy-900:#142538; --navy-700:#294865;
+  --ink:#1E2A32; --muted:#63757C; --soft:#F3F6F7; --line:#DDE7E5;
+  --surface:#FFFFFF; --amber:#B35B09; --amber-bg:#FFF5E7;
+  --danger:#AE3F3A; --danger-bg:#FFF0EF;
+  --shadow:0 15px 36px rgba(22,55,45,.055);
+  font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-synthesis:none; text-rendering:optimizeLegibility;
+}
+*{box-sizing:border-box}
+html{min-width:320px}
+body{margin:0;background:#E8EFED;color:var(--ink)}
+button,select{font:inherit}
+button{cursor:pointer}
+button:disabled{cursor:not-allowed}
+:focus-visible{outline:3px solid #1B9E79;outline-offset:3px}
+.ico{width:19px;height:19px;flex:none}
+.concept-strip{
+  min-height:86px;padding:16px clamp(18px,4.8vw,78px);
+  background:#fff;border-bottom:1px solid #E0E7E6;display:flex;align-items:center;
+  justify-content:space-between;gap:20px;position:relative;z-index:1;
+}
+.concept-heading{display:flex;align-items:center;gap:12px;min-width:205px}
+.concept-icon{display:grid;place-items:center;width:43px;height:43px;
+  color:#fff;background:linear-gradient(150deg,#0B3D2A,#16724C);
+  font-weight:800;border-radius:13px;box-shadow:0 6px 14px #0b3d2a26}
+.concept-heading strong{display:block;font-size:13px;letter-spacing:.02em}
+.concept-heading small{display:block;color:#6A7A7C;margin-top:3px;font-size:11px}
+.variants{display:flex;padding:5px;gap:4px;align-items:center;border-radius:14px;background:#F0F4F3;
+  border:1px solid #E4EAE8}
+.variant-btn{display:flex;align-items:center;gap:9px;border:0;border-radius:10px;
+  background:transparent;color:#53636A;padding:10px 16px;font-size:12px;font-weight:730}
+.variant-btn .number{font-size:10px;opacity:.6;font-weight:800}
+.variant-btn.is-selected{color:#0B3D2A;background:#fff;box-shadow:0 3px 13px #183d3022}
+.concept-state{display:flex;align-items:center;gap:8px;font-size:11px;white-space:nowrap;
+  color:#6D7777;font-weight:650}
+.live-dot{width:7px;height:7px;border-radius:50%;background:#E7A345}
+.viewport{padding:34px clamp(14px,3.4vw,66px) 60px;min-height:calc(100vh - 90px)}
+.viewport-note{display:flex;gap:12px;align-items:center;justify-content:space-between;
+  max-width:1580px;margin:0 auto 13px;font-size:11px;color:#62736B}
+.viewport-note span:first-child{font-weight:700;color:#234538}
+.canvas{
+  max-width:1580px;min-height:820px;margin:0 auto;background:#F4F7F6;
+  border:1px solid #D8E2DF;border-radius:18px;overflow:hidden;
+  box-shadow:0 35px 85px #15342822,0 6px 20px #1534280b;
+}
+.shell{display:flex;min-height:820px}
+.sidebar{width:232px;flex:none;background:linear-gradient(170deg,#0F5036,#0B3929);
+  display:flex;flex-direction:column;padding:26px 16px;color:#fff}
+.product-brand{display:flex;align-items:center;gap:11px;min-width:0}
+.brand-symbol{display:grid;place-items:center;border-radius:10px;width:35px;height:35px;
+  color:#fff;background:#ffffff1f;border:1px solid #ffffff26;font-size:20px}
+.product-brand strong{font-size:18px;letter-spacing:-.035em;display:block;font-weight:800}
+.product-brand small{font-size:8px;letter-spacing:.14em;opacity:.75;font-weight:750}
+.sidebar-overline{font-size:9px;letter-spacing:.13em;font-weight:800;color:#C9DBD1;
+  opacity:.65;padding:39px 13px 13px}
+.primary-nav{display:flex;flex-direction:column;gap:4px}
+.nav-item{border:0;text-align:left;display:flex;gap:12px;align-items:center;position:relative;
+  background:transparent;color:#CCE0D6;border-radius:10px;padding:12px 13px;
+  font-weight:640;font-size:12px;width:100%}
+.nav-item:hover{background:#ffffff13;color:#fff}
+.nav-item.is-current{color:#fff;background:#ffffff24;font-weight:760}
+.nav-indicator{position:absolute;right:9px;width:5px;height:5px;border-radius:50%;background:#C4EED4}
+.sidebar-bottom{display:flex;align-items:flex-start;gap:12px;margin-top:auto;padding:18px 12px 8px;
+  border-top:1px solid #ffffff24;color:#DCF3E6;font-size:11px;font-weight:690}
+.sidebar-bottom small{display:block;color:#B0C9BD;margin-top:5px;font-size:10px;font-weight:500}
+.shell-content{min-width:0;flex:1;padding:28px 28px 34px;background:#F5F8F7}
+.toolbar{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:24px}
+.eyebrow{font-size:9px;font-weight:850;letter-spacing:.15em;color:#5F8D75;text-transform:uppercase;
+  display:block;margin:0 0 8px}
+.heading h1{font-size:26px;line-height:1.2;letter-spacing:-.05em;margin:0;font-weight:810;color:#15392B}
+.heading-sub{font-size:12px;color:#698078;margin:7px 0 0}
+.toolbar-end{display:flex;align-items:center;gap:16px;padding-top:7px}
+.tz-label{font-size:10px;color:#698078;display:flex;gap:6px;align-items:center;font-weight:600;white-space:nowrap}
+.tz-label .ico{width:14px;height:14px}
+.avatar{display:grid;place-items:center;width:34px;height:34px;flex:none;
+  border-radius:50%;background:#E6F3E9;color:#0F6345;font-size:11px;font-weight:800;
+  border:2px solid #fff;box-shadow:0 0 0 1px #CDE2D8}
+.workspace{display:grid;gap:20px;min-width:0}
+.workspace--a{grid-template-columns:minmax(0,1fr)}
+.workspace--b{grid-template-columns:minmax(0,1fr) 255px}
+.workspace--c{grid-template-columns:minmax(0,1fr) 260px}
+.workspace-main{min-width:0}
+.section-stack{display:flex;flex-direction:column;gap:18px}
+.metrics-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px}
+.metric{border:1px solid #E1EAE7;border-radius:12px;background:#fff;padding:17px 17px 15px;
+  box-shadow:var(--shadow);min-height:116px}
+.metric-top{display:flex;justify-content:space-between;align-items:center;gap:6px;
+  color:#6B8178;font-size:11px;font-weight:650}
+.metric-top .ico{width:17px;height:17px;color:#7A9E8B}
+.metric-value{font-size:31px;font-weight:810;letter-spacing:-.06em;color:#174B35;margin:8px 0 1px}
+.metric-detail{font-size:10px;color:#85958E}
+.metric--danger .metric-value,.metric--danger .metric-top .ico{color:#AA4842}
+.metric--warning .metric-value,.metric--warning .metric-top .ico{color:#B26A28}
+.metric--success .metric-value{color:#22724D}
+.panel{background:#fff;border:1px solid #DEE7E5;border-radius:13px;min-width:0;
+  box-shadow:var(--shadow);overflow:hidden}
+.panel-heading{display:flex;align-items:center;justify-content:space-between;gap:15px;
+  padding:20px 21px 16px;border-bottom:1px solid #EDF1F0}
+.panel-heading h2{margin:0;font-size:15px;letter-spacing:-.025em;font-weight:790;color:#1E3D31}
+.panel-heading .eyebrow{margin-bottom:5px}
+.panel-footnote{font-size:10px;color:#758780;margin:0;padding:13px 18px 16px;border-top:1px solid #EFF2F1;line-height:1.6}
+.tag{display:inline-flex;align-items:center;justify-content:center;gap:3px;
+  white-space:nowrap;border-radius:6px;padding:5px 7px;
+  font-weight:780;font-size:9px;line-height:1.35}
+.tag--neutral{background:#EDF2F1;color:#59726A}
+.tag--light{background:#E8F5EC;color:#236849}
+.tag--navy{background:#E7EEF8;color:#2B5B82}
+.tag--success{background:#E6F5EA;color:#21683E}
+.tag--warning{background:#FFF2D9;color:#9C6011}
+.tag--danger{background:#FCE6E4;color:#9F413B}
+.filterbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+.segmented{display:flex;background:#E8EEEB;padding:4px;border-radius:9px;gap:3px}
+.segmented button{border:0;background:transparent;border-radius:7px;padding:8px 13px;color:#657970;
+  font-size:11px;font-weight:750}
+.segmented button.active{background:#fff;color:#166534;box-shadow:0 2px 7px #213a2f20}
+.select-label{display:flex;align-items:center;gap:8px;color:#70837A;font-size:10px;font-weight:750}
+.select-label select{border:1px solid #DDE6E3;border-radius:9px;padding:9px 30px 9px 10px;
+  color:#2E5543;background:#fff;font-size:11px;font-weight:670;max-width:220px}
+.filter-caption{margin-left:auto;color:#81968B;font-size:9px;font-weight:810;letter-spacing:.085em}
+.week-scroll{overflow-x:auto;padding:13px 15px 18px;scrollbar-color:#C6D7CE transparent}
+.week-grid{min-width:770px}
+.week-headings{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:7px;margin-bottom:7px}
+.week-day-head{background:#F2F6F3;color:#436355;border-radius:8px;padding:11px 4px;
+  text-align:center;display:flex;gap:5px;align-items:baseline;justify-content:center;
+  font-size:11px}
+.week-day-head strong{font-weight:850}
+.week-day-head span{color:#83988D;font-weight:700}
+.week-columns{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:7px}
+.week-day{background:#F7F9F8;min-height:320px;border-radius:8px;padding:6px;display:flex;
+  flex-direction:column;gap:7px;border:1px solid #EDF0EE}
+.event-card{display:flex;align-items:stretch;flex-direction:column;text-align:left;gap:5px;
+  border:1px solid #D1E6D9;border-left:3px solid #2F9C72;border-radius:7px;
+  padding:11px;background:#F0FAF4;color:#24543B;max-width:100%;min-width:0}
+.event-card:hover{filter:brightness(.97);transform:translateY(-1px)}
+.event-card--neutral{background:#F0F6F3;border-color:#D3E7DB;border-left-color:#2E8961}
+.event-card--success{background:#EDF8F0;border-color:#CFE9D6;border-left-color:#23995E}
+.event-card--warning{background:#FFF9EE;border-color:#F0DDB8;border-left-color:#D69C37;color:#815217}
+.event-card--danger{background:#FFF0EF;border-color:#F5CCC8;border-left-color:#CF5550;color:#923F3B}
+.event-top{display:flex;justify-content:space-between;align-items:center;gap:3px}
+.event-id{font-size:9px;font-weight:790;opacity:.76}
+.event-card strong{font-size:11px;font-weight:800;overflow-wrap:anywhere}
+.event-hours{display:flex;align-items:center;gap:4px;color:inherit;font-size:10px;line-height:1.4}
+.event-hours .ico{width:12px;height:12px}
+.event-person{font-size:10px;opacity:.77}
+.event-status{font-size:9px;font-weight:780;margin-top:4px}
+.event-card--compact{padding:9px 7px;gap:5px}
+.event-card--compact strong{font-size:10px}
+.event-card--compact .tag{padding:3px 5px;font-size:8px}
+.event-card--compact .event-id{font-size:8px}
+.event-card--compact .event-hours{font-size:9px}
+.event-card--compact .event-person{font-size:9px}
+.empty{font-size:10px;color:#9AA9A3;text-align:center;line-height:1.5;margin:20px 3px}
+.legend{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.read-only-note{display:flex;gap:9px;align-items:start;padding:12px 14px;
+  font-size:10px;line-height:1.65;color:#617A70;border-radius:10px;
+  border:1px dashed #C7DCD2;background:#ECF6F1}
+.read-only-note .ico{color:#358664;width:17px;height:17px}
+.insights{display:flex;flex-direction:column;gap:16px;min-width:0}
+.insight-card{border:1px solid #DEE7E5;border-radius:12px;background:#fff;
+  box-shadow:var(--shadow);overflow:hidden}
+.insight-title{display:flex;align-items:center;justify-content:space-between;
+  gap:10px;padding:19px 17px 11px}
+.insight-title .eyebrow{margin-bottom:5px}
+.insight-title h3,.insight-card h3{margin:0;color:#234134;font-size:13px;letter-spacing:-.02em}
+.insight-count{display:grid;place-items:center;width:25px;height:25px;border-radius:8px;
+  background:#FFF1E9;color:#B55F3E;font-size:11px;font-weight:800}
+.alert-item{width:100%;padding:13px 15px;display:flex;align-items:start;gap:9px;
+  background:transparent;border:0;border-top:1px solid #F0F2F0;text-align:left}
+.alert-item:hover{background:#F8FBF9}
+.alert-dot{width:8px;height:8px;border-radius:50%;flex:none;margin-top:4px}
+.alert-dot--danger{background:#D35C51}.alert-dot--warning{background:#E8AA51}
+.alert-item span:nth-child(2){flex:1;min-width:0}
+.alert-item strong{font-size:10px;color:#2E4A3D;font-weight:800;display:block}
+.alert-item small{display:block;margin-top:5px;color:#81928A;font-size:9px;line-height:1.5}
+.alert-item em{font-style:normal;display:block;margin-top:4px;font-size:9px;color:#4C8567}
+.alert-item .ico{height:13px;width:13px;color:#93A89B;margin-top:3px}
+.insight-card--muted{padding:17px 15px;background:#F1F6F2}
+.insight-card--muted p{font-size:10px;line-height:1.7;color:#6C8476;margin:9px 0 14px}
+.small-action{background:transparent;color:#246D4B;border:0;padding:3px 0;
+  display:flex;align-items:center;gap:5px;font-size:11px;font-weight:800}
+.small-action .ico{width:13px;height:13px}
+.queue-panel .queue-items{display:flex;flex-direction:column}
+.queue-item{display:flex;align-items:center;gap:12px;text-align:left;padding:13px 16px;
+  background:#fff;border:0;border-bottom:1px solid #EDF1EF;width:100%}
+.queue-item:hover{background:#FAFCFB}
+.queue-rail{width:3px;height:42px;flex:none;border-radius:5px;background:#D86A57}
+.queue-item span:nth-child(2){flex:1}
+.queue-item strong{font-size:11px;color:#405248}
+.queue-item small{display:block;color:#84908B;font-size:10px;margin:4px 0}
+.queue-item em{display:block;color:#B55C49;font-size:9px;font-weight:760;font-style:normal}
+.queue-item .ico{width:15px;height:15px;color:#9BAEA2}
+.table-scroll{overflow:auto}
+table{width:100%;border-collapse:collapse;white-space:nowrap;text-align:left}
+thead th{background:#F5F8F6;color:#688075;font-size:10px;letter-spacing:.03em;
+  padding:14px 15px;text-transform:uppercase}
+tbody td{border-top:1px solid #E9EEEB;color:#42594D;font-size:11px;padding:12px 15px}
+tbody tr:hover{background:#FBFCFB}
+td strong{font-weight:790;display:block}
+td small{display:block;color:#8B9E93;font-size:9px;margin-top:4px}
+td .tag{font-size:9px}
+.link-btn{border:0;background:transparent;color:#21744F;font-size:10px;
+  font-weight:790;display:inline-flex;align-items:center;gap:5px;padding:5px}
+.link-btn .ico{width:12px;height:12px}
+.overview-grid{display:grid;grid-template-columns:1.25fr .75fr;gap:17px}
+.compact-list{display:flex;flex-direction:column}
+.compact-row{display:flex;align-items:center;gap:11px;border:0;border-top:1px solid #F0F3F1;
+  padding:14px 18px;background:transparent;text-align:left}
+.compact-row:first-child{border-top:0}
+.compact-row:hover{background:#F6FAF8}
+.compact-icon{display:grid;place-items:center;width:32px;height:32px;
+  border-radius:8px;background:#E7F5ED;color:#28754F}
+.compact-icon.shift-icon{background:#E5EFF7;color:#2F6492}
+.compact-icon .ico{width:17px;height:17px}
+.compact-row>span:nth-child(2){flex:1;min-width:0}
+.compact-row strong{display:block;color:#2D4C3D;font-size:11px}
+.compact-row small{display:block;margin-top:5px;color:#83958B;font-size:10px}
+.episode-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:19px}
+.episode-tile{display:flex;gap:12px;text-align:left;align-items:center;flex-wrap:wrap;
+  border:1px solid #DAE8DE;background:#FBFDFC;border-radius:11px;padding:15px}
+.episode-tile:hover{background:#F1F9F4}
+.episode-icon{display:grid;place-items:center;width:37px;height:37px;background:#E8F5EB;
+  color:#35815C;border-radius:10px}
+.episode-tile>span:nth-child(2){flex:1}
+.episode-tile strong{display:block;color:#2A553E;font-size:13px}
+.episode-tile small{display:block;font-size:10px;color:#82938A;margin-top:4px}
+.episode-total{font-size:22px;color:#225941;font-weight:850;text-align:right}
+.episode-services{width:100%;display:flex;gap:5px;margin-left:49px;flex-wrap:wrap}
+.professionals-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;padding:18px}
+.professional-card{padding:15px;border:1px solid #E5ECE8;border-radius:11px;background:#FCFDFC}
+.person-top{display:flex;justify-content:space-between;align-items:center}
+.person-avatar{display:grid;place-items:center;background:#E4F3E9;color:#26774E;
+  font-size:14px;font-weight:900;width:39px;height:39px;border-radius:11px}
+.professional-card h3{margin:16px 0 4px;font-size:12px;color:#254E39}
+.professional-card p{margin:0;color:#87958B;font-size:11px}
+.person-foot{margin-top:17px;border-top:1px solid #EAF0EB;padding-top:11px}
+.person-foot span{display:flex;align-items:center;gap:5px;color:#4F7E64;font-size:10px}
+.person-foot .ico{width:14px;height:14px}
+.person-foot small{display:block;margin-top:5px;color:#8A9891;font-size:9px}
+.handover-grid{padding:17px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.handover-card{background:#FBFDFC;border:1px solid #E2EBE4;border-radius:12px;padding:17px}
+.handover-top{display:flex;justify-content:space-between;gap:10px;align-items:center}
+.handover-top strong{font-size:12px;color:#2B4B36}
+.handover-case{font-size:11px;color:#74877D;padding:5px 0 15px;border-bottom:1px solid #E8EEE9}
+.handover-steps{display:flex;align-items:center;justify-content:space-between;gap:6px;margin:14px 0}
+.handover-step{display:flex;align-items:start;gap:6px;flex:1}
+.step-number{display:grid;place-items:center;background:#E6F3E9;color:#2F8053;border-radius:50%;
+  width:22px;height:22px;flex:none;font-size:10px;font-weight:800}
+.handover-step span:nth-child(2){color:#426152;font-size:10px;font-weight:700}
+.handover-step small{display:block;color:#85988A;font-size:9px;margin-top:4px;font-weight:500}
+.step-connector{height:1px;background:#C2D8C9;flex:none;width:10%}
+.handover-message{font-size:10px;line-height:1.5;color:#8C7260}
+.disabled-action{font-size:10px;font-weight:800;color:#98A69F;border-radius:7px;
+  border:1px solid #E0E6E1;background:#EDF1ED;padding:10px;width:100%}
+.report-bars{padding:20px;display:flex;flex-direction:column;gap:20px}
+.report-row{display:grid;grid-template-columns:120px 1fr;gap:20px;align-items:center}
+.report-row>div:first-child{font-size:11px}
+.report-row strong{display:block;color:#355A47}
+.report-row span{font-size:10px;color:#899B8E;display:block;margin-top:3px}
+.bar-track{background:#E8F1EC;height:12px;border-radius:12px;overflow:hidden}
+.bar-fill{height:100%;background:linear-gradient(90deg,#2D925E,#97D0A8);border-radius:12px}
+.timeline{display:grid;grid-template-columns:58px 1fr;padding:14px 15px 30px}
+.timeline-ruler,.timeline-track{position:relative;height:760px}
+.timeline-ruler{border-right:1px solid #D7E7DE}
+.time-ruler-tick{position:absolute;left:0;right:0;color:#889E8C;font-size:9px;transform:translateY(-50%)}
+.time-ruler-tick span{display:block;padding:0 5px;text-align:right}
+.timeline-track{background:repeating-linear-gradient(to bottom,#FCFDFB 0,#FCFDFB calc(8.333333% - 1px),#E8F0EA calc(8.333333% - 1px),#E8F0EA 8.333333%);
+  border-right:1px solid #E7EEE9}
+.time-block{position:absolute;left:3%;width:45%;border:1px solid #CEE0D4;border-left:4px solid #2B9864;
+  color:#2E6148;background:#E6F5E9;text-align:left;padding:5px 7px;overflow:hidden;
+  border-radius:6px;display:flex;flex-direction:column;gap:2px}
+.time-block.lane-b{left:51%;width:45%}
+.time-block--danger{background:#FCE8E6;color:#AC4B43;border-color:#F1CCC8;border-left-color:#C95049}
+.time-block--warning{background:#FFF3DE;color:#9C651F;border-color:#EAD4A9;border-left-color:#D89A36}
+.time-block strong{font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.time-block span{font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.modal-frame{border:0;max-width:560px;width:calc(100vw - 40px);border-radius:17px;
+  box-shadow:0 30px 90px #091e16ad;padding:28px;max-height:calc(100vh - 40px);overflow:auto}
+.modal-frame::backdrop{background:rgba(8,28,20,.55)}
+.modal-close{position:absolute;right:18px;top:17px;width:30px;height:30px;border:0;border-radius:8px;
+  background:#EFF4F1;color:#3B5E4A;font-size:18px;font-weight:600}
+.modal-header h2{font-size:26px;letter-spacing:-.04em;color:#214D35;margin:0}
+.modal-header p{font-size:12px;color:#83968A;margin:7px 0 18px}
+.modal-stats{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px}
+.modal-coverages{border:1px solid #E3EBE5;border-radius:10px;overflow:hidden}
+.modal-coverages>div{display:flex;flex-direction:column;gap:4px;padding:11px 13px;
+  border-bottom:1px solid #EEF2EE}
+.modal-coverages>div:last-child{border-bottom:0}
+.modal-coverages strong{font-size:11px;color:#345740}
+.modal-coverages span,.modal-coverages small{font-size:10px;color:#718678}
+.modal-warning{font-size:11px;line-height:1.6;color:#827459;margin-top:18px}
+.mock-footer{max-width:1580px;margin:17px auto 0;display:flex;align-items:center;
+  justify-content:space-between;color:#718780;font-size:10px;gap:14px}
+.mock-footer strong{color:#3A5D48}
+/* A — institutional clinical-administration language, no patient-chart imitation. */
+.shell--a .sidebar{background:#0B3D2A}
+.shell--a .heading h1{color:#0C4932}
+.shell--a .metric{border-radius:6px;box-shadow:none}
+.shell--a .panel{border-radius:6px;box-shadow:none}
+.shell--a .nav-item{border-radius:5px}
+/* B — operations first, navy topbar, open assignment swim lanes. */
+.shell--b{display:block;background:#F1F5F8}
+.top-shell{background:#172B3D;color:#fff;padding:17px 30px 0}
+.top-shell-head{display:flex;align-items:center;justify-content:space-between;
+  color:#9EC0C9;font-size:10px;padding-bottom:12px}
+.top-shell .product-brand .brand-symbol{background:#1A795F}
+.top-shell .nav-item{width:auto;padding:12px 13px 16px;border-radius:8px 8px 0 0;color:#BFD3DD}
+.top-shell .nav-item .ico{width:16px;height:16px}
+.top-shell .nav-item.is-current{background:#284659;color:#fff}
+.top-shell .nav-indicator{display:none}
+.topnav{display:flex;gap:6px;flex-wrap:wrap}
+.shell--b .shell-content{background:#F1F5F8;padding:26px}
+.shell--b .heading h1{color:#213F58}
+.shell--b .metric-value{color:#2C5871}
+.shell--b .metric--danger .metric-value{color:#B54D44}
+.shell--b .panel-heading h2{color:#2C465C}
+.shell--b .metric,.shell--b .panel,.shell--b .insight-card{border-radius:12px}
+.shell--b .week-day{background:#F2F6FA;border-color:#E3EBF3}
+.shell--b .week-day-head{background:#E9F0F7;color:#3B5A74}
+.shell--b .event-card--success,.shell--b .event-card--neutral{background:#EAF2F9;border-color:#CFE0EF;color:#294E6D;border-left-color:#4B85B7}
+.shell--b .agenda-layout--ops{display:grid;grid-template-columns:minmax(0,1fr) 248px;gap:14px}
+.shell--b .agenda-layout--ops .ops-queue{display:flex;gap:14px;flex-direction:column}
+.shell--b .workspace--b .metrics-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+.shell--b .insights{gap:13px}
+/* C — recommended hybrid: calmer editorial balance and visual 24/7 orchestration. */
+.shell--c .sidebar{background:linear-gradient(180deg,#0A4731,#123B2D)}
+.shell--c .heading h1{font-size:29px}
+.shell--c .metric{border-top:3px solid #C0E6CB}
+.shell--c .metric--warning{border-top-color:#EAC68C}
+.shell--c .metric--danger{border-top-color:#E8AAA5}
+.shell--c .week-day{background:#F5FAF7}
+.shell--c .panel-heading{padding-top:22px;padding-bottom:20px}
+.shell--c .event-card--compact{box-shadow:0 2px 6px #19462a0b}
+@media(max-width:1450px) {
+  .workspace--b{grid-template-columns:minmax(0,1fr)}
+  .workspace--b>.insights{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .shell--b .agenda-layout--ops{grid-template-columns:minmax(0,1fr) 220px}
+  .workspace--c{grid-template-columns:minmax(0,1fr)}
+  .workspace--c>.insights{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:1050px){
+  .viewport{padding:20px 14px 32px}
+  .shell--a .sidebar,.shell--c .sidebar{width:200px}
+  .shell-content{padding:22px 18px}
+  .toolbar{flex-direction:column}
+  .toolbar-end{padding-top:0}
+  .metrics-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .shell--b .agenda-layout--ops{grid-template-columns:1fr}
+  .shell--b .agenda-layout--ops .ops-queue{display:grid;grid-template-columns:1fr 1fr}
+}
+@media(max-width:730px){
+  .concept-strip{flex-direction:column;align-items:stretch;gap:12px;padding:14px}
+  .variants{display:grid;grid-template-columns:repeat(3,1fr);width:100%}
+  .variant-btn{padding:9px 6px;justify-content:center;font-size:10px;gap:4px}
+  .concept-state{justify-content:center}
+  .viewport{padding:12px 6px 24px}
+  .canvas{border-radius:9px;min-height:640px}
+  .shell--a,.shell--c{flex-direction:column}
+  .sidebar{width:100%!important;min-height:0;padding:13px}
+  .sidebar-overline,.sidebar-bottom{display:none}
+  .primary-nav{flex-direction:row;overflow-x:auto;margin-top:12px}
+  .primary-nav .nav-item{flex:none;width:auto;white-space:nowrap;font-size:10px;padding:8px}
+  .nav-item .ico{width:15px;height:15px}
+  .nav-indicator{display:none}
+  .shell-content,.shell--b .shell-content{padding:17px 12px 25px}
+  .top-shell{padding:12px 13px 0}
+  .top-shell-head{align-items:flex-start}
+  .top-shell-head>span{display:none}
+  .topnav{flex-wrap:nowrap;overflow-x:auto}
+  .topnav .nav-item{white-space:nowrap;flex:none}
+  .heading h1,.shell--c .heading h1{font-size:24px}
+  .tz-label{font-size:9px;white-space:normal}
+  .metrics-grid{gap:8px}
+  .metric{padding:12px;min-height:96px}
+  .metric-value{font-size:25px}
+  .metric-top{font-size:9px}
+  .filter-caption{margin:0}
+  .overview-grid,.episode-grid,.professionals-grid,.handover-grid{grid-template-columns:1fr}
+  .workspace--b>.insights,.workspace--c>.insights,
+  .shell--b .agenda-layout--ops .ops-queue{grid-template-columns:1fr}
+  .week-grid{min-width:770px}
+  .mock-footer,.viewport-note{flex-direction:column;align-items:flex-start;gap:3px}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{scroll-behavior:auto!important;transition-duration:0ms!important;animation-duration:0ms!important}
+}
+
+  </style>
+</head>
+<body>
+  <header class="concept-strip">
+    <div class="concept-heading">
+      <span class="concept-icon" aria-hidden="true">✚</span>
+      <div>
+        <strong>Laboratorio de interfaces</strong>
+        <small>CONSULTLAN · VISITAS DOMICILIARIAS</small>
+      </div>
+    </div>
+    <nav class="variants" aria-label="Comparar las tres propuestas visuales">
+      <button type="button" data-variant="a" class="variant-btn" aria-pressed="false"><span class="number">01</span> A · Institucional</button>
+      <button type="button" data-variant="b" class="variant-btn" aria-pressed="false"><span class="number">02</span> B · Operativa</button>
+      <button type="button" data-variant="c" class="variant-btn is-selected" aria-pressed="true"><span class="number">03</span> C · Híbrida</button>
+    </nav>
+    <div class="concept-state"><span class="live-dot" aria-hidden="true"></span> DEMO SIN CONEXIÓN</div>
+  </header>
+  <div class="viewport">
+    <div class="viewport-note">
+      <span id="current-style">C · Híbrido</span>
+      <span>Escenario ficticio · 12–18 octubre de 2026 · No habilitado para pacientes reales</span>
+    </div>
+    <div class="canvas">
+      <main id="app">
+        <p style="padding: 32px; font-family: sans-serif">Inicializando escenario sintético…</p>
+      </main>
+    </div>
+    <footer class="mock-footer">
+      <span><strong>WEB-COORD-01A</strong> · Tres alternativas navegables · Identidad visual CONSULTLAN</span>
+      <span>Sin red, sin autenticación y sin información sanitaria · Diseño conceptual</span>
+    </footer>
+  </div>
+  <dialog id="episode-modal" class="modal-frame" aria-label="Detalle del episodio sintético">
+    <button type="button" class="modal-close" data-close aria-label="Cerrar detalle">×</button>
+    <div id="episode-modal-content"></div>
+  </dialog>
+  <noscript>Esta demostración necesita JavaScript habilitado; no se realizan llamadas a servidores.</noscript>
+  <script>
+/* WEB-COORD-01A — Fixture exclusively synthetic, no clinical or patient identity. */
+(function () {
+  "use strict";
+  const TIMEZONE = "America/Argentina/Buenos_Aires";
+  const OFFSET = "-03:00";
+  const DAYS = Object.freeze([
+    { date: "2026-10-12", short: "Lun", full: "Lunes 12" },
+    { date: "2026-10-13", short: "Mar", full: "Martes 13" },
+    { date: "2026-10-14", short: "Mié", full: "Miércoles 14" },
+    { date: "2026-10-15", short: "Jue", full: "Jueves 15" },
+    { date: "2026-10-16", short: "Vie", full: "Viernes 16" },
+    { date: "2026-10-17", short: "Sáb", full: "Sábado 17" },
+    { date: "2026-10-18", short: "Dom", full: "Domingo 18" },
+  ]);
+  const EPISODES = Object.freeze([
+    { id: "EPI-101", area: "Zona Norte", status: "En seguimiento", services: ["Enfermería", "Medicina"] },
+    { id: "EPI-102", area: "Zona Centro", status: "En seguimiento", services: ["Kinesiología", "Enfermería"] },
+    { id: "EPI-103", area: "Zona Sur", status: "En seguimiento", services: ["Fonoaudiología", "Enfermería"] },
+    { id: "EPI-104", area: "Zona Oeste", status: "En seguimiento", services: ["Medicina", "Kinesiología"] },
+  ]);
+  const PROFESSIONALS = Object.freeze([
+    { id: "PRO-01", label: "Profesional A", specialty: "Enfermería", availability: "12 h / disponibilidad a validar", state: "Asignado" },
+    { id: "PRO-02", label: "Profesional B", specialty: "Kinesiología", availability: "Visitas programadas", state: "Asignado" },
+    { id: "PRO-03", label: "Profesional C", specialty: "Medicina", availability: "Visitas programadas", state: "Asignado" },
+    { id: "PRO-04", label: "Profesional D", specialty: "Fonoaudiología", availability: "Visitas programadas", state: "Asignado" },
+    { id: "PRO-05", label: "Profesional E", specialty: "Enfermería", availability: "Disponibilidad sin verificar", state: "A verificar" },
+  ]);
+  const COVERAGES = Object.freeze([
+    { id: "COB-001", episodeId: "EPI-101", professionalId: "PRO-01", specialty: "Enfermería", type: "VISIT", start: "2026-10-12T08:30:00-03:00", end: "2026-10-12T09:30:00-03:00", status: "Confirmada" },
+    { id: "COB-002", episodeId: "EPI-102", professionalId: "PRO-02", specialty: "Kinesiología", type: "VISIT", start: "2026-10-12T11:00:00-03:00", end: "2026-10-12T12:00:00-03:00", status: "Asignada" },
+    { id: "COB-003", episodeId: "EPI-101", professionalId: "PRO-01", specialty: "Enfermería", type: "SHIFT", start: "2026-10-12T20:00:00-03:00", end: "2026-10-13T08:00:00-03:00", status: "Relevo pendiente" },
+    { id: "COB-004", episodeId: "EPI-104", professionalId: "PRO-03", specialty: "Medicina", type: "VISIT", start: "2026-10-13T10:00:00-03:00", end: "2026-10-13T11:00:00-03:00", status: "Confirmada" },
+    { id: "COB-005", episodeId: "EPI-102", professionalId: null, specialty: "Enfermería", type: "SHIFT", start: "2026-10-13T20:00:00-03:00", end: "2026-10-14T08:00:00-03:00", status: "Sin asignar" },
+    { id: "COB-006", episodeId: "EPI-102", professionalId: "PRO-02", specialty: "Kinesiología", type: "VISIT", start: "2026-10-14T09:00:00-03:00", end: "2026-10-14T10:00:00-03:00", status: "Asignada" },
+    { id: "COB-007", episodeId: "EPI-104", professionalId: null, specialty: "Kinesiología", type: "VISIT", start: "2026-10-14T16:00:00-03:00", end: "2026-10-14T17:00:00-03:00", status: "Sin asignar" },
+    { id: "COB-008", episodeId: "EPI-103", professionalId: "PRO-01", specialty: "Enfermería", type: "SHIFT", start: "2026-10-14T19:00:00-03:00", end: "2026-10-15T07:00:00-03:00", status: "Confirmada" },
+    { id: "COB-009", episodeId: "EPI-101", professionalId: "PRO-03", specialty: "Medicina", type: "VISIT", start: "2026-10-15T10:30:00-03:00", end: "2026-10-15T11:30:00-03:00", status: "Asignada" },
+    { id: "COB-010", episodeId: "EPI-103", professionalId: "PRO-04", specialty: "Fonoaudiología", type: "VISIT", start: "2026-10-16T09:00:00-03:00", end: "2026-10-16T10:00:00-03:00", status: "Confirmada" },
+    { id: "COB-011", episodeId: "EPI-103", professionalId: "PRO-01", specialty: "Enfermería", type: "SHIFT", start: "2026-10-16T20:00:00-03:00", end: "2026-10-17T08:00:00-03:00", status: "Asignada" },
+    { id: "COB-012", episodeId: "EPI-104", professionalId: "PRO-02", specialty: "Kinesiología", type: "VISIT", start: "2026-10-17T10:00:00-03:00", end: "2026-10-17T11:00:00-03:00", status: "Asignada" },
+    { id: "COB-013", episodeId: "EPI-104", professionalId: "PRO-03", specialty: "Medicina", type: "VISIT", start: "2026-10-18T09:30:00-03:00", end: "2026-10-18T10:30:00-03:00", status: "Asignada" },
+  ]);
+  const HANDOVERS = Object.freeze([
+    { id: "REL-001", coverageId: "COB-003", outgoingId: "PRO-01", incomingId: "PRO-05", stage: "Pendiente de confirmación", message: "El relevo requiere validación humana." },
+    { id: "REL-002", coverageId: "COB-005", outgoingId: null, incomingId: null, stage: "Sin reemplazo", message: "Guardia sin profesional confirmado." },
+  ]);
+  const ALERTS = Object.freeze([
+    { id: "ALT-001", coverageId: "COB-005", tone: "danger", label: "Guardia sin asignación", detail: "Mar 13, 20:00 a Mié 14, 08:00" },
+    { id: "ALT-002", coverageId: "COB-003", tone: "warning", label: "Relevo pendiente", detail: "Lun 12, 20:00 a Mar 13, 08:00" },
+    { id: "ALT-003", coverageId: "COB-007", tone: "warning", label: "Visita sin asignación", detail: "Mié 14, 16:00 a 17:00" },
+  ]);
+  function dateMillis(iso) { return Date.parse(iso); }
+  function nextDate(date) {
+    const start = Date.parse(date + "T00:00:00Z");
+    return new Date(start + 86400000).toISOString().slice(0, 10);
+  }
+  function dayWindow(date) {
+    if (!DAYS.some(function (d) { return d.date === date; })) return null;
+    return {
+      start: dateMillis(date + "T00:00:00" + OFFSET),
+      end: dateMillis(nextDate(date) + "T00:00:00" + OFFSET),
+    };
+  }
+  function overlapsDay(coverage, date) {
+    const day = dayWindow(date);
+    return !!day && dateMillis(coverage.end) > day.start && dateMillis(coverage.start) < day.end;
+  }
+  function daySlice(coverage, date) {
+    const day = dayWindow(date);
+    if (!day || !overlapsDay(coverage, date)) return null;
+    return {
+      fromMinute: Math.max(0, (dateMillis(coverage.start) - day.start) / 60000),
+      toMinute: Math.min(1440, (dateMillis(coverage.end) - day.start) / 60000),
+      continuesFromPreviousDay: dateMillis(coverage.start) < day.start,
+      continuesToNextDay: dateMillis(coverage.end) > day.end,
+    };
+  }
+  function filterCoverages(spec) {
+    const options = spec || {};
+    return COVERAGES.filter(function (item) {
+      return (!options.specialty || options.specialty === "Todas" || item.specialty === options.specialty) &&
+        (!options.day || overlapsDay(item, options.day)) &&
+        (!options.episodeId || item.episodeId === options.episodeId);
+    }).sort(function (a, b) {
+      return dateMillis(a.start) - dateMillis(b.start) || a.id.localeCompare(b.id);
+    });
+  }
+  function formatClock(iso) {
+    return new Intl.DateTimeFormat("es-AR", {
+      timeZone: TIMEZONE, hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+    }).format(new Date(iso));
+  }
+  function isOvernight(coverage) {
+    const dayStart = new Intl.DateTimeFormat("en-CA", {
+      timeZone: TIMEZONE, year: "numeric", month: "2-digit", day: "2-digit",
+    }).format(new Date(coverage.start));
+    const dayEnd = new Intl.DateTimeFormat("en-CA", {
+      timeZone: TIMEZONE, year: "numeric", month: "2-digit", day: "2-digit",
+    }).format(new Date(coverage.end));
+    return dayStart !== dayEnd;
+  }
+  function summary(rows) {
+    const items = rows || COVERAGES;
+    return {
+      total: items.length,
+      visits: items.filter(function (x) { return x.type === "VISIT"; }).length,
+      shifts: items.filter(function (x) { return x.type === "SHIFT"; }).length,
+      unassigned: items.filter(function (x) { return x.professionalId === null; }).length,
+      pendingRelief: items.filter(function (x) { return x.status === "Relevo pendiente"; }).length,
+      episodes: EPISODES.length,
+    };
+  }
+  function personName(id) {
+    const p = PROFESSIONALS.find(function (x) { return x.id === id; });
+    return p ? p.label : "Sin asignar";
+  }
+  const api = {
+    TIMEZONE: TIMEZONE, OFFSET: OFFSET,
+    DAYS: DAYS, EPISODES: EPISODES, PROFESSIONALS: PROFESSIONALS,
+    COVERAGES: COVERAGES, HANDOVERS: HANDOVERS, ALERTS: ALERTS,
+    dayWindow: dayWindow, overlapsDay: overlapsDay, daySlice: daySlice,
+    filterCoverages: filterCoverages, summary: summary,
+    formatClock: formatClock, isOvernight: isOvernight, personName: personName,
+  };
+  window.CONSULTLAN_WEB_DEMO = Object.freeze(api);
+}());
+
+  </script>
+  <script>
+/* WEB-COORD-01A — Offline-only visual prototype. All values are fictitious. */
+(function () {
+  "use strict";
+  const data = window.CONSULTLAN_WEB_DEMO;
+  const host = document.getElementById("app");
+  const modal = document.getElementById("episode-modal");
+  const modalBody = document.getElementById("episode-modal-content");
+  if (!data || !host || !modal || !modalBody) throw new Error("Missing offline demo assets");
+
+  const state = { variant: "c", section: "agenda", mode: "semana", day: data.DAYS[0].date, specialty: "Todas" };
+  const sections = [
+    { key: "resumen", label: "Resumen", icon: "dashboard" },
+    { key: "agenda", label: "Agenda 24/7", icon: "calendar" },
+    { key: "episodios", label: "Episodios", icon: "folder" },
+    { key: "profesionales", label: "Profesionales", icon: "users" },
+    { key: "relevos", label: "Relevos", icon: "repeat" },
+    { key: "reportes", label: "Reportes", icon: "chart" },
+  ];
+  const titles = {
+    resumen: ["Panorama operativo", "Vista consolidada de las coberturas domiciliarias"],
+    agenda: ["Agenda de coberturas", "Visitas, guardias y continuidad entre días"],
+    episodios: ["Episodios domiciliarios", "Seguimiento administrativo por episodio"],
+    profesionales: ["Equipo interdisciplinario", "Disponibilidad y asignaciones por especialidad"],
+    relevos: ["Relevos y contingencias", "Solicitudes y validaciones humanas pendientes"],
+    reportes: ["Resumen de gestión", "Indicadores ilustrativos, no liquidables"],
+  };
+  const glyph = {
+    dashboard: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+    calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 2v6M16 2v6M3 11h18"/>',
+    folder: '<path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10H3z"/>',
+    users: '<circle cx="9" cy="8" r="3"/><path d="M3 20v-2a6 6 0 0 1 12 0v2M17 5a3 3 0 0 1 0 6M19 20v-2a5 5 0 0 0-3-4.6"/>',
+    repeat: '<path d="m17 2 4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 0 1-3 3H3"/>',
+    chart: '<path d="M4 20V11M10 20V4M16 20v-8M22 20v-5"/>',
+    clock: '<circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/>',
+    chevron: '<path d="m8 5 7 7-7 7"/>',
+    bell: '<path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/>',
+    shield: '<path d="m12 2 9 4v6c0 5-3 8-9 10-6-2-9-5-9-10V6z"/><path d="m9 12 2 2 4-4"/>',
+    layers: '<path d="m12 3 9 5-9 5-9-5zM3 12l9 5 9-5M3 16l9 5 9-5"/>',
+  };
+  function icon(name, extra) {
+    return '<svg class="ico ' + (extra || "") + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true">' + (glyph[name] || glyph.layers) + "</svg>";
+  }
+  function esc(value) {
+    return String(value === undefined || value === null ? "" : value).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function tag(label, tone) { return '<span class="tag tag--' + (tone || "neutral") + '">' + esc(label) + "</span>"; }
+  function tone(event) {
+    if (!event.professionalId) return "danger";
+    if (event.status === "Relevo pendiente") return "warning";
+    if (event.status === "Confirmada") return "success";
+    return "neutral";
+  }
+  function eventHours(e) {
+    return data.formatClock(e.start) + " — " + data.formatClock(e.end) + (data.isOvernight(e) ? " · +1 día" : "");
+  }
+  function type(e) { return e.type === "SHIFT" ? "Guardia" : "Visita"; }
+  function forFilter(obj) { return data.filterCoverages(Object.assign({ specialty: state.specialty }, obj || {})); }
+  function sectionButton(item) {
+    const current = state.section === item.key;
+    return '<button type="button" data-section="' + item.key + '" class="nav-item ' +
+      (current ? "is-current" : "") + '" aria-current="' + (current ? "page" : "false") +
+      '">' + icon(item.icon) + '<span>' + esc(item.label) + "</span>" +
+      (current ? '<span class="nav-indicator" aria-hidden="true"></span>' : "") + "</button>";
+  }
+  function brand() {
+    return '<div class="product-brand"><span class="brand-symbol" aria-hidden="true">✚</span>' +
+      '<span><strong>Pediatrics</strong><small>ATENCIÓN DOMICILIARIA</small></span></div>';
+  }
+  function sidebar() {
+    return '<aside class="sidebar">' + brand() +
+      '<div class="sidebar-overline">ESPACIO DE COORDINACIÓN</div>' +
+      '<nav class="primary-nav" aria-label="Módulos de demostración">' +
+      sections.map(sectionButton).join("") + '</nav>' +
+      '<div class="sidebar-bottom">' + icon("shield") +
+      '<span>Accesos simulados<small>Sin datos clínicos</small></span></div>' +
+      "</aside>";
+  }
+  function topnav() {
+    return '<nav class="topnav" aria-label="Módulos de demostración">' +
+      sections.map(sectionButton).join("") + "</nav>";
+  }
+  function toolbar() {
+    return '<div class="toolbar"><div class="heading"><p class="eyebrow">COORDINACIÓN / ' +
+      esc(titles[state.section][0].toUpperCase()) + '</p><h1>' +
+      esc(titles[state.section][0]) + '</h1><p class="heading-sub">' +
+      esc(titles[state.section][1]) + '</p></div>' +
+      '<div class="toolbar-end"><span class="tz-label">' + icon("clock") +
+      'America/Argentina/Buenos_Aires · UTC−03</span>' +
+      '<div class="avatar" aria-label="Perfil de coordinación ficticio">CO</div></div></div>';
+  }
+  function metric(value, label, detail, kind, glyphName) {
+    return '<div class="metric metric--' + (kind || "default") + '">' +
+      '<div class="metric-top"><span>' + esc(label) + '</span>' + icon(glyphName || "layers") + '</div>' +
+      '<div class="metric-value">' + esc(value) + '</div><div class="metric-detail">' + esc(detail) + '</div></div>';
+  }
+  function metrics() {
+    const s = data.summary();
+    return '<div class="metrics-grid">' +
+      metric(s.total, "Coberturas / semana", "Datos sintéticos", "default", "calendar") +
+      metric(s.unassigned, "Sin profesional", "Requieren coordinación", "danger", "users") +
+      metric(s.pendingRelief, "Relevos pendientes", "Validación humana", "warning", "repeat") +
+      metric(s.episodes, "Episodios activos", "Códigos inventados", "success", "folder") +
+      "</div>";
+  }
+  function filters() {
+    const options = ["Todas", "Enfermería", "Kinesiología", "Medicina", "Fonoaudiología"];
+    return '<div class="filterbar">' +
+      '<div class="segmented" role="group" aria-label="Modo de agenda">' +
+      '<button data-mode="semana" aria-pressed="' + (state.mode === "semana") + '" class="' +
+      (state.mode === "semana" ? "active" : "") + '">Semana</button>' +
+      '<button data-mode="dia" aria-pressed="' + (state.mode === "dia") + '" class="' +
+      (state.mode === "dia" ? "active" : "") + '">24 horas</button></div>' +
+      '<label class="select-label">Especialidad <select id="specialty-filter" aria-label="Filtrar especialidad">' +
+      options.map(function (o) { return '<option value="' + esc(o) + '" ' + (state.specialty === o ? "selected" : "") + ">" + esc(o) + "</option>"; }).join("") +
+      '</select></label><label class="select-label">Jornada <select id="day-filter" aria-label="Elegir día">' +
+      data.DAYS.map(function (d) { return '<option value="' + d.date + '" ' +
+        (state.day === d.date ? "selected" : "") + ">" + esc(d.full) + "</option>"; }).join("") +
+      '</select></label><span class="filter-caption">12–18 OCT 2026 · DEMO</span></div>';
+  }
+  function eventCard(e, compact) {
+    const title = esc(e.episodeId);
+    const p = esc(data.personName(e.professionalId));
+    return '<button type="button" class="event-card event-card--' + tone(e) +
+      (compact ? " event-card--compact" : "") +
+      '" data-episode="' + esc(e.episodeId) + '" aria-label="Ver episodio ficticio ' + title +
+      ' de ' + esc(type(e)) + ' ' + esc(eventHours(e)) + '">' +
+      '<span class="event-top">' + tag(type(e), e.type === "SHIFT" ? "navy" : "light") +
+      '<span class="event-id">' + title + '</span></span>' +
+      '<strong>' + esc(e.specialty) + '</strong><span class="event-hours">' + icon("clock") +
+      esc(eventHours(e)) + '</span><span class="event-person">' + p + '</span>' +
+      (compact ? "" : '<span class="event-status">' + esc(e.status) + "</span>") +
+      "</button>";
+  }
+  function empty(label) { return '<p class="empty">' + esc(label || "Sin coberturas en este período.") + "</p>"; }
+  function daysHeader() {
+    return data.DAYS.map(function (d) {
+      return '<div class="week-day-head"><strong>' + esc(d.short) + '</strong>' +
+        '<span>' + esc(d.date.slice(-2)) + '</span></div>';
+    }).join("");
+  }
+  function weekPlanner(flavor) {
+    const columns = data.DAYS.map(function (d) {
+      const rows = forFilter({ day: d.date });
+      return '<div class="week-day" data-day="' + d.date + '">' +
+        (rows.length ? rows.map(function (e) { return eventCard(e, true); }).join("") : empty("Sin asignaciones")) + "</div>";
+    }).join("");
+    return '<div class="panel planner-panel"><div class="panel-heading"><div><span class="eyebrow">SEMANA DE PRUEBA · 24/7</span>' +
+      '<h2>' + (flavor === "b" ? "Tablero de asignaciones" : "Planificador semanal") + '</h2>' +
+      '</div><span class="legend">' + tag("Guardia", "navy") + tag("Visita", "light") + tag("Sin asignar", "danger") + '</span></div>' +
+      '<div class="week-scroll"><div class="week-grid week-grid--' + flavor + '">' +
+      '<div class="week-headings">' + daysHeader() + '</div><div class="week-columns">' +
+      columns + '</div></div></div><p class="panel-footnote">' +
+      'Las guardias que atraviesan medianoche se ven en ambos días. Un relevo pendiente no equivale a una atención confirmada.' +
+      '</p></div>';
+  }
+  function institutionalTable() {
+    const rows = forFilter();
+    return '<section class="panel"><div class="panel-heading"><div><span class="eyebrow">VISTA ADMINISTRATIVA</span>' +
+      '<h2>Registro de coberturas semanales</h2></div>' + tag("Solo lectura", "light") + "</div>" +
+      '<div class="table-scroll"><table><thead><tr><th>Episodio</th><th>Prestación</th>' +
+      '<th>Profesional</th><th>Horario del servicio</th><th>Estado</th><th>Acceso</th></tr></thead><tbody>' +
+      rows.map(function (e) {
+        return '<tr><td><strong>' + esc(e.episodeId) + '</strong><small>' + esc(e.id) +
+          '</small></td><td>' + tag(type(e), e.type === "SHIFT" ? "navy" : "light") +
+          '<small>' + esc(e.specialty) + '</small></td><td>' + esc(data.personName(e.professionalId)) +
+          '</td><td><strong>' + esc(e.start.slice(8, 10)) + '/10 · ' + esc(eventHours(e)) +
+          '</strong></td><td>' + tag(e.status, tone(e)) + '</td><td><button type="button" class="link-btn" data-episode="' +
+          esc(e.episodeId) + '">Ver episodio ' + icon("chevron") + "</button></td></tr>";
+      }).join("") +
+      '</tbody></table></div></section>';
+  }
+  function dayTimeline() {
+    const rows = forFilter({ day: state.day });
+    const ticks = Array.from({ length: 13 }, function (_, i) {
+      const hour = i * 2;
+      return '<div class="time-ruler-tick" style="top:' + (hour / 24 * 100) +
+        '%"><span>' + String(hour).padStart(2, "0") + ':00</span></div>';
+    }).join("");
+    const blocks = rows.map(function (e, i) {
+      const range = data.daySlice(e, state.day);
+      if (!range) return "";
+      const start = range.fromMinute / 1440 * 100;
+      const height = Math.max(1.75, (range.toMinute - range.fromMinute) / 1440 * 100);
+      const lane = i % 2 === 0 ? "lane-a" : "lane-b";
+      const extra = range.continuesFromPreviousDay ? " · continúa" :
+        range.continuesToNextDay ? " · continúa mañana" : "";
+      return '<button type="button" class="time-block time-block--' + tone(e) + " " + lane +
+        '" style="top:' + start.toFixed(3) + "%;height:" + height.toFixed(3) +
+        '%;" data-episode="' + esc(e.episodeId) + '">' +
+        '<strong>' + esc(e.episodeId) + " · " + esc(type(e)) + '</strong><span>' +
+        esc(e.specialty + " · " + data.formatClock(e.start) + "–" + data.formatClock(e.end) + extra) +
+        "</span></button>";
+    }).join("");
+    return '<section class="panel"><div class="panel-heading"><div><span class="eyebrow">24 HORAS · ZONA UTC−03</span>' +
+      '<h2>Jornada ' + esc(data.DAYS.find(function (x) { return x.date === state.day; }).full) +
+      "</h2></div>" + tag(rows.length + " coberturas visibles", "light") +
+      '</div><div class="timeline"><div class="timeline-ruler">' + ticks +
+      '</div><div class="timeline-track">' + blocks + '</div></div>' +
+      '<p class="panel-footnote">Los bloques muestran solo la porción de cada cobertura dentro de esta jornada. ' +
+      'No hay confirmaciones ni acciones clínicas reales.</p></section>';
+  }
+  function unassignedQueue() {
+    const open = forFilter().filter(function (e) { return !e.professionalId; });
+    return '<section class="panel queue-panel"><div class="panel-heading"><div><span class="eyebrow">NECESITAN GESTIÓN</span>' +
+      '<h2>Sin asignar</h2></div>' + tag(open.length, "danger") + "</div><div class=\"queue-items\">" +
+      open.map(function (e) {
+        return '<button type="button" class="queue-item" data-episode="' + esc(e.episodeId) + '">' +
+          '<span class="queue-rail"></span><span><strong>' + esc(e.episodeId) + ' · ' +
+          esc(type(e)) + '</strong><small>' + esc(e.specialty + " · " + eventHours(e)) +
+          '</small><em>Sin profesional confirmado</em></span>' + icon("chevron") + "</button>";
+      }).join("") + "</div></section>";
+  }
+  function legendText() {
+    return '<div class="read-only-note">' + icon("shield") +
+      '<span>Diseño demostrativo, sin operaciones ni pacientes reales. ' +
+      'La aprobación de relevos y la activación de planes clínicos están bloqueadas.</span></div>';
+  }
+  function rail() {
+    const count = data.ALERTS.length;
+    return '<aside class="insights" aria-label="Alertas operativas ficticias">' +
+      '<section class="insight-card"><div class="insight-title">' +
+      '<div><span class="eyebrow">PRIORIDADES</span><h3>Atención requerida</h3></div>' +
+      '<span class="insight-count">' + count + '</span></div>' +
+      data.ALERTS.map(function (a) {
+        const e = data.COVERAGES.find(function (x) { return x.id === a.coverageId; });
+        return '<button class="alert-item" type="button" data-episode="' + esc(e.episodeId) + '">' +
+          '<span class="alert-dot alert-dot--' + a.tone + '"></span><span><strong>' + esc(a.label) +
+          '</strong><small>' + esc(a.detail) + '</small><em>' + esc(e.episodeId) +
+          '</em></span>' + icon("chevron") + '</button>';
+      }).join("") + '</section><section class="insight-card insight-card--muted">' +
+      '<span class="eyebrow">RELEVO A CONTROLAR</span><h3>Confirmación pendiente</h3>' +
+      '<p>Un cambio de guardia requiere propuesta, aceptación y autorización de Coordinación.</p>' +
+      '<button type="button" class="small-action" data-section="relevos">Ver circuito ' +
+      icon("chevron") + '</button></section></aside>';
+  }
+  function agenda() {
+    const content = state.mode === "dia" ? dayTimeline() :
+      state.variant === "a" ? institutionalTable() : weekPlanner(state.variant);
+    if (state.variant === "b") {
+      return '<div class="agenda-layout agenda-layout--ops"><div>' + content + '</div>' +
+        '<div class="ops-queue">' + unassignedQueue() + legendText() + '</div></div>';
+    }
+    if (state.variant === "a") {
+      return '<div class="section-stack">' + content + legendText() + "</div>";
+    }
+    return '<div class="section-stack">' + content + unassignedQueue() + legendText() + "</div>";
+  }
+  function overview() {
+    const rows = forFilter();
+    return '<div class="section-stack">' + metrics() +
+      '<div class="overview-grid"><section class="panel"><div class="panel-heading"><div>' +
+      '<span class="eyebrow">VENTANA DE PRUEBA</span><h2>Próximas coberturas</h2></div>' +
+      '<button type="button" class="link-btn" data-section="agenda">Abrir agenda ' + icon("chevron") + '</button></div>' +
+      '<div class="compact-list">' + rows.slice(0, 5).map(function (e) {
+        return '<button type="button" data-episode="' + esc(e.episodeId) + '" class="compact-row">' +
+          '<span class="compact-icon ' + (e.type === "SHIFT" ? "shift-icon" : "") + '">' +
+          icon(e.type === "SHIFT" ? "clock" : "calendar") + '</span><span><strong>' + esc(e.episodeId) +
+          " · " + esc(e.specialty) + '</strong><small>' + esc(eventHours(e)) + '</small></span>' +
+          tag(e.status, tone(e)) + '</button>';
+      }).join("") + "</div></section>" + unassignedQueue() + "</div>" +
+      legendText() + "</div>";
+  }
+  function episodes() {
+    return '<section class="panel"><div class="panel-heading"><div><span class="eyebrow">GESTIÓN DE EPISODIOS</span>' +
+      '<h2>Listado administrativo</h2></div>' + tag("Solo identificadores inventados", "light") + '</div>' +
+      '<div class="episode-grid">' + data.EPISODES.map(function (e) {
+        const count = data.COVERAGES.filter(function (x) { return x.episodeId === e.id; }).length;
+        return '<button type="button" data-episode="' + esc(e.id) + '" class="episode-tile">' +
+          '<div class="episode-icon">' + icon("folder") + '</div><span><strong>' + esc(e.id) +
+          '</strong><small>' + esc(e.area) + '</small></span><span class="episode-total">' + count +
+          '<small>coberturas</small></span><span class="episode-services">' +
+          e.services.map(function (s) { return tag(s, "light"); }).join("") +
+          '</span></button>';
+      }).join("") + '</div></section>';
+  }
+  function professionals() {
+    return '<div class="section-stack"><section class="panel"><div class="panel-heading"><div>' +
+      '<span class="eyebrow">RECURSOS HUMANOS</span><h2>Equipo de demostración</h2></div>' +
+      tag(data.PROFESSIONALS.length + " fichas sintéticas", "light") + '</div><div class="professionals-grid">' +
+      data.PROFESSIONALS.map(function (p, index) {
+        const count = data.COVERAGES.filter(function (x) { return x.professionalId === p.id; }).length;
+        return '<div class="professional-card"><div class="person-top"><span class="person-avatar">' +
+          String.fromCharCode(65 + index) + '</span>' + tag(p.state, p.state === "A verificar" ? "warning" : "success") +
+          '</div><h3>' + esc(p.label) + '</h3><p>' + esc(p.specialty) + '</p><div class="person-foot">' +
+          '<span>' + icon("calendar") + " " + count + ' asignaciones</span><small>' +
+          esc(p.availability) + '</small></div></div>';
+      }).join("") + '</div></section>' + legendText() + "</div>";
+  }
+  function handovers() {
+    return '<div class="section-stack"><section class="panel"><div class="panel-heading"><div>' +
+      '<span class="eyebrow">DOBLE VERIFICACIÓN HUMANA</span><h2>Propuestas de relevo</h2></div>' +
+      tag(data.HANDOVERS.length + " ejemplos", "warning") + '</div><div class="handover-grid">' +
+      data.HANDOVERS.map(function (r) {
+        const e = data.COVERAGES.find(function (x) { return x.id === r.coverageId; });
+        return '<article class="handover-card"><div class="handover-top"><strong>' +
+          esc(r.id) + '</strong>' + tag(r.stage, "warning") + '</div><p class="handover-case">' +
+          esc(e.episodeId) + ' · ' + esc(type(e)) + ' · ' + esc(eventHours(e)) + '</p>' +
+          '<div class="handover-steps"><div class="handover-step"><span class="step-number">1</span>' +
+          '<span>Propuesta de cambio<small>' + esc(data.personName(r.outgoingId)) + '</small></span></div>' +
+          '<div class="step-connector"></div><div class="handover-step"><span class="step-number">2</span>' +
+          '<span>Aceptación y autorización<small>' + esc(data.personName(r.incomingId)) + '</small></span></div></div>' +
+          '<p class="handover-message">' + esc(r.message) + '</p>' +
+          '<button disabled type="button" class="disabled-action" aria-label="Aprobar relevo deshabilitado en demostración">' +
+          'Aprobar cambio · deshabilitado</button></article>';
+      }).join("") + '</div></section>' + legendText() + "</div>";
+  }
+  function reports() {
+    const s = data.summary();
+    return '<div class="section-stack">' + metrics() +
+      '<section class="panel"><div class="panel-heading"><div><span class="eyebrow">SOLO MÉTRICAS ILUSTRATIVAS</span>' +
+      '<h2>Distribución de la semana</h2></div></div>' +
+      '<div class="report-bars">' + [
+        { label: "Visitas", v: s.visits, total: s.total },
+        { label: "Guardias", v: s.shifts, total: s.total },
+        { label: "Sin asignar", v: s.unassigned, total: s.total },
+      ].map(function (it) {
+        return '<div class="report-row"><div><strong>' + esc(it.label) +
+          '</strong><span>' + it.v + ' eventos</span></div><div class="bar-track"><div class="bar-fill" style="width:' +
+          (it.v / it.total * 100).toFixed(2) + '%"></div></div></div>';
+      }).join("") + '</div><p class="panel-footnote">Estas cifras no representan prestaciones realizadas, facturación ni indicadores médicos.</p></section></div>';
+  }
+  function content() {
+    switch (state.section) {
+      case "resumen": return overview();
+      case "agenda": return metrics() + agenda();
+      case "episodios": return episodes();
+      case "profesionales": return professionals();
+      case "relevos": return handovers();
+      case "reportes": return reports();
+      default: return agenda();
+    }
+  }
+  function render() {
+    document.querySelectorAll("[data-variant]").forEach(function (btn) {
+      const isActive = btn.getAttribute("data-variant") === state.variant;
+      btn.setAttribute("aria-pressed", String(isActive));
+      btn.classList.toggle("is-selected", isActive);
+    });
+    const shell = state.variant === "b" ?
+      '<div class="shell shell--b"><div class="top-shell">' +
+      '<div class="top-shell-head">' + brand() + '<span>Gestión operativa / Semana demostrativa</span></div>' +
+      topnav() + '</div><div class="shell-content">' + toolbar() +
+      (state.section === "agenda" ? filters() : "") +
+      '<div class="workspace workspace--b"><div class="workspace-main">' + content() +
+      '</div>' + (state.section === "agenda" || state.section === "resumen" ? rail() : "") +
+      '</div></div></div>' :
+      '<div class="shell shell--' + state.variant + '">' + sidebar() +
+      '<div class="shell-content">' + toolbar() +
+      (state.section === "agenda" ? filters() : "") +
+      '<div class="workspace workspace--' + state.variant + '"><div class="workspace-main">' + content() +
+      '</div>' + (state.variant === "c" && (state.section === "agenda" || state.section === "resumen") ? rail() : "") +
+      "</div></div></div>";
+    host.innerHTML = shell;
+    document.getElementById("current-style").textContent = {
+      a: "A · Institucional", b: "B · Operativo", c: "C · Híbrido",
+    }[state.variant];
+  }
+  function openEpisode(code) {
+    const episode = data.EPISODES.find(function (x) { return x.id === code; });
+    if (!episode) return;
+    const rows = data.COVERAGES.filter(function (x) { return x.episodeId === code; });
+    modalBody.innerHTML = '<div class="modal-header"><span class="eyebrow">EPISODIO FICTICIO · SOLO LECTURA</span>' +
+      '<h2>' + esc(episode.id) + '</h2><p>' + esc(episode.area) + " · " + esc(episode.status) +
+      '</p></div><div class="modal-stats">' + tag(rows.length + " coberturas", "light") +
+      episode.services.map(function (s) { return tag(s, "light"); }).join("") + '</div>' +
+      '<div class="modal-coverages">' + rows.map(function (e) {
+        return '<div><strong>' + esc(type(e) + " · " + e.specialty) +
+          '</strong><span>' + esc(eventHours(e)) + '</span><small>' + esc(e.status) +
+          ' · ' + esc(data.personName(e.professionalId)) + '</small></div>';
+      }).join("") + '</div><p class="modal-warning">' +
+      'Sin identidad de paciente, historia clínica, diagnósticos, órdenes ni firmas. ' +
+      'El acceso real dependerá de permisos y autorización institucional.</p>';
+    modal.showModal();
+  }
+  document.addEventListener("click", function (event) {
+    const button = event.target.closest("button");
+    if (!button) return;
+    if (button.hasAttribute("data-variant")) {
+      const next = button.getAttribute("data-variant");
+      if (["a", "b", "c"].includes(next)) { state.variant = next; render(); }
+    } else if (button.hasAttribute("data-section")) {
+      const next = button.getAttribute("data-section");
+      if (titles[next]) { state.section = next; render(); }
+    } else if (button.hasAttribute("data-mode")) {
+      const next = button.getAttribute("data-mode");
+      if (["semana", "dia"].includes(next)) { state.mode = next; render(); }
+    } else if (button.hasAttribute("data-episode")) {
+      openEpisode(button.getAttribute("data-episode"));
+    } else if (button.hasAttribute("data-close")) {
+      modal.close();
+    }
+  });
+  document.addEventListener("change", function (event) {
+    if (event.target.id === "specialty-filter") {
+      const valid = ["Todas", "Enfermería", "Kinesiología", "Medicina", "Fonoaudiología"];
+      if (valid.includes(event.target.value)) state.specialty = event.target.value;
+      render();
+    } else if (event.target.id === "day-filter") {
+      if (data.DAYS.some(function (d) { return d.date === event.target.value; })) state.day = event.target.value;
+      render();
+    }
+  });
+  modal.addEventListener("click", function (event) {
+    if (event.target === modal) modal.close();
+  });
+  render();
+}());
+
+  </script>
+</body>
+</html>
