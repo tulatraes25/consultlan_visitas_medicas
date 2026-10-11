@@ -47,6 +47,18 @@ function isCursor(cursor:unknown):cursor is CoverageCursor{
     typeof c.scheduledStart==="string" &&
     strictInstant(c.scheduledStart)!==null;
 }
+/** SQL returns a snake_case keyset. Translate to the mobile cursor shape
+ * only AFTER strict validation; reject camelCase from an upstream payload.
+ */
+function parseServerCursor(value:unknown):CoverageCursor|null{
+  if(!value||typeof value!=="object"||Array.isArray(value))return null;
+  const c=value as Record<string,unknown>;
+  if(Object.keys(c).sort().join(",")!=="id,scheduled_start"||
+    typeof c.id!=="string"||!UUID.test(c.id)||
+    typeof c.scheduled_start!=="string"||
+    strictInstant(c.scheduled_start)===null)return null;
+  return {id:c.id,scheduledStart:c.scheduled_start};
+}
 function safeResult(data:unknown,window:CoverageWindow,prior:CoverageCursor|null):CoveragePage{
   if(!data||typeof data!=="object"||Array.isArray(data))fail("ROSTER_PAGE_UNEXPECTED_SHAPE");
   const obj=data as Record<string,unknown>;
@@ -69,20 +81,18 @@ function safeResult(data:unknown,window:CoverageWindow,prior:CoverageCursor|null
   if(prior&&rows.length>0&&compareCoverageChronology({
     id:prior.id,scheduledStart:prior.scheduledStart,
   },rows[0])>=0)fail("ROSTER_PAGE_REPLAY");
+  const next=obj.hasMore?parseServerCursor(obj.nextCursor):null;
   if(obj.hasMore){
-    if(rows.length!==100||!isCursor(obj.nextCursor))fail("ROSTER_PAGE_CURSOR_INVALID");
+    if(rows.length!==100||!next)fail("ROSTER_PAGE_CURSOR_INVALID");
     const last=rows[rows.length-1];
-    if(obj.nextCursor.id.toLowerCase()!==last.id.toLowerCase()||
-      obj.nextCursor.scheduledStart!==last.scheduledStart)
+    if(next.id.toLowerCase()!==last.id.toLowerCase()||
+      next.scheduledStart!==last.scheduledStart)
       fail("ROSTER_PAGE_CURSOR_INVALID");
   }else if(obj.nextCursor!==null)fail("ROSTER_PAGE_CURSOR_INVALID");
   return Object.freeze({
     rows:Object.freeze(rows.map(row=>Object.freeze({...row}))),
     hasMore:obj.hasMore,
-    nextCursor:obj.hasMore ? Object.freeze({
-      id:(obj.nextCursor as CoverageCursor).id,
-      scheduledStart:(obj.nextCursor as CoverageCursor).scheduledStart,
-    }) : null,
+    nextCursor:next?Object.freeze({...next}):null,
   });
 }
 
