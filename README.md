@@ -25,6 +25,7 @@ Aplicación móvil para la **continuidad de cuidados domiciliarios pediátricos*
 - [HC-READ-01 lectura de agenda propia](docs/specs/HC-READ-01-session-scoped-roster.md) — RPC de seis campos solo para profesionales activos y su episodio; cierra la lectura directa de coberturas/relevos con JWT. Aún pendiente staging independiente.
 - [SEC-READ-02A cierre de lectura directa](docs/specs/SEC-READ-02A-sensitive-table-lockdown.md) — revocación de once tablas sensibles adicionales, antecedente con excepción transitoria ya resuelta por SEC-READ-02B.
 - [SEC-READ-02B lectura de episodio por Edge](docs/specs/SEC-READ-02B-episode-edge-gate.md) — revoca el último SELECT móvil sobre episodios, valida identidad/sesión y habilita prueba sintética de alcance por organización, sin conexión real.
+- [SEC-SURFACE-01 guardia automática de permisos](docs/specs/SEC-SURFACE-01-dynamic-privilege-guard.md) — inspección dinámica de todas las tablas, vistas, secuencias y RPC de `public` para bloquear nuevas exposiciones accidentales en futuras migraciones.
 - [FORM-001](docs/specs/FORM-001-inventario-clinico.md) — planillas de origen inventariadas sin datos de pacientes.
 - [Supabase: migración y pruebas RLS](supabase/README.md) — instalación pendiente de proyecto en la nube, prueba en PostgreSQL sintético.
 - [STAGING-01A preflight](docs/specs/STAGING-01A-safe-preflight.md) — inspección offline del esquema y controles de destino; las pruebas negativas remotas son **opcionales** y requieren staging independiente expresamente autorizado.

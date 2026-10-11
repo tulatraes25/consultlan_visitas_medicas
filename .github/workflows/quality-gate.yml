@@ -179,6 +179,8 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261010100000_episode_scope_edge_read.sql
       - name: Verify all fourteen direct reads denied and scoped Edge RPC isolation
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/episode_scope_edge_read.sql
+      - name: Reject future mobile grants on any new public table or privileged RPC
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/dynamic_public_surface_guard.sql
 
   edge-functions:
     name: Deno Edge JWT boundary and request validation

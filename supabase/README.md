@@ -109,6 +109,10 @@ La migración `20261010080000_homecare_roster_edge_read.sql` revoca SELECT direc
 
 **SEC-READ-02B (undécima migración):** revoca también SELECT directo sobre `homecare_episodes`, completando **catorce tablas sin lectura directa por JWT**. Añade `api_hc_episode_scope(p_actor,p_episode)` exclusiva del backend con resultado mínimo `[id,organization_id]` para episodios permitidos. La Edge valida Auth y sesión activa antes de consultar, y la prueba STAGING-01B sustituye su GET directo por cuatro solicitudes Edge más 14 comprobaciones negativas de PostgREST sin filas. No se ha verificado en Supabase alojado ni permite atención de pacientes. [SPEC SEC-READ-02B](../docs/specs/SEC-READ-02B-episode-edge-gate.md). [SPEC HC-READ-01](../docs/specs/HC-READ-01-session-scoped-roster.md).
 
+## SEC-SURFACE-01 — Control de regresiones de permisos ante nuevas migraciones
+
+Tras las once migraciones, el Quality Gate recorre **dinámicamente** los objetos del catálogo de PostgreSQL: deniega a `authenticated` y `anon` permisos de SELECT/escritura sobre cualquier tabla o vista pública nueva, permisos de secuencias y EXECUTE sobre RPC `api_*` y funciones `SECURITY DEFINER` públicas. Así no depende únicamente del inventario fijo de catorce tablas conocido hoy. Valida también el `search_path` fijado en funciones privilegiadas. La auditoría es sintética; el ensayo contra Supabase alojado sigue pendiente. [SPEC SEC-SURFACE-01](../docs/specs/SEC-SURFACE-01-dynamic-privilege-guard.md).
+
 ## Puesta en marcha posterior (NO realizada)
 1. La administración propietaria de Pediatrics crea un **proyecto Supabase nuevo y separado**, comprueba responsabilidad contractual, región de residencia de datos, privacidad, backup/restore y política de retención. Nunca usar el proyecto SICOM ni un entorno de CONSULTLAN.
 2. Configura Supabase Auth con registro abierto/usuarios anónimos deshabilitados; define invitaciones, MFA, rotación, recuperación y control de sesiones. **No** desplegar con pacientes reales sin una revisión de cumplimiento sanitario/contractual.
