@@ -232,9 +232,9 @@ describe("MOB-DATA-02 standalone staging read-only preview screen",()=>{
     const visible=JSON.stringify(view.toJSON());
     expect(visible).not.toMatch(/11111111|22222222|Bearer|auth\.users|medicacion|diagnostico/);
     expect(visible).not.toMatch(/2026-10-15T20:00:00Z/);
-    expect(visible).toMatch(/15\\/10\\/2026/);
+    expect(visible).toContain("15/10/2026");
     expect(visible).toMatch(/17:00/);
-    expect(visible).toMatch(/16\\/10\\/2026/);
+    expect(visible).toContain("16/10/2026");
     expect(visible).toMatch(/05:00/);
     expect(visible).toMatch(/GMT-3/);
     view.unmount();
