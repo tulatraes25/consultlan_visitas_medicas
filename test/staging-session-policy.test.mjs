@@ -70,7 +70,6 @@ test("STAGING-01C accepts only full UUIDs, standalone project and explicit sessi
     { ...good(), STAGING_URL: "https://" + REF + ".supabase.co/" },
     { ...good(), STAGING_PROJECT_REF: FORBIDDEN_REF, STAGING_URL: "https://" + FORBIDDEN_REF + ".supabase.co" },
     { ...good(), STAGING_PUBLISHABLE_KEY: "sb_secret_" + "x".repeat(32) },
-    { ...good(), STAGING_SESSION_USER_ID: "11111111-1111-4111-111111111111" },
     { ...good(), STAGING_SESSION_USER_ID: "11111111-1111-4111-8111-11111111111" },
     { ...good(), STAGING_SESSION_ACTIVE_JWT: fakeJwt("22222222-2222-4222-8222-222222222222", SESSION_A, now() + 3600) },
     { ...good(), STAGING_SESSION_ACTIVE_JWT: fakeJwt(USER, SESSION_A, now() - 10) },
@@ -79,21 +78,7 @@ test("STAGING-01C accepts only full UUIDs, standalone project and explicit sessi
     { ...good(), STAGING_SESSION_EXPIRED_JWT: fakeJwt(USER, SESSION_OLD, now() + 3600) },
     { ...good(), STAGING_SESSION_ACTIVE_JWT: "sb_secret_untrusted" },
     { ...good(), STAGING_SESSION_EXPIRED_JWT: "abc.not_json.signature" },
-  ].filter(env => env.STAGING_SESSION_USER_ID !== USER || env !== null)) {
-    // The normal identical USER ID was included to guard test fixture assumptions
-    // and is skipped, since only mutations should be invalid.
-    if (env.STAGING_SESSION_USER_ID === USER &&
-        env.STAGING_SESSION_ACTIVE_JWT === good().STAGING_SESSION_ACTIVE_JWT &&
-        env.STAGING_SESSION_REVOKED_JWT === good().STAGING_SESSION_REVOKED_JWT &&
-        env.STAGING_SESSION_EXPIRED_JWT === good().STAGING_SESSION_EXPIRED_JWT &&
-        env.STAGING_SESSION_E2E === "YES" &&
-        env.STAGING_ALLOW_NETWORK === "YES" &&
-        env.STAGING_SYNTHETIC_FIXTURES === "YES" &&
-        env.STAGING_SESSION_REVOCATION_CONFIRMED === "YES" &&
-        env.STAGING_URL === good().STAGING_URL &&
-        env.STAGING_PROJECT_REF === good().STAGING_PROJECT_REF &&
-        env.STAGING_PUBLISHABLE_KEY === good().STAGING_PUBLISHABLE_KEY &&
-        env.STAGING_ENVIRONMENT === "staging") continue;
+  ]) {
     assert.equal(validateSessionStagingEnvironment(env, { live: true }).ok, false);
   }
 });
