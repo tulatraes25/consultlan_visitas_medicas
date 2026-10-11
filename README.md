@@ -23,6 +23,7 @@ Aplicación móvil para la **continuidad de cuidados domiciliarios pediátricos*
 - [MOB-HC-EPISODE-01 episodios móviles](docs/specs/MOB-HC-EPISODE-01-readonly-timeline.md) — navegación caso-primero en teléfonos/tablets, coberturas ficticias agrupadas estrictamente por paciente y episodio, sin acciones clínicas.
 - [MOB-DATA-01 lectura de coberturas](docs/specs/MOB-DATA-01-readonly-staging-coverage.md) — contrato móvil Edge dormido con JWT de usuario y sesión activa requerida; backend HC-READ-01 implementado y probado sintéticamente, sin conexión real ni consulta directa a tablas.
 - [HC-READ-01 lectura de agenda propia](docs/specs/HC-READ-01-session-scoped-roster.md) — RPC de seis campos solo para profesionales activos y su episodio; cierra la lectura directa de coberturas/relevos con JWT. Aún pendiente staging independiente.
+- [SEC-READ-02A cierre de lectura directa](docs/specs/SEC-READ-02A-sensitive-table-lockdown.md) — revoca SELECT de otras once tablas sensibles para JWT móvil; queda una excepción temporal de episodios para STAGING-01B, bloqueante antes de producción.
 - [FORM-001](docs/specs/FORM-001-inventario-clinico.md) — planillas de origen inventariadas sin datos de pacientes.
 - [Supabase: migración y pruebas RLS](supabase/README.md) — instalación pendiente de proyecto en la nube, prueba en PostgreSQL sintético.
 - [STAGING-01A preflight](docs/specs/STAGING-01A-safe-preflight.md) — inspección offline del esquema y controles de destino; las pruebas negativas remotas son **opcionales** y requieren staging independiente expresamente autorizado.
