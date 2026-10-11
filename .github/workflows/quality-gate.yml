@@ -187,6 +187,8 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/dynamic_public_surface_guard.sql
       - name: Verify read-only staging catalog preflight on synthetic Auth schema
         run: psql -v ON_ERROR_STOP=1 -f supabase/staging/01d_catalog_readonly_attestation.sql
+      - name: Check exact remote migration ledger contract with positive and negative CI fixtures
+        run: sh scripts/ci-staging-history-verify.sh
 
   edge-functions:
     name: Deno Edge JWT boundary and request validation

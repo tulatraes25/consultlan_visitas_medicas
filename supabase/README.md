@@ -115,6 +115,10 @@ La migración `20261010080000_homecare_roster_edge_read.sql` revoca SELECT direc
 
 Tras las once migraciones, el Quality Gate recorre **dinámicamente** los objetos del catálogo de PostgreSQL: deniega a `authenticated` y `anon` permisos de SELECT/escritura sobre cualquier tabla o vista pública nueva, permisos de secuencias y EXECUTE sobre RPC `api_*` y funciones `SECURITY DEFINER` públicas. Así no depende únicamente del inventario fijo de catorce tablas conocido hoy. Valida también el `search_path` fijado en funciones privilegiadas. La auditoría es sintética; el ensayo contra Supabase alojado sigue pendiente. [SPEC SEC-SURFACE-01](../docs/specs/SEC-SURFACE-01-dynamic-privilege-guard.md).
 
+## STAGING-01E — Historial registrado por Supabase (no desplegado)
+
+El SQL `staging/01e_migration_history_readonly.sql` consulta únicamente el historial `supabase_migrations.schema_migrations.version` en una **transacción de solo lectura**: requiere 11 versiones exactas. CI usa un stub descartable con 11 versiones, y verifica rechazo de historial extra, faltante o sustituido. Un operador autorizado debe revisar `supabase migration list --linked` y `supabase db push --dry-run` antes de cualquier instalación remota; **este repositorio no ejecuta despliegues automáticamente**. El historial registra versiones, no demuestra por sí solo igualdad de bytes ni prueba Auth administrado. [SPEC STAGING-01E](../docs/specs/STAGING-01E-migration-history-readiness.md).
+
 ## Puesta en marcha posterior (NO realizada)
 1. La administración propietaria de Pediatrics crea un **proyecto Supabase nuevo y separado**, comprueba responsabilidad contractual, región de residencia de datos, privacidad, backup/restore y política de retención. Nunca usar el proyecto SICOM ni un entorno de CONSULTLAN.
 2. Configura Supabase Auth con registro abierto/usuarios anónimos deshabilitados; define invitaciones, MFA, rotación, recuperación y control de sesiones. **No** desplegar con pacientes reales sin una revisión de cumplimiento sanitario/contractual.
