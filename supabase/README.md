@@ -119,6 +119,10 @@ Tras las once migraciones, el Quality Gate recorre **dinámicamente** los objeto
 
 El SQL `staging/01e_migration_history_readonly.sql` consulta únicamente el historial `supabase_migrations.schema_migrations.version` en una **transacción de solo lectura**: requiere 11 versiones exactas. CI usa un stub descartable con 11 versiones, y verifica rechazo de historial extra, faltante o sustituido. Un operador autorizado debe revisar `supabase migration list --linked` y `supabase db push --dry-run` antes de cualquier instalación remota; **este repositorio no ejecuta despliegues automáticamente**. El historial registra versiones, no demuestra por sí solo igualdad de bytes ni prueba Auth administrado. [SPEC STAGING-01E](../docs/specs/STAGING-01E-migration-history-readiness.md).
 
+## STAGING-01F — Suite única de identidad, tenant y revocación (pendiente de nube)
+
+El comando `scripts/staging-integrated-verify.mjs` compone las pruebas HTTP de 01A/01B/01C (30 solicitudes acotadas) contra una sola referencia de Supabase. Obliga a compartir el JWT activo y el JWT vencido de la cuenta A entre los dos ensayos autenticados y rechaza diferencias de identidad. CI y `--check-env` son offline; `--probe` está reservado a un proyecto independiente real aprobado, con datos sintéticos. La declaración de titularidad no reemplaza una inspección del Dashboard. No acredita catálogos SQL, migraciones, backups ni seguridad clínica. [SPEC STAGING-01F](../docs/specs/STAGING-01F-integrated-identity-run.md).
+
 ## Puesta en marcha posterior (NO realizada)
 1. La administración propietaria de Pediatrics crea un **proyecto Supabase nuevo y separado**, comprueba responsabilidad contractual, región de residencia de datos, privacidad, backup/restore y política de retención. Nunca usar el proyecto SICOM ni un entorno de CONSULTLAN.
 2. Configura Supabase Auth con registro abierto/usuarios anónimos deshabilitados; define invitaciones, MFA, rotación, recuperación y control de sesiones. **No** desplegar con pacientes reales sin una revisión de cumplimiento sanitario/contractual.

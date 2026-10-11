@@ -33,6 +33,7 @@ Aplicación móvil para la **continuidad de cuidados domiciliarios pediátricos*
 - [SEC-SURFACE-01 guardia automática de permisos](docs/specs/SEC-SURFACE-01-dynamic-privilege-guard.md) — inspección dinámica de todas las tablas, vistas, secuencias y RPC de `public` para bloquear nuevas exposiciones accidentales en futuras migraciones.
 - [STAGING-01D atestación de fuente y catálogo](docs/specs/STAGING-01D-source-and-catalog-attestation.md) — manifiesto SHA-256 de once migraciones y runtime Edge desde commit Git limpio, más inspección SQL estructural de solo lectura; no acredita despliegue.
 - [STAGING-01E historial de migraciones](docs/specs/STAGING-01E-migration-history-readiness.md) — consulta SQL READ ONLY que rechaza versiones extra, faltantes o sustituidas; ensayada en PostgreSQL sintético, aplicación real aún bloqueada.
+- [STAGING-01F verificaciones integradas](docs/specs/STAGING-01F-integrated-identity-run.md) — unifica los controles Auth, aislamiento y sesión revocada con identidades sintéticas compartidas; CI offline y ejecución remota pendiente.
 - [FORM-001](docs/specs/FORM-001-inventario-clinico.md) — planillas de origen inventariadas sin datos de pacientes.
 - [Supabase: migración y pruebas RLS](supabase/README.md) — instalación pendiente de proyecto en la nube, prueba en PostgreSQL sintético.
 - [STAGING-01A preflight](docs/specs/STAGING-01A-safe-preflight.md) — inspección offline del esquema y controles de destino; las pruebas negativas remotas son **opcionales** y requieren staging independiente expresamente autorizado.

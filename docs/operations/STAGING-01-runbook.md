@@ -44,6 +44,16 @@ Una vez que el operador institucional haya identificado y aprobado un proyecto *
 
 Solo **después** de la instalación supervisada de las once migraciones, ejecutar el SQL de historial por una conexión segura al staging correcto, seguido del SQL STAGING-01D de catálogo. La coincidencia de versiones no acredita igualdad criptográfica de los scripts ejecutados: correlacionar con el manifiesto SHA-256 fuente, el dry-run revisado, el registro de aplicación y las pruebas de Auth/Edge. [SPEC STAGING-01E](../specs/STAGING-01E-migration-history-readiness.md).
 
+## 1F. STAGING-01F — Suite integrada de seguridad (no ejecutada en Supabase remoto)
+
+El gate `scripts/staging-integrated-verify.mjs` combina STAGING-01A/B/C en una misma ejecución de 30 solicitudes negativas o de solo lectura. Para evitar falsas certificaciones exige el mismo proyecto y los mismos JWT activos/vencidos del usuario A entre las pruebas de aislamiento y de sesión. No modifica datos.
+
+El operador institucional deberá verificar fuera de GitHub la titularidad, región, referencia del proyecto Supabase nuevo y la lista de refs excluidos. Solo entonces establecer `STAGING_OPERATOR_PROJECT_IDENTITY_VERIFIED=YES`: una declaración humana que el programa no puede corroborar. También exige todas las variables de 01A/01B/01C, incluyendo `STAGING_SESSION_ACTIVE_JWT=STAGING_USER_A_JWT`, `STAGING_SESSION_EXPIRED_JWT=STAGING_EXPIRED_USER_JWT` y `STAGING_SESSION_USER_ID=STAGING_USER_A_ID`.
+
+Modos: `node scripts/staging-integrated-verify.mjs --ci` no usa red ni credenciales; `--check-env` valida sin red; `--probe` requiere autorización y credenciales exclusivamente sintéticas gestionadas fuera del repositorio. El último modo NO fue ejecutado contra un proyecto real.
+
+Un PASS confirma solamente los 30 comportamientos HTTP observados. Son exigencias adicionales las auditorías SQL de solo lectura 01D/01E, manifiesto SHA-256, respaldo/restauración, identidad institucional, configuración Auth/Storage y autorización de Dirección Médica. Nunca registrar JWT, claves o pacientes en GitHub ni en un acta pública. [SPEC STAGING-01F](../specs/STAGING-01F-integrated-identity-run.md).
+
 ## 2. Variables temporales requeridas, solo en entorno autorizado
 No pasar llaves como argumentos, no usar archivos .env dentro del repositorio público, no pegar credenciales en chats, issues o logs. Usar el gestor de secretos del operador o un entorno de ejecución aislado.
 
