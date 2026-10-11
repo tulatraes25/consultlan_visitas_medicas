@@ -221,3 +221,31 @@ jobs:
             echo 'A mobile component must not include server-side secrets.'
             exit 1
           fi
+
+  web-browser-qa:
+    name: Browser QA for synthetic web A/B/C
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CI: '1'
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned local Playwright test driver only
+        run: npm install --no-save --package-lock=false --no-audit --no-fund --ignore-scripts playwright@1.56.1
+      - name: Confirm hosted Chrome browser
+        run: google-chrome --version
+      - name: Run real desktop and tablet Chrome navigation, privacy and screenshots
+        run: node test/web-browser.e2e.cjs
+      - name: Preserve browser QA screenshots for nontechnical review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-coord-qa-${{ github.run_id }}
+          path: artifacts/web-coord/*.png
+          if-no-files-found: ignore
+          retention-days: 14

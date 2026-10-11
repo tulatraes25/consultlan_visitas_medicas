@@ -35,3 +35,11 @@ Tres alternativas **navegables** del futuro panel web, diseñadas con un único 
 El comando node --test test/web-coord-prototypes.test.mjs verifica fixture, solapamiento de noches, filtros, estructura de A/B/C, sintaxis JavaScript, marcadores de accesibilidad y preview sin URLs externas. Quality Gate integra estas pruebas en npm test más syntax checks. **No es una prueba E2E en navegador real**, no equivale a accesibilidad WCAG auditada ni a autorización clínica. La revisión visual por Coordinación y automatización E2E se definirán antes de WEB-COORD-01B.
 
 Arquitectura fuente: [OSS-HC-ARCH-01](../../docs/research/OSS-HC-ARCH-01-github-benchmark.md), [ADR-004](../../docs/adr/ADR-004-benchmark-driven-homecare-platform.md), [WEB-COORD-01](../../docs/specs/WEB-COORD-01-coordination-console.md).
+
+## WEB-COORD-01B — Capturas verificadas en navegador real (GitHub Actions)
+
+La demo sigue siendo exclusivamente sintética. Una prueba adicional ahora abre preview.html en **Chrome real**, verifica los tres estilos en escritorio/tablet (1440, 1024 y 768 px), cambio de día y especialidad, continuidad de una guardia nocturna, foco/teclado, cuadro de episodio y aprobación deshabilitada. Durante la prueba, **toda solicitud HTTP/HTTPS se bloquea** y cualquier error JavaScript causa fallo.
+
+Las **capturas PNG** se adjuntan como artefacto del trabajo Browser QA for synthetic web A/B/C en **Actions → Quality Gate**. Esto permite comparar las tres pantallas sin instalar programas. No se cargan imágenes clínicas ni se conecta ninguna API.
+
+El test de Chrome no es un estudio clínico ni una auditoría completa WCAG, y no verifica Safari/WebKit. La **elección A/B/C por Coordinación continúa pendiente** antes de construir apps/web React definitivo.
