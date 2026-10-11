@@ -43,3 +43,7 @@ La demo sigue siendo exclusivamente sintética. Una prueba adicional ahora abre 
 Las **capturas PNG** se adjuntan como artefacto del trabajo Browser QA for synthetic web A/B/C en **Actions → Quality Gate**. Esto permite comparar las tres pantallas sin instalar programas. No se cargan imágenes clínicas ni se conecta ninguna API.
 
 El test de Chrome no es un estudio clínico ni una auditoría completa WCAG, y no verifica Safari/WebKit. La **elección A/B/C por Coordinación continúa pendiente** antes de construir apps/web React definitivo.
+
+## WEB-COORD-01C — compatibilidad y accesibilidad automatizada
+
+La suite CI amplía la validación con **Firefox y WebKit (motor de Safari)** en 1440/768 px, además de Chrome ya probado. Verifica vista A/B/C, guardia 20:00–08:00, filtros, cambios de día, aprobación de relevo deshabilitada, modal y cero peticiones HTTP. **axe-core 4.10.3** examina violaciones automáticas graves/críticas WCAG 2.1 A/AA de Agenda, Episodios y Relevos en las tres alternativas. Estos controles son automáticos: no reemplazan la revisión humana ni la prueba en dispositivos físicos.

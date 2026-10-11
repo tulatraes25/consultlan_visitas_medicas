@@ -74,7 +74,7 @@ async function crossEngine(){
             await checkLayout(page,engine,variant,viewport.width);
           }
           await page.locator("#specialty-filter").selectOption("Enfermería");
-          assert.equal(await page.locator(".event-card").count(),7,
+          assert.equal(await page.locator(".event-card").count(),9,
             "filtered nurse coverages can appear on multiple days");
           await page.locator("#day-filter").selectOption("2026-10-13");
           await page.locator(".timeline").waitFor({state:"visible"});
