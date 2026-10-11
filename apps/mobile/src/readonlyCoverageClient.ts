@@ -167,7 +167,7 @@ export function createReadOnlyCoverageClient(config: ReadOnlyCoverageConfig) {
       }
       const rows = body.result.map(parseCoverage);
       // Duplicate IDs must not masquerade as multiple visits or UI cards.
-      if (new Set(rows.map(row => row.id)).size !== rows.length) {
+      if (new Set(rows.map(row => row.id.toLowerCase())).size !== rows.length) {
         return fail("ROSTER_DUPLICATE_COVERAGE_ID");
       }
       return { rows, possiblyTruncated: rows.length === 100 };
