@@ -24,6 +24,7 @@ Usar el emulador/dispositivo compatible con Expo SDK 57. Para producir bundles e
 6. Gestión administrativa simulada: pacientes/profesionales ficticios, elección de modalidad **Visita puntual / Guardia prolongada**, fecha y rango HH:mm variable, incluso guardias de hasta 24 horas que cruzan medianoche; se rechazan superposiciones del mismo profesional y se muestran **posibles continuidades**, nunca como relevos acreditados. No crea cuentas ni persiste datos.
 7. **Planillas (HC-03B)**: catálogo por seis especialidades y hoja de evolución; previsualiza campos originales confirmados, sin campos de captura ni firmas. Lista→detalle en celulares/tablets medianas y dos paneles en tablet ancha. Desde una visita ficticia se abre la plantilla de su especialidad **sin enviar datos del paciente**.
 8. **Hojas en domicilio**: Kardex, signos vitales, procedimientos y hoja de crisis figuran únicamente como referencias físicas; no son formularios editables ni sistemas de alarmas.
+9. **Episodios (MOB-HC-EPISODE-01)**: dentro de Gestión, lista de episodios inventados y agenda VISIT/SHIFT agrupada por episodio y paciente; sin admisión ni plan aprobados, y sin mezcla de casos.
 
 ## Límites y seguridad
 - Se muestra siempre **MODO DEMO · datos ficticios**.
