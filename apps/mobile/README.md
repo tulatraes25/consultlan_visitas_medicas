@@ -26,6 +26,10 @@ Usar el emulador/dispositivo compatible con Expo SDK 57. Para producir bundles e
 8. **Hojas en domicilio**: Kardex, signos vitales, procedimientos y hoja de crisis figuran únicamente como referencias físicas; no son formularios editables ni sistemas de alarmas.
 9. **Episodios (MOB-HC-EPISODE-01)**: dentro de Gestión, lista de episodios inventados y agenda VISIT/SHIFT agrupada por episodio y paciente; sin admisión ni plan aprobados, y sin mezcla de casos.
 
+## Adaptador de lectura futura (MOB-DATA-01)
+
+El código `src/readonlyCoverageClient.ts` prepara una futura consulta **POST a una Edge Function con validación de sesión activa** en el Supabase autónomo, con llave publicable y JWT de usuario de Auth. **No está importado por las pantallas y no hace llamadas reales**. El backend todavía **no implementa** la acción de lectura: HTTP 422 se rechaza explícitamente. No realiza GET directos a PostgREST, que podrían aceptar un JWT luego de cerrar sesión. Los tests solo simulan respuestas. Las credenciales privilegiadas y la verificación real de permisos permanecen exclusivamente en el servidor; sin datos clínicos, firma ni pacientes reales.
+
 ## Límites y seguridad
 - Se muestra siempre **MODO DEMO · datos ficticios**.
 - La pestaña Gestión solo sirve para probar UX, **no es una ruta autenticada ni representa permisos reales**. Los códigos de personas son sintéticos de 1 a 4 caracteres. Los campos de fecha/hora únicamente representan calendario de simulación.
