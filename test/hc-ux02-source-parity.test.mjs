@@ -82,7 +82,7 @@ test("HC-UX-02: no clinical data capture, write endpoint, signature, or false ou
     /\b(?:fetch|XMLHttpRequest|WebSocket|EventSource|localStorage|sessionStorage|indexedDB|navigator\.sendBeacon)\s*(?:\(|\.)/);
   assert.doesNotMatch(appScript,/\b(?:apiKey|service_role|SUPABASE_SERVICE|process\.env)\b/);
   assert.match(html,/La evolución no es una constancia de asistencia/);
-  assert.match(html,/no reproduce el formato original DOCX\/PDF completo/);
+  assert.match(html,/no reproduce el formato original DOCX\/PDF completo/i);
   assert.doesNotMatch(html,/firma\s+registrada|validaci[oó]n\s+completada|documento\s+emitido\s+correctamente/i);
   new Script(appScript,{filename:"apps/form-prototypes/preview.html"});
 });
