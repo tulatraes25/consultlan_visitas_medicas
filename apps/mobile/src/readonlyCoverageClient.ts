@@ -2,8 +2,9 @@
  * MOB-DATA-01 — staging-only, read-only Supabase coverage metadata adapter.
  *
  * Not wired to the app. No patient, clinical notes, medical orders, signatures,
- * caregiver identity or service-role secrets. Real access depends on Supabase
- * Auth + actual PostgreSQL RLS, not on these client-side guards.
+ * caregiver identity or service-role secrets. Any eventual read MUST travel
+ * through the Edge Auth + LIVE SESSION gate before its future scoped RPC.
+ * There is no backend roster-read command yet; current Edge returns HTTP 422.
  */
 
 export type PublicCoverage = Readonly<{
@@ -41,7 +42,7 @@ const UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 const DATE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:Z|[+-]\d{2}:\d{2})$/;
 const STATES = new Set(["PLANNED", "ASSIGNED", "ACTIVE", "COMPLETED", "CANCELLED", "NOT_PERFORMED"]);
 const FIELDS = ["id", "episode_id", "service_kind", "coverage_state", "scheduled_start", "scheduled_end"];
-const FIXED_QUERY = "select=" + FIELDS.join(",") + "&order=scheduled_start.asc&limit=100";
+const FIXED_ACTION = '{"action":"listMyHomecareCoverages"}';
 
 function fail(code: string): never { throw new CoverageReadError(code); }
 
@@ -86,8 +87,9 @@ export function createReadOnlyCoverageClient(config: ReadOnlyCoverageConfig) {
       typeof config.getAccessToken !== "function" ||
       typeof config.fetcher !== "function") fail("ROSTER_STAGING_CONFIG_REJECTED");
 
-  const endpoint = "https://" + config.projectRef +
-    ".supabase.co/rest/v1/homecare_coverage_assignments?" + FIXED_QUERY;
+  // Never GET the table directly through PostgREST: its RLS does not yet
+  // enforce the additional auth.sessions check performed by this Edge handler.
+  const endpoint = "https://" + config.projectRef + ".supabase.co/functions/v1/visits";
 
   return {
     async list(signal?: AbortSignal): Promise<{
@@ -104,12 +106,14 @@ export function createReadOnlyCoverageClient(config: ReadOnlyCoverageConfig) {
       let response: Pick<Response, "status" | "json">;
       try {
         response = await config.fetcher(endpoint, {
-          method: "GET",
+          method: "POST",
           headers: {
             apikey: config.publishableKey,
             authorization: "Bearer " + token,
             accept: "application/json",
+            "content-type": "application/json",
           },
+          body: FIXED_ACTION,
           redirect: "error",
           cache: "no-store",
           signal,
@@ -119,14 +123,22 @@ export function createReadOnlyCoverageClient(config: ReadOnlyCoverageConfig) {
       if (response.status === 401 || response.status === 403) {
         return fail("ROSTER_ACCESS_DENIED");
       }
+      // Until a separately reviewed Edge read action exists, the published
+      // handler will return 422. Never treat that as an empty roster.
+      if (response.status === 422) return fail("ROSTER_EDGE_READ_NOT_IMPLEMENTED");
       if (response.status !== 200) return fail("ROSTER_SERVICE_UNAVAILABLE");
-      let data: unknown;
-      try { data = await response.json(); }
+      let envelope: unknown;
+      try { envelope = await response.json(); }
       catch { return fail("ROSTER_UNEXPECTED_SHAPE"); }
-      if (!Array.isArray(data) || data.length > 100) {
+      if (!envelope || typeof envelope !== "object" || Array.isArray(envelope) ||
+          Object.keys(envelope).sort().join(",") !== "ok,result") {
         return fail("ROSTER_UNEXPECTED_SHAPE");
       }
-      const rows = data.map(parseCoverage);
+      const body = envelope as Record<string, unknown>;
+      if (body.ok !== true || !Array.isArray(body.result) || body.result.length > 100) {
+        return fail("ROSTER_UNEXPECTED_SHAPE");
+      }
+      const rows = body.result.map(parseCoverage);
       return { rows, possiblyTruncated: rows.length === 100 };
     },
   };
