@@ -11,9 +11,10 @@ import {
 import { PrimaryAction, ScreenHeading } from "./ui";
 import { PlanReviewQueueDemo } from "./PlanReviewQueueDemo";
 import { EpisodeOverviewDemo } from "./EpisodeOverviewDemo";
+import { ProfessionalRosterPreviewDemo } from "./ProfessionalRosterPreviewDemo";
 import { corners, palette, spacing, touchSize } from "./theme";
 
-type Section = "patients" | "professionals" | "assignments" | "reviews" | "episodes";
+type Section = "patients" | "professionals" | "assignments" | "reviews" | "episodes" | "professional-preview";
 
 function Choice({
   label, selected, onPress, accessibilityLabel,
@@ -62,6 +63,7 @@ export function AdminWorkspaceDemo({
 
   const sections: readonly { id: Section; label: string }[] = [
     { id: "episodes", label: "Episodios" },
+    { id: "professional-preview", label: "Vista profesional" },
     { id: "patients", label: "Pacientes" },
     { id: "professionals", label: "Profesionales" },
     { id: "assignments", label: "Asignaciones" },
@@ -321,6 +323,12 @@ export function AdminWorkspaceDemo({
       {section === "reviews" && (
         <View style={styles.panel}>
           <PlanReviewQueueDemo />
+        </View>
+      )}
+
+      {section === "professional-preview" && (
+        <View style={styles.panel}>
+          <ProfessionalRosterPreviewDemo professionals={professionals} visits={visits} />
         </View>
       )}
 
