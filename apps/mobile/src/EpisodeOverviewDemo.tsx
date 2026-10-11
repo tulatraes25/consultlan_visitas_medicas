@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { DemoVisit } from "./demoData";
 import { formatDemoDate, statusLabel } from "./demoData";
 import type { DemoPatient, DemoProfessional } from "./adminDemoData";
-import { coverageKindLabel, formatDemoTimeRange } from "./coverageDemo";
+import { coverageKindLabel, findDemoContinuityHints, formatDemoTimeRange } from "./coverageDemo";
 import { ScreenHeading } from "./ui";
 import { corners, palette, spacing, touchSize } from "./theme";
 
@@ -41,6 +41,8 @@ export function EpisodeOverviewDemo({
   const coverages = demoEpisodeCoverages(patient, visits);
   const shifts = coverages.filter(item => item.serviceKind === "SHIFT").length;
   const visitsCount = coverages.length - shifts;
+  // The only permissible source is the already patient+episode-scoped list.
+  const continuity = findDemoContinuityHints(coverages);
 
   return (
     <View style={styles.root} testID="demo-homecare-episodes">
@@ -131,6 +133,44 @@ export function EpisodeOverviewDemo({
             </Text>
           )}
 
+          <Text style={styles.sectionHeading}>
+            Posibles continuidades de guardia · DEMO
+          </Text>
+          {continuity.length > 0 ? (
+            <View style={styles.continuityList} testID="episode-continuity-list">
+              {continuity.map(pair => {
+                const outgoing = coverages.find(item => item.id === pair.outgoingId);
+                const incoming = coverages.find(item => item.id === pair.incomingId);
+                if (!outgoing || !incoming) return null;
+                const from = professionals.find(item => item.id === outgoing.professionalRef);
+                const to = professionals.find(item => item.id === incoming.professionalRef);
+                return (
+                  <View key={pair.outgoingId + "-" + pair.incomingId}
+                    style={styles.continuityCard} testID={"episode-continuity-" + pair.outgoingId}>
+                    <Text style={styles.continuityLabel}>HORARIOS CONSECUTIVOS · SIN RELEVO ACREDITADO</Text>
+                    <Text style={styles.coverageName}>
+                      {outgoing.reference} → {incoming.reference}
+                    </Text>
+                    <Text style={styles.help}>
+                      {formatDemoDate(incoming.date)} · cambio previsto a las {incoming.startTime}
+                    </Text>
+                    <Text style={styles.help}>
+                      {from?.label ?? "Profesional ficticio no identificado"} → {to?.label ?? "Profesional ficticio no identificado"}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+          ) : (
+            <Text style={styles.help} testID="episode-continuity-empty">
+              Sin guardias consecutivas de distintos profesionales en este episodio ficticio.
+            </Text>
+          )}
+          <Text style={styles.help}>
+            La coincidencia horaria no acredita un relevo, transmisión de información,
+            aceptación profesional ni continuidad asistencial real.
+          </Text>
+
           <View style={styles.footnote}>
             <Text style={styles.help}>
               Esta vista no confirma admisión, indicaciones, relevos,
@@ -185,6 +225,12 @@ const styles = StyleSheet.create({
     padding: spacing.md, borderWidth: 1, borderColor: palette.border,
     backgroundColor: palette.surface, borderRadius: corners.medium, gap: spacing.xs,
   },
+  continuityList: { gap: spacing.sm },
+  continuityCard: {
+    padding: spacing.md, borderWidth: 1, borderColor: palette.borderStrong,
+    borderRadius: corners.medium, backgroundColor: palette.primarySubtle, gap: spacing.xs,
+  },
+  continuityLabel: { fontSize: 10, fontWeight: "800", color: palette.textSecondary },
   coverageRef: { fontSize: 12, fontWeight: "800", color: palette.primary },
   coverageName: { fontSize: 14, fontWeight: "700", color: palette.deep },
   footnote: { padding: spacing.md, borderRadius: corners.medium, backgroundColor: palette.primarySubtle },
