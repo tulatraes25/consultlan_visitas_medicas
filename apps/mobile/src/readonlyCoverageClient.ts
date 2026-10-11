@@ -47,7 +47,7 @@ const DATE = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,6}))?(Z
  * normalize February 30 to March 2 rather than rejecting it. Also reject
  * 24:00, invalid seconds and timezone offsets outside ISO's +/-14 hours.
  */
-function strictInstant(value: unknown): number | null {
+export function strictInstant(value: unknown): number | null {
   if (typeof value !== "string") return null;
   const parts = DATE.exec(value);
   if (!parts) return null;
@@ -73,7 +73,7 @@ const FIXED_ACTION = '{"action":"listMyHomecareCoverages"}';
 
 function fail(code: string): never { throw new CoverageReadError(code); }
 
-function parseCoverage(row: unknown): PublicCoverage {
+export function parseCoverage(row: unknown): PublicCoverage {
   if (!row || typeof row !== "object" || Array.isArray(row)) fail("ROSTER_UNEXPECTED_SHAPE");
   const fields = Object.keys(row as object).sort().join(",");
   if (fields !== [...FIELDS].sort().join(",")) fail("ROSTER_UNEXPECTED_SHAPE");
@@ -107,21 +107,31 @@ function parseCoverage(row: unknown): PublicCoverage {
  * JavaScript Date drops microseconds, so compare the whole 6-digit fraction
  * separately to avoid rejecting correctly ordered PostgreSQL timestamps.
  */
-function compareChronology(a: PublicCoverage, b: PublicCoverage): number {
-  const key = (iso: string): readonly [number, number] => {
-    const p = DATE.exec(iso);
-    if (!p) return fail("ROSTER_INVALID_WINDOW"); // already validated above
-    const seconds = `${p[1]}-${p[2]}-${p[3]}T${p[4]}:${p[5]}:${p[6]}${p[8]}`;
-    const epochMillis = Date.parse(seconds);
-    if (!Number.isFinite(epochMillis)) return fail("ROSTER_INVALID_WINDOW");
-    return [epochMillis, Number((p[7] ?? "").padEnd(6, "0"))];
+/** ISO instant ordering at full microsecond precision, not Date.parse milliseconds. */
+export function compareCoverageInstants(a:string,b:string):number {
+  const key=(iso:string):readonly [number,number]=>{
+    const p=DATE.exec(iso);
+    if(!p) throw new CoverageReadError("ROSTER_INVALID_WINDOW");
+    const seconds=`${p[1]}-${p[2]}-${p[3]}T${p[4]}:${p[5]}:${p[6]}${p[8]}`;
+    const millis=Date.parse(seconds);
+    if(!Number.isFinite(millis)) throw new CoverageReadError("ROSTER_INVALID_WINDOW");
+    return [millis,Number((p[7]??"").padEnd(6,"0"))];
   };
-  const l = key(a.scheduledStart), r = key(b.scheduledStart);
-  if (l[0] !== r[0]) return l[0] < r[0] ? -1 : 1;
-  if (l[1] !== r[1]) return l[1] < r[1] ? -1 : 1;
-  const leftId = a.id.toLowerCase(), rightId = b.id.toLowerCase();
-  return leftId < rightId ? -1 : leftId > rightId ? 1 : 0;
+  const x=key(a),y=key(b);
+  if(x[0]!==y[0])return x[0]<y[0]?-1:1;
+  return x[1]<y[1]?-1:x[1]>y[1]?1:0;
 }
+/** Total order must match PostgreSQL ORDER BY scheduled_start ASC, id ASC. */
+export function compareCoverageChronology(
+  a:Pick<PublicCoverage,"scheduledStart"|"id">,
+  b:Pick<PublicCoverage,"scheduledStart"|"id">,
+):number {
+  const dateOrder=compareCoverageInstants(a.scheduledStart,b.scheduledStart);
+  if(dateOrder!==0)return dateOrder;
+  const l=a.id.toLowerCase(),r=b.id.toLowerCase();
+  return l<r?-1:l>r?1:0;
+}
+const compareChronology=compareCoverageChronology;
 
 export function createReadOnlyCoverageClient(config: ReadOnlyCoverageConfig) {
   // No network is possible until the caller supplies an explicit staging gate,

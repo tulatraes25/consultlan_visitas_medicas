@@ -369,3 +369,36 @@ Deno.test("HC-READ-02: invalid dates/cursors and impersonation are rejected befo
   }
   equal(h.calls.length,0,"no unauthorized pagination reaches database");
 });
+
+Deno.test("HC-READ-02B: accepts PostgreSQL UTC-offset cursor with six digits",async()=>{
+  const h=harness();
+  const first={
+    action:"listMyHomecareCoveragesNextPage",
+    windowStart:"2026-11-02T00:00:00Z",
+    windowEnd:"2026-11-05T00:00:00Z",
+    cursorId:"c0000099-0000-4000-8000-000000000099",
+  };
+  for(const cursorStart of [
+    "2026-11-03T00:45:00.123456+00:00",
+    "2026-11-02T21:45:00.123456-03:00",
+    "2026-11-03T06:30:00.123456+05:45",
+  ]){
+    const res=await h.handle(post({...first,cursorStart}));
+    equal(res.status,200,"valid PostgreSQL offset accepted");
+    equal(h.calls[h.calls.length-1].args.p_after_start,cursorStart,
+      "cursor passed byte-for-byte to timestamptz");
+  }
+  const before=h.calls.length;
+  for(const cursorStart of [
+    "2026-02-30T09:00:00+00:00",
+    "2026-11-03T24:00:00+00:00",
+    "2026-11-03T00:45:00.1234567Z",
+    "2026-11-03T00:45:00+15:00",
+    "2026-11-03T00:45:00+14:01",
+    "2026-11-03T00:45:00",
+  ]){
+    const res=await h.handle(post({...first,cursorStart}));
+    equal(res.status,422,"invalid cursor rejected before RPC");
+  }
+  equal(h.calls.length,before,"no invalid offset reaches SQL");
+});

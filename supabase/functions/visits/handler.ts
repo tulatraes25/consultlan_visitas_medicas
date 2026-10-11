@@ -3,7 +3,7 @@
  * It has no Supabase dependencies and is exercised with synthetic JWT fixtures.
  * Only the runtime adapter is allowed to touch secrets or make network requests.
  */
-type FieldKind = "uuid" | "name" | "specialty" | "dateTime" | "utcInstant" | "coverageKind" | "positiveInt";
+type FieldKind = "uuid" | "name" | "specialty" | "dateTime" | "utcInstant" | "cursorInstant" | "coverageKind" | "positiveInt";
 type CommandSpec = {
   rpc: string;
   fields: Record<string, { db: string; kind: FieldKind }>;
@@ -50,7 +50,7 @@ const COMMANDS: Record<string, CommandSpec> = {
     fields: {
       windowStart: {db:"p_window_start",kind:"utcInstant"},
       windowEnd: {db:"p_window_end",kind:"utcInstant"},
-      cursorStart: {db:"p_after_start",kind:"utcInstant"},
+      cursorStart: {db:"p_after_start",kind:"cursorInstant"},
       cursorId: {db:"p_after_id",kind:"uuid"},
     },
   },
@@ -145,6 +145,27 @@ function strictUtcInstant(value:string):boolean {
   return Number.isFinite(millis) &&
     new Date(millis).toISOString().slice(0,19) === value.slice(0,19);
 }
+const CURSOR_ISO=/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,6}))?(Z|([+-])(\d{2}):(\d{2}))$/;
+/** PostgreSQL jsonb timestamptz serializes with a numeric UTC offset,
+ * commonly +00:00, not necessarily literal Z. Preserve six digits and
+ * reject normalized calendar dates or offsets beyond ISO +14:00.
+ */
+function strictCursorInstant(value:string):boolean {
+  const p=CURSOR_ISO.exec(value);
+  if(!p)return false;
+  const year=Number(p[1]),month=Number(p[2]),day=Number(p[3]);
+  const hour=Number(p[4]),minute=Number(p[5]),second=Number(p[6]);
+  const leap=year%4===0&&(year%100!==0||year%400===0);
+  const days=[31,leap?29:28,31,30,31,30,31,31,30,31,30,31];
+  if(year===0||month<1||month>12||day<1||day>days[month-1]||
+    hour>23||minute>59||second>59)return false;
+  const tzH=p[9]?Number(p[10]):0,tzM=p[9]?Number(p[11]):0;
+  if(tzH>14||tzM>59||(tzH===14&&tzM!==0))return false;
+  const offset=(p[9]==="-"?-1:1)*(tzH*60+tzM)*60000;
+  const instant=Date.parse(value);
+  return Number.isFinite(instant)&&
+    new Date(instant+offset).toISOString().slice(0,19)===value.slice(0,19);
+}
 const MAX_BODY_BYTES = 32768;
 const HEADERS = {
   "content-type": "application/json; charset=utf-8",
@@ -168,6 +189,7 @@ function checkField(value: unknown, kind: FieldKind): boolean {
     case "specialty": return value === value.trim() && value.length >= 2 && value.length <= 100;
     case "dateTime": return DATE_TIME.test(value) && Number.isFinite(Date.parse(value));
     case "utcInstant": return strictUtcInstant(value);
+    case "cursorInstant": return strictCursorInstant(value);
     case "coverageKind": return value === "VISIT" || value === "SHIFT";
   }
 }
