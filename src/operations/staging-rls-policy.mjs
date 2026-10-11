@@ -6,7 +6,7 @@
  */
 import { validateStagingEnvironment, StagingGateError } from "./staging-policy.mjs";
 
-const UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
+const UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
 const USER_JWT = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/;
 const SCOPE_ACTION = "inspectMyHomecareEpisodeScope";
 export const DIRECT_READ_TABLES = Object.freeze([
