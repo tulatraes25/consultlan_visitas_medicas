@@ -71,7 +71,7 @@ describe("MOB-HC-TEAM-01 participants derived only from selected synthetic case"
     expect(screen.getByTestId("episode-demo-participants")).toBeTruthy();
     expect(screen.getByTestId("episode-participant-DEMO-PRO-2")).toBeTruthy();
     expect(screen.queryByTestId("episode-participant-DEMO-PRO-3")).toBeNull();
-    expect(screen.getByText("1 visitas · 1 guardias de muestra")).toBeTruthy();
+    expect(screen.getByText("1 visita · 1 guardia de muestra")).toBeTruthy();
     expect(screen.queryByText("GUA-WRONG")).toBeNull();
     expect(screen.queryByRole("button",{name:/Aprobar equipo|Validar matr/i})).toBeNull();
 
