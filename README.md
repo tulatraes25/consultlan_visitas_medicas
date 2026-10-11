@@ -21,6 +21,7 @@ Aplicación móvil para la **continuidad de cuidados domiciliarios pediátricos*
 - [HC-03B pantallas de previsualización](docs/specs/HC-03B-mobile-form-preview.md) — pestaña Planillas, seis especialidades, evolución separada, hojas físicas y tests de paridad documental.
 - [MOB-ROSTER-02 coberturas flexibles](docs/specs/MOB-ROSTER-02-flexible-coverage.md) — reemplaza slots de 40 minutos por fechas, guardias y visitas variables, exclusión de superposiciones y continuidad no confirmada.
 - [MOB-HC-EPISODE-01 episodios móviles](docs/specs/MOB-HC-EPISODE-01-readonly-timeline.md) — navegación caso-primero en teléfonos/tablets, coberturas ficticias agrupadas estrictamente por paciente y episodio, sin acciones clínicas.
+- [MOB-DATA-01 lectura de coberturas](docs/specs/MOB-DATA-01-readonly-staging-coverage.md) — adaptador REST dormido, exclusivo para staging y JWT de usuario, consulta mínima protegida por RLS; sin conexión real.
 - [FORM-001](docs/specs/FORM-001-inventario-clinico.md) — planillas de origen inventariadas sin datos de pacientes.
 - [Supabase: migración y pruebas RLS](supabase/README.md) — instalación pendiente de proyecto en la nube, prueba en PostgreSQL sintético.
 - [STAGING-01A preflight](docs/specs/STAGING-01A-safe-preflight.md) — inspección offline del esquema y controles de destino; las pruebas negativas remotas son **opcionales** y requieren staging independiente expresamente autorizado.
