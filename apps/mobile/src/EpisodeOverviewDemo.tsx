@@ -61,6 +61,7 @@ export function demoEpisodeParticipants(
   const counts = new Map<string, DemoEpisodeParticipant>();
   const seen = new Set<string>();
   for (const visit of eligible) {
+    if (visit.serviceKind !== "VISIT" && visit.serviceKind !== "SHIFT") continue;
     if (seen.has(visit.id)) continue;
     seen.add(visit.id);
     const professional = professionals.find(item =>
