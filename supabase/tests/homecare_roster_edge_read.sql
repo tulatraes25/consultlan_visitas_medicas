@@ -80,6 +80,7 @@ declare
   v_a jsonb; v_b jsonb; v_c jsonb; v_one jsonb;
   j jsonb;
   denied boolean;
+  v_forbidden_actor uuid;
   record_count integer;
 begin
   v_a := public.api_hc_list_my_coverages('11111111-1111-4111-8111-111111111111');
@@ -95,22 +96,22 @@ begin
     raise exception 'HC_READ_EXPECTED_SYNTHETIC_ROSTERS_NOT_PRESENT';
   end if;
 
-  if not exists (select 1 from pg_catalog.jsonb_array_elements(v_a) x
-      where x->>'id'='d1000000-0000-4000-8000-000000000001')
-    or not exists (select 1 from pg_catalog.jsonb_array_elements(v_a) x
-      where x->>'id'='d1000000-0000-4000-8000-000000000002')
-    or exists (select 1 from pg_catalog.jsonb_array_elements(v_a) x
-      where x->>'id' in (
+  if not exists (select 1 from pg_catalog.jsonb_array_elements(v_a) as x(item)
+      where x.item->>'id'='d1000000-0000-4000-8000-000000000001')
+    or not exists (select 1 from pg_catalog.jsonb_array_elements(v_a) as x(item)
+      where x.item->>'id'='d1000000-0000-4000-8000-000000000002')
+    or exists (select 1 from pg_catalog.jsonb_array_elements(v_a) as x(item)
+      where x.item->>'id' in (
         'd1000000-0000-4000-8000-000000000003',
         'd1000000-0000-4000-8000-000000000004',
         'd1000000-0000-4000-8000-000000000005')) then
     raise exception 'HC_READ_PRO_A_SCOPE_LEAK_OR_MISSING';
   end if;
 
-  if not exists (select 1 from pg_catalog.jsonb_array_elements(v_b) x
-      where x->>'id'='d1000000-0000-4000-8000-000000000003')
-    or exists (select 1 from pg_catalog.jsonb_array_elements(v_b) x
-      where x->>'id' in (
+  if not exists (select 1 from pg_catalog.jsonb_array_elements(v_b) as x(item)
+      where x.item->>'id'='d1000000-0000-4000-8000-000000000003')
+    or exists (select 1 from pg_catalog.jsonb_array_elements(v_b) as x(item)
+      where x.item->>'id' in (
         'd1000000-0000-4000-8000-000000000001',
         'd1000000-0000-4000-8000-000000000002',
         'd1000000-0000-4000-8000-000000000005')) then
@@ -123,7 +124,7 @@ begin
 
   -- EXACT projection: six metadata keys, never user IDs, patient, note,
   -- member, address, prescription, signature, organization, or free text.
-  for j in select x from pg_catalog.jsonb_array_elements(v_a) x loop
+  for j in select x.item from pg_catalog.jsonb_array_elements(v_a) as x(item) loop
     select count(*) into record_count
       from pg_catalog.jsonb_object_keys(j) key;
     if record_count<>6 or not (
@@ -139,7 +140,7 @@ begin
 
   -- An active administrator is not a clinician with assignments;
   -- a coordinator with revoked membership cannot impersonate a nurse.
-  for j in select pg_catalog.to_jsonb(u.user_id)
+  for v_forbidden_actor in select u.user_id
     from (values
        ('44444444-4444-4444-8444-444444444444'::uuid),
        ('33333333-3333-4333-8333-333333333333'::uuid),
@@ -149,7 +150,7 @@ begin
   loop
     denied := false;
     begin
-      perform public.api_hc_list_my_coverages((j #>> '{}')::uuid);
+      perform public.api_hc_list_my_coverages(v_forbidden_actor);
     exception when insufficient_privilege then denied := true;
     end;
     if not denied then raise exception 'HC_READ_UNAUTHORIZED_ROLE_PERMITTED'; end if;
@@ -241,8 +242,8 @@ do $$
 declare j jsonb;
 begin
   j := public.api_hc_list_my_coverages('11111111-1111-4111-8111-111111111111');
-  if not exists(select 1 from pg_catalog.jsonb_array_elements(j) x
-      where x->>'id'='d1000000-0000-4000-8000-000000000002')
+  if not exists(select 1 from pg_catalog.jsonb_array_elements(j) as x(item)
+      where x.item->>'id'='d1000000-0000-4000-8000-000000000002')
     then raise exception 'HC_READ_ROSTER_NOT_RESTORED'; end if;
 end $$;
 commit;
