@@ -97,7 +97,7 @@ test("WEB-COORD-01A: three distinct navigable layouts and accessible filters",()
   assert.match(html,/aria-label="Comparar las tres propuestas visuales"/);
   for(const variant of ["a","b","c"]){
     assert.match(html,new RegExp('data-variant="'+variant+'"'));
-    assert.match(application,new RegExp('shell--'+variant));
+    assert.match(application,/shell shell--/); // class name composed at render time
     assert.match(css,new RegExp('\\.shell--'+variant));
   }
   for(const key of ["resumen","agenda","episodios","profesionales","relevos","reportes"]){
@@ -115,6 +115,69 @@ test("WEB-COORD-01A: three distinct navigable layouts and accessible filters",()
   assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
   new Script(scenario);
   new Script(application);
+});
+
+test("WEB-COORD-01A: offline DOM harness switches three real layouts and retains navigation",()=>{
+  const handlers={};
+  const root={innerHTML:""};
+  const style={textContent:""};
+  const detail={innerHTML:""};
+  const modal={
+    open:false, addEventListener(){},
+    showModal(){this.open=true;}, close(){this.open=false;},
+  };
+  const switches=["a","b","c"].map(variant=>({
+    variant,attributes:{},
+    getAttribute(key){return key==="data-variant"?this.variant:null;},
+    setAttribute(key,value){this.attributes[key]=value;},
+    classList:{toggle(){}},
+  }));
+  const dom={
+    getElementById(id){
+      return {"app":root,"current-style":style,
+        "episode-modal":modal,"episode-modal-content":detail}[id]??null;
+    },
+    querySelectorAll(selector){
+      assert.equal(selector,"[data-variant]");
+      return switches;
+    },
+    addEventListener(type,fn){handlers[type]=fn;},
+  };
+  runInNewContext(application,{
+    window:{CONSULTLAN_WEB_DEMO:demo},document:dom,Date,Intl,
+  },{timeout:5000});
+  function click(attributes){
+    const button={
+      hasAttribute(key){return Object.hasOwn(attributes,key);},
+      getAttribute(key){return attributes[key]??null;},
+    };
+    handlers.click({target:{closest(){return button;}}});
+  }
+  assert.match(root.innerHTML,/shell shell--c/);
+  assert.match(root.innerHTML,/week-grid--c/);
+  assert.match(root.innerHTML,/Agenda de coberturas/);
+  assert.equal(style.textContent,"C · Híbrido");
+  click({"data-variant":"a"});
+  assert.match(root.innerHTML,/shell shell--a/);
+  assert.match(root.innerHTML,/<table>/);
+  assert.doesNotMatch(root.innerHTML,/week-grid--c/);
+  click({"data-variant":"b"});
+  assert.match(root.innerHTML,/shell shell--b/);
+  assert.match(root.innerHTML,/week-grid--b/);
+  assert.match(root.innerHTML,/Sin asignar/);
+  handlers.change({target:{id:"specialty-filter",value:"Fonoaudiología"}});
+  assert.equal((root.innerHTML.match(/class="event-card /g)||[]).length,1);
+  click({"data-mode":"dia"});
+  assert.match(root.innerHTML,/class="timeline"/);
+  click({"data-section":"relevos"});
+  assert.match(root.innerHTML,/Aprobar cambio · deshabilitado/);
+  assert.match(root.innerHTML,/disabled type="button"/);
+  click({"data-episode":"EPI-101"});
+  assert.equal(modal.open,true);
+  assert.match(detail.innerHTML,/EPI-101/);
+  assert.doesNotMatch(detail.innerHTML,/Paciente real|diagnóstico/i);
+  click({"data-close":""});
+  assert.equal(modal.open,false);
 });
 
 test("WEB-COORD-01A: standalone preview works offline without external URLs",()=>{
