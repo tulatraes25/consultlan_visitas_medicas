@@ -40,7 +40,33 @@ const PROJECT_REF = /^[a-z0-9]{20}$/;
 const PUBLISHABLE = /^sb_publishable_[A-Za-z0-9_-]{16,}$/;
 const JWT = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/;
 const UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
-const DATE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:Z|[+-]\d{2}:\d{2})$/;
+const DATE = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,6}))?(Z|([+-])(\d{2}):(\d{2}))$/;
+
+/**
+ * Reject impossible calendar dates BEFORE Date.parse. Some JS engines
+ * normalize February 30 to March 2 rather than rejecting it. Also reject
+ * 24:00, invalid seconds and timezone offsets outside ISO's +/-14 hours.
+ */
+function strictInstant(value: unknown): number | null {
+  if (typeof value !== "string") return null;
+  const parts = DATE.exec(value);
+  if (!parts) return null;
+  const [year, month, day, hour, minute, second] =
+    [parts[1],parts[2],parts[3],parts[4],parts[5],parts[6]].map(Number);
+  const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  const days = [31,leap ? 29 : 28,31,30,31,30,31,31,30,31,30,31];
+  if (year === 0 || month < 1 || month > 12 ||
+    day < 1 || day > days[month - 1] ||
+    hour > 23 || minute > 59 || second > 59) return null;
+  if (parts[8] !== "Z") {
+    const tzHour = Number(parts[10]);
+    const tzMinute = Number(parts[11]);
+    if (tzHour > 14 || tzMinute > 59 ||
+      (tzHour === 14 && tzMinute !== 0)) return null;
+  }
+  const ms = Date.parse(value);
+  return Number.isFinite(ms) ? ms : null;
+}
 const STATES = new Set(["PLANNED", "ASSIGNED", "ACTIVE", "COMPLETED", "CANCELLED", "NOT_PERFORMED"]);
 const FIELDS = ["id", "episode_id", "service_kind", "coverage_state", "scheduled_start", "scheduled_end"];
 const FIXED_ACTION = '{"action":"listMyHomecareCoverages"}';
@@ -56,13 +82,13 @@ function parseCoverage(row: unknown): PublicCoverage {
       typeof r.episode_id !== "string" || !UUID.test(r.episode_id) ||
       (r.service_kind !== "VISIT" && r.service_kind !== "SHIFT") ||
       typeof r.coverage_state !== "string" || !STATES.has(r.coverage_state) ||
-      typeof r.scheduled_start !== "string" || !DATE.test(r.scheduled_start) ||
-      typeof r.scheduled_end !== "string" || !DATE.test(r.scheduled_end)) {
+      typeof r.scheduled_start !== "string" ||
+      typeof r.scheduled_end !== "string") {
     fail("ROSTER_UNEXPECTED_SHAPE");
   }
-  const start = Date.parse(r.scheduled_start);
-  const end = Date.parse(r.scheduled_end);
-  if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) {
+  const start = strictInstant(r.scheduled_start);
+  const end = strictInstant(r.scheduled_end);
+  if (start === null || end === null || end <= start) {
     fail("ROSTER_INVALID_WINDOW");
   }
   return {
@@ -140,6 +166,10 @@ export function createReadOnlyCoverageClient(config: ReadOnlyCoverageConfig) {
         return fail("ROSTER_UNEXPECTED_SHAPE");
       }
       const rows = body.result.map(parseCoverage);
+      // Duplicate IDs must not masquerade as multiple visits or UI cards.
+      if (new Set(rows.map(row => row.id.toLowerCase())).size !== rows.length) {
+        return fail("ROSTER_DUPLICATE_COVERAGE_ID");
+      }
       return { rows, possiblyTruncated: rows.length === 100 };
     },
   };

@@ -149,9 +149,66 @@ describe("MOB-DATA-01 dormant staging-only coverage client", () => {
     }
   });
 
+  test("MOB-DATA-03 rejects duplicated UUIDs, including case-variant duplicates", async () => {
+    const b = { ...safeRow(), id: safeRow().id, coverage_state:"ACTIVE" };
+    const c = { ...safeRow(), id:"abcdefab-abcd-4abc-8abc-abcdefabcdef" };
+    const d = { ...c, id:c.id.toUpperCase() };
+    for(const rows of [[safeRow(),b],[c,d]]) {
+      const reader = createReadOnlyCoverageClient(good(async()=>({
+        status:200,json:async()=>({ok:true,result:rows}),
+      })));
+      await expect(reader.list()).rejects.toMatchObject({
+        code:"ROSTER_DUPLICATE_COVERAGE_ID",
+      });
+    }
+  });
+
+  test("MOB-DATA-03 rejects nonexistent dates, clock overflow and ISO offset abuse", async () => {
+    for(const invalidDate of [
+      "2026-02-30T09:00:00Z", "2025-02-29T09:00:00Z",
+      "1900-02-29T09:00:00Z", "2026-04-31T09:00:00Z",
+      "2026-13-15T09:00:00Z", "2026-00-15T09:00:00Z",
+      "2026-10-00T09:00:00Z", "0000-10-15T09:00:00Z",
+      "2026-10-15T24:00:00Z", "2026-10-15T09:60:00Z",
+      "2026-10-15T09:00:60Z", "2026-10-15T09:00:00+15:00",
+      "2026-10-15T09:00:00-14:01", "2026-10-15T09:00:00+14:30",
+      "2026-10-15T09:00:00+05:60", "2026-10-15T09:00:00",
+      "2026-10-15T09:00:00.1234567Z",
+    ]) {
+      const bad = {...safeRow(),scheduled_start:invalidDate};
+      const reader = createReadOnlyCoverageClient(good(async()=>({
+        status:200,json:async()=>({ok:true,result:[bad]}),
+      })));
+      await expect(reader.list()).rejects.toMatchObject({
+        code:"ROSTER_INVALID_WINDOW",
+      });
+    }
+  });
+
+  test("MOB-DATA-03 supports leap years and explicit timezone offsets", async () => {
+    for(const [start,end] of [
+      ["2028-02-29T09:00:00Z","2028-02-29T10:00:00Z"],
+      ["2000-02-29T09:00:00.123456Z","2000-02-29T10:00:00.123456Z"],
+      ["2026-10-15T09:00:00+05:45","2026-10-15T10:00:00+05:45"],
+      ["2026-10-15T09:00:00-03:00","2026-10-15T10:00:00-03:00"],
+      ["2026-10-15T09:00:00+14:00","2026-10-15T10:00:00+14:00"],
+    ]) {
+      const row={...safeRow(),scheduled_start:start,scheduled_end:end};
+      const reader=createReadOnlyCoverageClient(good(async()=>({
+        status:200,json:async()=>({ok:true,result:[row]}),
+      })));
+      await expect(reader.list()).resolves.toMatchObject({
+        rows:[{scheduledStart:start,scheduledEnd:end}],
+      });
+    }
+  });
+
   test("caps the response and flags possible truncation without inventing remaining rows", async () => {
+    const uniqueRows = Array.from({ length: 100 }, (_,i) => ({
+      ...safeRow(), id:"11111111-1111-4111-8111-"+String(i).padStart(12,"0"),
+    }));
     const client = createReadOnlyCoverageClient(good(async () => ({
-      status: 200, json: async () => ({ok:true,result:Array.from({ length: 100 }, () => safeRow())}),
+      status: 200, json: async () => ({ok:true,result:uniqueRows}),
     })));
     const result = await client.list();
     expect(result.rows).toHaveLength(100);
