@@ -58,6 +58,8 @@ jobs:
           node --check scripts/staging-rls-verify.mjs
           node --check src/operations/staging-session-policy.mjs
           node --check scripts/staging-session-verify.mjs
+          node --check src/operations/staging-integrated-policy.mjs
+          node --check scripts/staging-integrated-verify.mjs
           for test_file in test/*.test.mjs; do
             node --check "$test_file"
           done
@@ -69,6 +71,8 @@ jobs:
         run: node scripts/staging-rls-verify.mjs --ci
       - name: Validate signed-out Auth session probe remains offline
         run: node scripts/staging-session-verify.mjs --ci
+      - name: Validate integrated same-identity tenant and session probes remain offline
+        run: node scripts/staging-integrated-verify.mjs --ci
       - name: Domain security and API contract tests
         run: npm test
 
