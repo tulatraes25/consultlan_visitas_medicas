@@ -61,6 +61,11 @@ export function createPagedCoverageController(config:ReadOnlyCoverageConfig){
   async function run(requestWindow:CoverageWindow,
     cursor:CoverageCursor|null, prior:readonly PublicCoverage[]):Promise<boolean>{
     if(disposed)return false;
+    // Lock one bounded interval for the entire async Auth/Edge operation.
+    // Caller mutation cannot silently change the window between pages.
+    const fixedWindow=Object.freeze({
+      startUtc:requestWindow?.startUtc,endUtc:requestWindow?.endUtc,
+    });
     const requestId=++epoch;
     pending?.abort();
     const abort=new AbortController();
@@ -75,7 +80,7 @@ export function createPagedCoverageController(config:ReadOnlyCoverageConfig){
       const reader=createPagedCoverageClient({
         ...locked,getAccessToken:async()=>token,
       });
-      const page=await reader.read(requestWindow,cursor,abort.signal);
+      const page=await reader.read(fixedWindow,cursor,abort.signal);
       if(!current())return false;
       const after=await locked.getAccessToken();
       if(!current())return false;
@@ -93,7 +98,7 @@ export function createPagedCoverageController(config:ReadOnlyCoverageConfig){
       }
       if(prior.length+page.rows.length>MAX_MEMORY_ROWS)
         throw new CoverageReadError("ROSTER_PAGE_MEMORY_LIMIT");
-      window=Object.freeze({...requestWindow});
+      window=fixedWindow;
       nextCursor=page.nextCursor;
       publish(Object.freeze({
         state:"ready",
