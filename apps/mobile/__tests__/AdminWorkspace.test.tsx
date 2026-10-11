@@ -172,6 +172,17 @@ test('possible handover hint requires same episode, different professional and a
     {outgoingId:a.id,incomingId:b.id},
   ]);
   expect(findDemoContinuityHints([a,wrongPatient])).toEqual([]);
+  // A forged episode reference must NEVER link two different patients.
+  const sameEpisodeWrongPatient = { ...wrongPatient,
+    episodeRef: a.episodeRef, patientRef: patients[1].id };
+  expect(findDemoContinuityHints([b,sameEpisodeWrongPatient])).toEqual([]);
+  expect(findDemoContinuityHints([a,{...b,patientRef:patients[1].id}])).toEqual([]);
+  expect(findDemoContinuityHints([a,{...b,patientRef:undefined}])).toEqual([]);
+  expect(findDemoContinuityHints([a,{...b,episodeRef:undefined}])).toEqual([]);
+  expect(findDemoContinuityHints([a,{...b,patientRef:'P-REAL'}])).toEqual([]);
+  expect(findDemoContinuityHints([a,{...b,startTime:'18:01'}])).toEqual([]);
+  expect(findDemoContinuityHints([a,{...b,startTime:'17:59'}])).toEqual([]);
+  expect(findDemoContinuityHints([a,{...b,startTime:'not-time'}])).toEqual([]);
   const visit={...b,serviceKind:'VISIT' as const};
   expect(findDemoContinuityHints([a,visit])).toEqual([]);
   expect(findDemoContinuityHints([a,{...b,professionalRef:a.professionalRef}])).toEqual([]);
