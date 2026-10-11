@@ -28,7 +28,7 @@ Usar el emulador/dispositivo compatible con Expo SDK 57. Para producir bundles e
 
 ## Adaptador de lectura futura (MOB-DATA-01)
 
-El código `src/readonlyCoverageClient.ts` prepara una consulta **GET exclusivamente de metadatos de coberturas** al Supabase autónomo, con llave publicable, JWT de usuario obtenido de Auth y validación estricta de respuestas. **No está importado por las pantallas y no hace llamadas reales**. Requiere autorización explícita de staging y proyectos excluidos, y sus tests solo usan respuestas falsas. No incorpora pacientes, diagnósticos, evoluciones, indicaciones, firmas ni credenciales de servicio; RLS del servidor sigue siendo la autoridad.
+El código `src/readonlyCoverageClient.ts` prepara una futura consulta **POST a una Edge Function con validación de sesión activa** en el Supabase autónomo, con llave publicable y JWT de usuario de Auth. **No está importado por las pantallas y no hace llamadas reales**. El backend todavía **no implementa** la acción de lectura: HTTP 422 se rechaza explícitamente. No realiza GET directos a PostgREST, que podrían aceptar un JWT luego de cerrar sesión. Los tests solo simulan respuestas. Las credenciales privilegiadas y la verificación real de permisos permanecen exclusivamente en el servidor; sin datos clínicos, firma ni pacientes reales.
 
 ## Límites y seguridad
 - Se muestra siempre **MODO DEMO · datos ficticios**.
