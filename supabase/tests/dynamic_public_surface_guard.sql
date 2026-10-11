@@ -74,8 +74,13 @@ begin
       raise exception 'SEC_SURFACE_DIRECT_CLIENT_RPC_EXECUTE: %',
         routine.object_name;
     end if;
-    if routine.is_definer and not coalesce(
-      ('search_path='=any(routine.settings)),false
+    -- PostgreSQL may serialize an explicitly empty search_path as either
+    -- search_path= or search_path="" in pg_proc.proconfig. Accept ONLY
+    -- these two empty variants, never public, pg_temp, or user-writable paths.
+    if routine.is_definer and not exists (
+      select 1
+      from pg_catalog.unnest(routine.settings) as option(setting)
+      where option.setting in ('search_path=', 'search_path=""')
     ) then
       raise exception 'SEC_SURFACE_UNPINNED_DEFINER_SEARCH_PATH: %',
         routine.object_name;
