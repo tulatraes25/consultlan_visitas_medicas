@@ -5,7 +5,7 @@
  */
 import { validateStagingEnvironment, StagingGateError } from "./staging-policy.mjs";
 
-const UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
+const UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 const JWT = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/;
 const UNKNOWN_ACTION = '{"action":"__staging_session_negative_only__"}';
 
