@@ -228,12 +228,15 @@ describe("HC-READ-02B paginated in-memory controller",()=>{
     expect(count).toBeLessThanOrEqual(1);
   });
 
-  test("token change after first 100-page network call cannot publish rows",async()=>{
+  test("token rotation while Edge is pending cannot publish old rows",async()=>{
     let token=JWT;
-    const ctrl=createPagedCoverageController(config(async()=>
-      success(firstPage()),async()=>token));
+    const delayed=deferred<ReturnType<typeof success>>();
+    const ctrl=createPagedCoverageController(config(async()=>delayed.promise,
+      async()=>token));
     const request=ctrl.loadWindow(WINDOW);
+    await Promise.resolve();await Promise.resolve();await Promise.resolve();
     token="rotated.header.signature";
+    delayed.resolve(success(firstPage()));
     expect(await request).toBe(false);
     expect(ctrl.getSnapshot().rows).toEqual([]);
     expect(ctrl.getSnapshot().state).not.toBe("ready");
