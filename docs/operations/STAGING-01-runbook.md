@@ -36,6 +36,14 @@ Guardar el manifiesto fuera del repo bajo control institucional. Nunca usar el m
 
 [SPEC STAGING-01D](../specs/STAGING-01D-source-and-catalog-attestation.md). Staging sigue pendiente de creación y autorización.
 
+## 1E. STAGING-01E — Historia exacta de migraciones y aprobación previa
+
+El SQL `supabase/staging/01e_migration_history_readonly.sql` verifica exclusivamente metadatos de `supabase_migrations.schema_migrations`: deben estar las **once versiones exactas**, sin ninguna extra. GitHub lo ensaya con una tabla ficticia y fallos intencionales por versiones faltantes, extras y reemplazos. **No instala migraciones ni inspecciona pacientes.**
+
+Una vez que el operador institucional haya identificado y aprobado un proyecto **nuevo** en el Dashboard, debe comprobar localmente la referencia enlazada y, sin mutar nada, ejecutar `supabase migration list --linked` y `supabase db push --dry-run`. Registrar el cotejo del destino y la revisión de cambios en un acta segura. No ejecutar `supabase db push`, `supabase functions deploy`, `db reset`, `migration repair` ni crear cuentas/pacientes antes de la autorización específica y del control de datos.
+
+Solo **después** de la instalación supervisada de las once migraciones, ejecutar el SQL de historial por una conexión segura al staging correcto, seguido del SQL STAGING-01D de catálogo. La coincidencia de versiones no acredita igualdad criptográfica de los scripts ejecutados: correlacionar con el manifiesto SHA-256 fuente, el dry-run revisado, el registro de aplicación y las pruebas de Auth/Edge. [SPEC STAGING-01E](../specs/STAGING-01E-migration-history-readiness.md).
+
 ## 2. Variables temporales requeridas, solo en entorno autorizado
 No pasar llaves como argumentos, no usar archivos .env dentro del repositorio público, no pegar credenciales en chats, issues o logs. Usar el gestor de secretos del operador o un entorno de ejecución aislado.
 
