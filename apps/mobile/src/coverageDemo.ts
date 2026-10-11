@@ -85,18 +85,24 @@ export type DemoContinuityHint = Readonly<{ outgoingId: string; incomingId: stri
 
 /**
  * Candidate shift continuity only. NOT an acknowledged/reconciled handover:
- * a shared synthetic homecare episode, different clinicians, and adjacency
- * are necessary but not sufficient for a clinical handover.
+ * identical synthetic patient AND homecare episode, different clinicians,
+ * and exact adjacency are necessary but not sufficient for a clinical handover.
+ * A shared episode label alone is NOT a safe patient boundary.
  */
 export function findDemoContinuityHints(visits: readonly DemoVisit[]): DemoContinuityHint[] {
   const shifts = visits.filter(v =>
-    v.serviceKind === 'SHIFT' && Boolean(v.episodeRef && v.professionalRef));
+    v.serviceKind === 'SHIFT' && v.id.startsWith('DEMO-') &&
+    /^DEMO-PAT-[A-Z0-9]{1,4}$/.test(v.patientRef ?? '') &&
+    /^DEMO-EPI-[A-Z0-9]{1,4}$/.test(v.episodeRef ?? '') &&
+    /^DEMO-PRO-(?:[0-9]+|CODE-[A-Z0-9]{1,4})$/.test(v.professionalRef ?? '')
+  );
   const result: DemoContinuityHint[] = [];
   for (const outgoing of shifts) {
     const current = resolveDemoWindow(outgoing.date, outgoing.startTime, outgoing.endTime);
     if (!current) continue;
     for (const incoming of shifts) {
       if (outgoing.id === incoming.id
+        || outgoing.patientRef !== incoming.patientRef
         || outgoing.episodeRef !== incoming.episodeRef
         || outgoing.professionalRef === incoming.professionalRef) continue;
       const next = resolveDemoWindow(incoming.date, incoming.startTime, incoming.endTime);
