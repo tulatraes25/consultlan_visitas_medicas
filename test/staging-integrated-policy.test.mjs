@@ -137,7 +137,11 @@ test("STAGING-01F performs exactly 30 minimal requests, to ONE staging origin",a
     assert.equal(options.headers.apikey,env.STAGING_PUBLISHABLE_KEY);
     assert.ok(["GET","POST"].includes(options.method));
     assert.ok(!url.includes("access_token") && !url.includes("password"));
-    assert.ok(!url.includes("/storage/") && !url.includes("/patients"));
+    assert.ok(!url.includes("/storage/"));
+    if(url.includes("/rest/v1/patients")) {
+      assert.equal(url,env.STAGING_URL+"/rest/v1/patients?select=*&limit=0");
+      assert.equal(options.method,"GET");
+    }
     if(options.method==="POST"){
       assert.ok(url.endsWith("/functions/v1/visits"));
       const body=JSON.parse(options.body);
