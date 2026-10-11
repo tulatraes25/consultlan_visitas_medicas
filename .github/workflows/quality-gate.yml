@@ -171,6 +171,10 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261010080000_homecare_roster_edge_read.sql
       - name: Verify exact roster projection, cross-tenant/role denial and revocations
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/homecare_roster_edge_read.sql
+      - name: Revoke residual sensitive table reads for direct JWT callers
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261010090000_close_direct_sensitive_reads.sql
+      - name: Verify thirteen direct grants denied and staging episode RLS exception
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/close_direct_sensitive_reads.sql
 
   edge-functions:
     name: Deno Edge JWT boundary and request validation
