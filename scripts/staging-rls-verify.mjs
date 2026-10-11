@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
- * STAGING-01B — separate, read-only end-to-end RLS verifier.
+ * STAGING-01B / SEC-READ-02B — isolated Edge tenant-scope verifier.
+ * Also enforces 14 PostgREST table-denial probes with LIMIT ZERO.
  * No network unless --probe AND operator opt-in; no JWT logging, no writes.
  */
 import { validateRlsStagingEnvironment, verifySyntheticCrossTenantRls } from
@@ -26,7 +27,7 @@ async function main() {
     return;
   }
   await verifySyntheticCrossTenantRls(process.env);
-  console.log("STAGING01B_TWO_TENANT_READONLY_RLS_PROBE_PASS_REQUIRES_INDEPENDENT_AUDIT");
+  console.log("STAGING01B_EDGE_TENANT_SCOPE_AND_DIRECT_JWT_DENIAL_PASS_REQUIRES_INDEPENDENT_AUDIT");
 }
 
 main().catch(error => {

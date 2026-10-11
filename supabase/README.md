@@ -41,6 +41,8 @@ psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261010080000_homecare_roster_ed
 psql -v ON_ERROR_STOP=1 -f supabase/tests/homecare_roster_edge_read.sql
 psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261010090000_close_direct_sensitive_reads.sql
 psql -v ON_ERROR_STOP=1 -f supabase/tests/close_direct_sensitive_reads.sql
+psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261010100000_episode_scope_edge_read.sql
+psql -v ON_ERROR_STOP=1 -f supabase/tests/episode_scope_edge_read.sql
 ```
 El stub `postgres_auth_stub.sql` simula exclusivamente el esquema de autenticación y roles de Supabase dentro del Postgres de CI. **No debe ejecutarse en Supabase real.**
 
@@ -85,13 +87,13 @@ La revisión de metadatos de un plan domiciliario ahora se solicita mediante `re
 
 ## STAGING-01A — Preflight sin credenciales y runbook (aún no conectado)
 
-El comando `node scripts/staging-preflight.mjs --ci` comprueba sin conexión externa la consistencia mínima del repositorio: diez migraciones, id local de CLI, JWT obligatorio en Edge, revisión administrativa PENDING y bloqueo de RPC clínicas históricas. También se ejecuta automáticamente en GitHub Actions.
+El comando `node scripts/staging-preflight.mjs --ci` comprueba sin conexión externa la consistencia mínima del repositorio: once migraciones, id local de CLI, JWT obligatorio en Edge, revisión administrativa PENDING y bloqueo de RPC clínicas históricas. También se ejecuta automáticamente en GitHub Actions.
 
 El modo opcional `--probe` es **posterior** a crear y asegurar un proyecto staging nuevo de internación domiciliaria. Exige aprobación explícita y una clave **publicable**, nunca secreta, y solo realiza pruebas negativas sin JWT ni mutaciones. No equivale a aprobación de seguridad, RLS, identidad o clínica.
 
 Runbook: [STAGING-01](../docs/operations/STAGING-01-runbook.md) · SPEC: [STAGING-01A](../docs/specs/STAGING-01A-safe-preflight.md). No usar reset remoto/destructivo; no aplicar el shim sintético de auth en Supabase.
 
-**STAGING-01B:** `node scripts/staging-rls-verify.mjs --ci` funciona sin red, y las pruebas negativas con mocks forman parte del Quality Gate. `--check-env` y `--probe` requieren dos organizaciones, dos usuarios y dos episodios sintéticos de staging con JWT de usuario y JWT vencido (ninguna credencial en el repo). La prueba en red es GET-only; exige **lectura positiva no vacía** de episodios propios y deniega casos ajenos, anónimo y JWT vencido. Se ejecutará solo con un proyecto independiente autorizado. [SPEC STAGING-01B](../docs/specs/STAGING-01B-cross-tenant-rls.md).
+**STAGING-01B actualizado por SEC-READ-02B:** `node scripts/staging-rls-verify.mjs --ci` funciona sin red; los tests negativos con mocks forman parte de CI. `--check-env` y `--probe` requieren dos organizaciones, usuarios y episodios ficticios más un JWT vencido, sin credenciales en GitHub. El ensayo remoto utiliza **POST Edge de lectura sin escritura** con actor verificado en Auth/sesión activa: resultado propio no vacío, resultado ajeno vacío. Adicionalmente se exigen **14 GET directos a PostgREST con `limit=0` rechazados** (401/403), sin recuperar filas. Esto prueba el alcance Edge y los grants denegados, no todas las políticas RLS internas de la nube. Ejecutar solo en staging independiente aprobado. [SPEC STAGING-01B](../docs/specs/STAGING-01B-cross-tenant-rls.md).
 
 ## SEC-SESSION-01 — sesión Auth viva además de JWT firmado
 
@@ -103,7 +105,9 @@ Esta protección responde al hecho de que `signOut` puede dejar access JWT váli
 
 La migración `20261010080000_homecare_roster_edge_read.sql` revoca SELECT directo a `authenticated` y `anon` en `homecare_coverage_assignments` y `homecare_shift_handovers`, cerrando la vía de JWT firmado pero sesión cerrada que el gate Edge no puede controlar si se usa PostgREST directamente. La RPC `api_hc_list_my_coverages(p_actor)` es exclusiva de `service_role`; consulta **solo** seis campos de hasta 100 coberturas del profesional autorizado, con pertenencia activa a equipo, organización y episodio. La Edge añade el actor obtenido de Auth y exige sesión viva antes de invocarla. No se aceptan filtros de paciente/organización indicados por la app. Sin proyecto staging real la consulta no está habilitada para uso clínico.
 
-**SEC-READ-02A (décima migración):** revoca SELECT directo de otras once tablas: organizaciones, membresías, profesionales, pacientes, visitas, notas, constancias, auditoría, equipos, versiones de plan y solicitudes de revisión. Junto con HC-READ-01, son trece tablas sin SELECT desde JWT de cliente. La única excepción temporal es `homecare_episodes`, que STAGING-01B requiere para verificar RLS positivo/no vacío contra dos organizaciones ficticias. **SEC-READ-02B debe crear una verificación segura sustitutiva y revocar ese último SELECT antes de pacientes reales**. [SPEC SEC-READ-02A](../docs/specs/SEC-READ-02A-sensitive-table-lockdown.md). [SPEC HC-READ-01](../docs/specs/HC-READ-01-session-scoped-roster.md).
+**SEC-READ-02A (décima migración):** revoca SELECT directo de otras once tablas: organizaciones, membresías, profesionales, pacientes, visitas, notas, constancias, auditoría, equipos, versiones de plan y solicitudes de revisión. Junto con HC-READ-01 son trece tablas, más una excepción histórica de episodios. [SPEC SEC-READ-02A](../docs/specs/SEC-READ-02A-sensitive-table-lockdown.md).
+
+**SEC-READ-02B (undécima migración):** revoca también SELECT directo sobre `homecare_episodes`, completando **catorce tablas sin lectura directa por JWT**. Añade `api_hc_episode_scope(p_actor,p_episode)` exclusiva del backend con resultado mínimo `[id,organization_id]` para episodios permitidos. La Edge valida Auth y sesión activa antes de consultar, y la prueba STAGING-01B sustituye su GET directo por cuatro solicitudes Edge más 14 comprobaciones negativas de PostgREST sin filas. No se ha verificado en Supabase alojado ni permite atención de pacientes. [SPEC SEC-READ-02B](../docs/specs/SEC-READ-02B-episode-edge-gate.md). [SPEC HC-READ-01](../docs/specs/HC-READ-01-session-scoped-roster.md).
 
 ## Puesta en marcha posterior (NO realizada)
 1. La administración propietaria de Pediatrics crea un **proyecto Supabase nuevo y separado**, comprueba responsabilidad contractual, región de residencia de datos, privacidad, backup/restore y política de retención. Nunca usar el proyecto SICOM ni un entorno de CONSULTLAN.

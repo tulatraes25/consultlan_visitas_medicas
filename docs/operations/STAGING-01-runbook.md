@@ -18,7 +18,7 @@ Desde el repositorio limpio con Node >=22:
 node scripts/staging-preflight.mjs --ci
 npm test
 ```
-El comando `--ci` no usa internet: comprueba el identificador **local** `project_id = "consultlan-visitas-medicas-local"`, `[functions.visits] verify_jwt = true`, las diez migraciones SQL y que se hayan retirado tanto las rutas Edge como los permisos SQL de cinco RPC clínicas históricas. Este identificador local **no** es una referencia de proyecto online.
+El comando `--ci` no usa internet: comprueba el identificador **local** `project_id = "consultlan-visitas-medicas-local"`, `[functions.visits] verify_jwt = true`, las once migraciones SQL y que se hayan retirado tanto las rutas Edge como los permisos SQL de cinco RPC clínicas históricas. Este identificador local **no** es una referencia de proyecto online.
 
 GitHub Actions realiza además los tests RLS PostgreSQL 16 con Auth sintético, tests Edge Deno y typecheck/UI/exportación JS Android e iOS. No confundir bundles JS con un APK/IPA.
 
@@ -44,7 +44,7 @@ Resultado favorable = formato y declaraciones aceptados, **no** independencia/id
 ## 3. Instalación inicial del proyecto staging (MANUAL, bloqueada)
 Solo con autorizaciones y revisión de seguridad: crear un proyecto Supabase **nuevo**, habilitar Auth según política, verificar región, destinatarios, backups, restauración y políticas de Storage privado. No desplegar el proyecto SICOM, el servidor de Pediatrics ni los datos de consultorio.
 
-Revisar las diez migraciones en orden y en staging vacío. No ejecutar `supabase db reset --linked`: es destructivo sobre el proyecto enlazado. No ejecutar `supabase db push` sin cotejo explícito de la referencia enlazada, revisión de cambios pendientes, backup de staging y aprobación del operador. Los datos sintéticos de `supabase/tests/postgres_auth_stub.sql` son **solo para PostgreSQL aislado de CI**; nunca aplicar ese shim en una base real Supabase.
+Revisar las once migraciones en orden y en staging vacío. No ejecutar `supabase db reset --linked`: es destructivo sobre el proyecto enlazado. No ejecutar `supabase db push` sin cotejo explícito de la referencia enlazada, revisión de cambios pendientes, backup de staging y aprobación del operador. Los datos sintéticos de `supabase/tests/postgres_auth_stub.sql` son **solo para PostgreSQL aislado de CI**; nunca aplicar ese shim en una base real Supabase.
 
 Validar que el esquema `private` no esté expuesto; verificar `SECURITY DEFINER`, propietario/search_path, GRANT/REVOKE, RLS, auditoría, Auth, funciones Edge, cifrado, redes y separación de cuentas. No activar ningún documento clínico, permiso médico, firma o paciente real.
 
@@ -87,7 +87,7 @@ node scripts/staging-rls-verify.mjs --check-env
 node scripts/staging-rls-verify.mjs --probe
 ```
 
-El modo `--probe` ejecuta **únicamente GET**: verifica identidades actuales ante `/auth/v1/user`, lectura no vacía del propio episodio (id y organization_id), lectura vacía del episodio ajeno en ambas direcciones, ausencia de acceso anónimo a una fila conocida y rechazo del JWT vencido. Cualquier fallo bloquea. Nunca crea sesiones, usuarios, visitas, tratamientos ni documentos.
+Con SEC-READ-02B, el modo `--probe` efectúa **22 solicitudes sin mutación**: 2 GET Auth para identidades, 4 POST Edge con RPC de alcance únicamente de lectura (propio y cruzado A/B), 1 POST anónimo denegado, 1 GET Auth de JWT vencido denegado y 14 GET PostgREST con `?select=*&limit=0`, cada uno obligatoriamente 401/403. Ninguna fila clínica se solicita; un GET a una tabla con 200 es fracaso incluso si devuelve `[]`. El test remoto demuestra alcance Edge/SQL y cierre de grants, no que todas las políticas RLS internas operen desde PostgREST. Nunca crea sesiones, usuarios, visitas, tratamientos ni documentos.
 
 La validación de Auth por dos cuentas y un JWT vencido requiere credenciales reales **de ensayo**, que no están disponibles ni almacenadas en GitHub. Esto no puede considerarse certificado hasta su ejecución en el proyecto autónomo aprobado. Aun con PASS, persisten pruebas de permisos más finos para especialistas, Storage, backups, firmas y procedimientos.
 
@@ -133,7 +133,11 @@ Solo después de crear staging autónomo se podrá auditar externamente: SELECT 
 
 La décima migración `20261010090000_close_direct_sensitive_reads.sql` revoca lectura directa a `authenticated`/`anon` sobre organizaciones, membresías, profesionales, pacientes, visitas, notas, constancias, auditoría, equipo de episodio, versiones de plan y solicitudes de revisión. Sumadas a las dos tablas de HC-READ-01, son **trece tablas sin SELECT móvil directo**. Las funciones `SECURITY DEFINER` conservan sus autorizaciones individuales y la Edge su verificación de sesión.
 
-**Excepción temporal sin aprobación clínica:** la tabla `homecare_episodes` todavía acepta SELECT de `authenticated` bajo RLS para mantener STAGING-01B (verificador positivo no vacío de dos organizaciones). Esta vía **no asegura revocación inmediata después de logout**. El operador solo podrá utilizar la prueba con episodios ficticios en un staging separado; queda PROHIBIDO usar pacientes reales hasta ejecutar SEC-READ-02B, reemplazar la comprobación remota y revocar esta última tabla. [SPEC SEC-READ-02A](../specs/SEC-READ-02A-sensitive-table-lockdown.md).
+**Antecedente de SEC-READ-02A, RESUELTO por SEC-READ-02B:** aquella migración preservó temporalmente SELECT sobre `homecare_episodes` para un verificador antiguo. La migración siguiente lo revoca y sustituye la prueba remota por Edge y 14 comprobaciones de acceso directo denegado. Esta solución aún requiere ensayo real de staging con datos ficticios. [SPEC SEC-READ-02A](../specs/SEC-READ-02A-sensitive-table-lockdown.md).
+
+## 4G. SEC-READ-02B — Eliminación de la última excepción (NO desplegada)
+
+La undécima migración `20261010100000_episode_scope_edge_read.sql` revoca SELECT directo de `authenticated`/`anon` en `homecare_episodes`: quedan **14 tablas sin SELECT directo móvil**. Para preservar el control positivo no vacío entre dos organizaciones, agrega `api_hc_episode_scope`, exclusiva del backend y capaz de devolver únicamente `id` y `organization_id` del episodio autorizado. La Edge expone `inspectMyHomecareEpisodeScope` solo con `episodeId`; verifica Auth, sesión activa y suministra el actor. La consulta a otro tenant produce arreglo vacío. STAGING-01B, con proyectos reales de prueba, además exige **401/403 de cada GET directo de límite cero**. No prueba por sí solo la configuración real de Auth/RLS/retención en Supabase alojado y no autoriza datos verdaderos. [SPEC SEC-READ-02B](../specs/SEC-READ-02B-episode-edge-gate.md).
 
 ## 5. Aceptación de STAGING-01B/01C (todavía NO cumplida)
 - Mostrar evidencia de proyecto autónomo, titularidad, región, políticas y datos ficticios. Confirmar identidad contra proyectos excluidos por medios independientes.

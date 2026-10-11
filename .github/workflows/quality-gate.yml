@@ -175,6 +175,10 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261010090000_close_direct_sensitive_reads.sql
       - name: Verify thirteen direct grants denied and staging episode RLS exception
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/close_direct_sensitive_reads.sql
+      - name: Remove last direct JWT read and add server-only episode scope
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261010100000_episode_scope_edge_read.sql
+      - name: Verify all fourteen direct reads denied and scoped Edge RPC isolation
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/episode_scope_edge_read.sql
 
   edge-functions:
     name: Deno Edge JWT boundary and request validation

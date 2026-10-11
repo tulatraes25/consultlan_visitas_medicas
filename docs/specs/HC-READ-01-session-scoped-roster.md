@@ -32,7 +32,7 @@ En HC-02A, `authenticated` recibió SELECT directo sobre `homecare_coverage_assi
 
 ## Actualización posterior — SEC-READ-02A
 
-La migración posterior SEC-READ-02A revoca SELECT de otras once tablas sensibles para JWT de cliente. El único SELECT remoto mantenido para `authenticated` es `homecare_episodes` con RLS, necesario para STAGING-01B sintético; **SEC-READ-02B debe eliminarlo antes de pacientes reales**. [SPEC SEC-READ-02A](SEC-READ-02A-sensitive-table-lockdown.md).
+La migración posterior SEC-READ-02A revoca SELECT de otras once tablas sensibles para JWT de cliente. El único SELECT remoto mantenido para `authenticated` es `homecare_episodes` con RLS, necesario para STAGING-01B sintético; **SEC-READ-02B elimina ese SELECT y sustituye STAGING-01B por un verificador Edge de dos campos; sigue pendiente validación real contra Supabase**. [SPEC SEC-READ-02A](SEC-READ-02A-sensitive-table-lockdown.md).
 
 ## Riesgos residuales / NO-GO
 Aún subsisten otras tablas con SELECT directo para `authenticated` (pacientes, episodios, visitas, notas y metadatos de planes). Por tanto el cierre de **estas dos tablas** no certifica revocación inmediata para todas las vistas clínicas. Requieren inventario, política de lectura equivalente por Edge y revocación deliberada en un gate posterior **SEC-READ-02** antes de cualquier paciente verdadero.

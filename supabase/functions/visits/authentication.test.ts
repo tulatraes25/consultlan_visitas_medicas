@@ -203,3 +203,63 @@ Deno.test("HC-READ-01: revoked, stale and unavailable session cannot execute ros
     equal(s.commands.length, 0, "no roster RPC on failed authentication");
   }
 });
+
+const EPISODE_SCOPE_FIXTURE = "e1000000-0000-4000-8000-000000000001";
+
+Deno.test("SEC-READ-02B: verified live session can inspect a known episode via exact service-only RPC", async () => {
+  const data = [{ id: EPISODE_SCOPE_FIXTURE, organization_id: ORG }];
+  const s = system({ commandData: data });
+  const response = await s.handle(post(token(), {
+    action: "inspectMyHomecareEpisodeScope", episodeId: EPISODE_SCOPE_FIXTURE,
+  }));
+  equal(response.status, 200, "a valid synthetic user can reach the scope RPC");
+  equal(s.calls.length, 2, "Auth and active-session verification both executed");
+  equal(s.calls[0].url, authUrl, "JWT identity verified first");
+  equal(s.calls[1].url, sessionRpcUrl, "JWT session checked second");
+  equal(s.commands.length, 1, "one fixed, read-only RPC");
+  equal(s.commands[0].name, "api_hc_episode_scope", "fixed SQL RPC name");
+  equal(JSON.stringify(s.commands[0].args),
+    JSON.stringify({ p_episode: EPISODE_SCOPE_FIXTURE, p_actor: ACTOR }),
+    "mobile controls episode UUID only, actor always supplied by Auth");
+  const payload = await response.json();
+  equal(JSON.stringify(payload),JSON.stringify({ok:true,result:data}),
+    "response contains exactly the synthetic two-field array");
+  equal(response.headers.get("cache-control"),"no-store","never cache access result");
+});
+
+Deno.test("SEC-READ-02B: forged organization, role, actor and patient cannot reach episode scope SQL", async () => {
+  const s=system();
+  for (const malicious of [
+    { actorId: OTHER }, { p_actor: OTHER }, { organizationId: ORG },
+    { patientId: PATIENT }, { role: "ADMIN" }, { service_role: "secret" },
+    { includePatient: true }, { episodeId: "not-a-uuid" },
+    { episodeId: null },
+  ]) {
+    const response = await s.handle(post(token(),{
+      action:"inspectMyHomecareEpisodeScope",
+      episodeId:EPISODE_SCOPE_FIXTURE,
+      ...malicious,
+    }));
+    equal(response.status,422,"scope spoofing and malformed UUID must be rejected");
+  }
+  const withoutId = await s.handle(post(token(),{action:"inspectMyHomecareEpisodeScope"}));
+  equal(withoutId.status,422,"episode ID is required");
+  equal(s.commands.length,0,"invalid requests never dispatch SQL");
+});
+
+Deno.test("SEC-READ-02B: invalid or revoked session cannot inspect any episode", async () => {
+  for (const [settings, jwt, expected] of [
+    [{sessionActive:false},token(),401],
+    [{sessionStatus:503},token(),503],
+    [{authId:OTHER},token(),401],
+    [{authStatus:401},token(),401],
+    [{},token({exp:1}),401],
+  ] as const) {
+    const s=system(settings);
+    const response=await s.handle(post(jwt,{
+      action:"inspectMyHomecareEpisodeScope",episodeId:EPISODE_SCOPE_FIXTURE,
+    }));
+    equal(response.status,expected,"closed or wrong-actor JWT cannot inspect");
+    equal(s.commands.length,0,"must not touch scoped RPC after auth denial");
+  }
+});

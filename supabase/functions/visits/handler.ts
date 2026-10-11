@@ -19,6 +19,15 @@ export type TrustedServices = {
   command: (rpc: string, args: Record<string, unknown>) => Promise<CommandResult>;
 };
 const COMMANDS: Record<string, CommandSpec> = {
+  // SEC-READ-02B: two-field metadata probe for a known episode UUID.
+  // No client-supplied organization, actor, role or patient data.
+  // The server validates Auth + live session before calling this RPC.
+  inspectMyHomecareEpisodeScope: {
+    rpc: "api_hc_episode_scope",
+    fields: {
+      episodeId: { db: "p_episode", kind: "uuid" },
+    },
+  },
   // HC-READ-01: metadata-only professional roster. No caller-supplied
   // organization, episode, actor or patient identifiers: SQL derives scope.
   // Access requires the existing Auth + live session gate first.

@@ -24,6 +24,10 @@ HC-READ-01 revocó SELECT directo sobre `homecare_coverage_assignments` y `homec
 ## Criterios de aceptación
 El SQL y la suite RLS se ejecutan exitosamente en PostgreSQL sintético, así como Deno Auth/Edge, Node privacy/contracts, Expo TypeScript/Jest y export JS Android/iOS. Se comprueban archivos/diff y SHA exacto en GitHub antes del PR/merge, más CI posterior al merge cuando el conector pueda recuperarla.
 
+## Resolución posterior — SEC-READ-02B
+
+SEC-READ-02B sustituye STAGING-01B por una prueba de alcance vía Edge y revoca la excepción final de `homecare_episodes`. El texto siguiente describe los riesgos del estado **intermedio** SEC-READ-02A, no el estado después de aplicar la undécima migración. La validación efectiva de Supabase alojado sigue pendiente. [SPEC SEC-READ-02B](SEC-READ-02B-episode-edge-gate.md).
+
 ## Riesgos y NO-GO
 **La excepción de episodios mantiene el riesgo de un JWT no vencido pero con sesión revocada, aunque RLS siga aislando organización y equipo.** No se permite presentar SEC-READ-02A como cierre total de exposición de información sanitaria. El next gate **SEC-READ-02B** debe resolver el test remoto STAGING-01B sin lectura directa de episodios y entonces revocar también esa última tabla.
 
