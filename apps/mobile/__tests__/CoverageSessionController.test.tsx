@@ -134,6 +134,20 @@ describe("MOB-DATA-02 session-bound staging read controller",()=>{
     expect(JSON.stringify(ctrl.getSnapshot())).not.toMatch(/private patient|address|Bearer|signature/);
   });
 
+  test("duplicate coverage response wipes a previously accepted roster",async()=>{
+    let count=0;
+    const ctrl=createCoverageSessionController(config(async()=>{
+      count++;
+      return success(count===1?[firstRow()]:[firstRow(),{...firstRow()}]);
+    }));
+    expect(await ctrl.refresh()).toBe(true);
+    expect(ctrl.getSnapshot().rows).toHaveLength(1);
+    expect(await ctrl.refresh()).toBe(false);
+    expect(ctrl.getSnapshot()).toMatchObject({
+      state:"error",rows:[],errorCode:"ROSTER_DUPLICATE_COVERAGE_ID",
+    });
+  });
+
   test("no token or denied session fails without stale data",async()=>{
     let token:string|null=null,network=0;
     const ctrl=createCoverageSessionController(config(
