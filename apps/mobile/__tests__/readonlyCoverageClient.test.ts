@@ -17,7 +17,7 @@ const safeRow = () => ({
   scheduled_end: END,
 });
 function good(fetcher: ReadOnlyCoverageConfig["fetcher"] = async () =>
-  ({ status: 200, json: async () => [safeRow()] })) {
+  ({ status: 200, json: async () => ({ok:true,result:[safeRow()]}) })) {
   return {
     projectRef: PROJECT,
     forbiddenProjectRefs: [EXCLUDED],
@@ -29,11 +29,11 @@ function good(fetcher: ReadOnlyCoverageConfig["fetcher"] = async () =>
 }
 
 describe("MOB-DATA-01 dormant staging-only coverage client", () => {
-  test("makes exactly one authenticated GET of a fixed safe projection", async () => {
+  test("prepares exactly one authenticated Edge request and NEVER queries PostgREST", async () => {
     const calls: Array<{url: string; options: RequestInit}> = [];
     const client = createReadOnlyCoverageClient(good(async (url, options) => {
       calls.push({url, options});
-      return {status: 200, json: async () => [safeRow()]};
+      return {status: 200, json: async () => ({ok:true,result:[safeRow()]})};
     }));
     const controller = new AbortController();
     const result = await client.list(controller.signal);
@@ -45,21 +45,20 @@ describe("MOB-DATA-01 dormant staging-only coverage client", () => {
     });
     expect(result.possiblyTruncated).toBe(false);
     expect(calls).toHaveLength(1);
-    expect(calls[0].url).toBe(
-      `https://${PROJECT}.supabase.co/rest/v1/homecare_coverage_assignments?` +
-      "select=id,episode_id,service_kind,coverage_state,scheduled_start,scheduled_end&" +
-      "order=scheduled_start.asc&limit=100"
-    );
-    expect(calls[0].options.method).toBe("GET");
+    expect(calls[0].url).toBe(`https://${PROJECT}.supabase.co/functions/v1/visits`);
+    expect(calls[0].url).not.toContain("/rest/v1/");
+    expect(calls[0].options.method).toBe("POST");
     expect(calls[0].options.redirect).toBe("error");
     expect(calls[0].options.cache).toBe("no-store");
     expect(calls[0].options.signal).toBe(controller.signal);
-    expect(calls[0].options.body).toBeUndefined();
+    expect(calls[0].options.body).toBe('{"action":"listMyHomecareCoverages"}');
+    expect(calls[0].options.body).not.toMatch(/patient|signature|service_role|actor/i);
     expect(calls[0].url).not.toMatch(/patient_id|patient_name|notes|narrative|signature/i);
     expect(calls[0].options.headers).toEqual({
       apikey: good().publishableKey,
       authorization: "Bearer " + USER_JWT,
       accept: "application/json",
+      "content-type": "application/json",
     });
   });
 
@@ -67,7 +66,7 @@ describe("MOB-DATA-01 dormant staging-only coverage client", () => {
     let network = 0;
     const fetched = async () => {
       network++;
-      return { status: 200, json: async () => [safeRow()] };
+      return { status: 200, json: async () => ({ok:true,result:[safeRow()]}) };
     };
     const base = good(fetched);
     for (const bad of [
@@ -116,7 +115,7 @@ describe("MOB-DATA-01 dormant staging-only coverage client", () => {
     ];
     for (const row of badRows) {
       const client = createReadOnlyCoverageClient(good(async () => ({
-        status: 200, json: async () => [row],
+        status: 200, json: async () => ({ok:true,result:[row]}),
       })));
       await expect(client.list()).rejects.toBeInstanceOf(CoverageReadError);
     }
@@ -128,15 +127,37 @@ describe("MOB-DATA-01 dormant staging-only coverage client", () => {
     })).list()).rejects.toMatchObject({ code: "ROSTER_TRANSPORT_FAILED" });
   });
 
+
+  test("future Edge read command is explicitly unsupported until server authorization exists", async () => {
+    const client = createReadOnlyCoverageClient(good(async (url, options) => {
+      expect(url).toBe(`https://${PROJECT}.supabase.co/functions/v1/visits`);
+      expect(options.method).toBe("POST");
+      return { status: 422, json: async () => ({error: "INVALID_OPERATION_OR_FIELDS"}) };
+    }));
+    await expect(client.list()).rejects.toMatchObject({code:"ROSTER_EDGE_READ_NOT_IMPLEMENTED"});
+  });
+
+  test("rejects successful HTTP responses without the exact Edge envelope", async () => {
+    for(const data of [
+      [safeRow()],
+      { ok:true, result:[safeRow()], patient:"forbidden" },
+      { ok:false, result:[safeRow()] },
+      { ok:true, result:{message:"not an array"} },
+    ]) {
+      const client=createReadOnlyCoverageClient(good(async()=>({status:200,json:async()=>data})));
+      await expect(client.list()).rejects.toMatchObject({code:"ROSTER_UNEXPECTED_SHAPE"});
+    }
+  });
+
   test("caps the response and flags possible truncation without inventing remaining rows", async () => {
     const client = createReadOnlyCoverageClient(good(async () => ({
-      status: 200, json: async () => Array.from({ length: 100 }, () => safeRow()),
+      status: 200, json: async () => ({ok:true,result:Array.from({ length: 100 }, () => safeRow())}),
     })));
     const result = await client.list();
     expect(result.rows).toHaveLength(100);
     expect(result.possiblyTruncated).toBe(true);
     const invalid = createReadOnlyCoverageClient(good(async () => ({
-      status: 200, json: async () => Array.from({ length: 101 }, () => safeRow()),
+      status: 200, json: async () => ({ok:true,result:Array.from({ length: 101 }, () => safeRow())}),
     })));
     await expect(invalid.list()).rejects.toMatchObject({ code: "ROSTER_UNEXPECTED_SHAPE" });
   });
