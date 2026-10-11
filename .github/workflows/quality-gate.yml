@@ -54,6 +54,8 @@ jobs:
           node --check scripts/staging-preflight.mjs
           node --check src/operations/staging-rls-policy.mjs
           node --check scripts/staging-rls-verify.mjs
+          node --check src/operations/staging-session-policy.mjs
+          node --check scripts/staging-session-verify.mjs
           for test_file in test/*.test.mjs; do
             node --check "$test_file"
           done
@@ -61,6 +63,8 @@ jobs:
         run: node scripts/staging-preflight.mjs --ci
       - name: Validate synthetic two-tenant RLS runner remains offline
         run: node scripts/staging-rls-verify.mjs --ci
+      - name: Validate signed-out Auth session probe remains offline
+        run: node scripts/staging-session-verify.mjs --ci
       - name: Domain security and API contract tests
         run: npm test
 
