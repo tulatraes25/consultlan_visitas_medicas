@@ -3,6 +3,7 @@ import { act, fireEvent, render, screen } from "@testing-library/react-native";
 import { createCoverageSessionController } from "../src/coverageSessionController";
 import { StagingOwnRosterPreview } from "../src/StagingOwnRosterPreview";
 import type { ReadOnlyCoverageConfig } from "../src/readonlyCoverageClient";
+import { formatCoverageServiceInstant, isCoverageServiceTimeZone } from "../src/coverageServiceTime";
 
 const ORIGIN="a".repeat(20),FORBIDDEN="b".repeat(20);
 const JWT_A="headerA.syntheticA.signatureA";
@@ -196,7 +197,7 @@ describe("MOB-DATA-02 standalone staging read-only preview screen",()=>{
     const ctrl=createCoverageSessionController(config(async()=>{
       calls++;return success([{...firstRow(),rawClinicalNote:"not expected"} as never]);
     }));
-    const view=render(<StagingOwnRosterPreview controller={ctrl} authEvents={{
+    const view=render(<StagingOwnRosterPreview controller={ctrl} serviceTimeZone="America/Argentina/Buenos_Aires" authEvents={{
       onAuthStateChange: () => ({data:{subscription:{unsubscribe:()=>{}}}}),
     }}/>);
     expect(screen.getByTestId("staging-own-roster-screen")).toBeTruthy();
@@ -217,7 +218,7 @@ describe("MOB-DATA-02 standalone staging read-only preview screen",()=>{
 
   test("shows only type/state/time and removes all rows when unmounted",async()=>{
     const ctrl=createCoverageSessionController(config());
-    const view=render(<StagingOwnRosterPreview controller={ctrl} authEvents={{
+    const view=render(<StagingOwnRosterPreview controller={ctrl} serviceTimeZone="America/Argentina/Buenos_Aires" authEvents={{
       onAuthStateChange: () => ({data:{subscription:{unsubscribe:()=>{}}}}),
     }}/>);
     await act(async()=>{
@@ -230,9 +231,60 @@ describe("MOB-DATA-02 standalone staging read-only preview screen",()=>{
     expect(screen.getByText("Guardia de prueba 1")).toBeTruthy();
     const visible=JSON.stringify(view.toJSON());
     expect(visible).not.toMatch(/11111111|22222222|Bearer|auth\.users|medicacion|diagnostico/);
-    expect(visible).toMatch(/2026-10-15T20:00:00Z/);
+    expect(visible).not.toMatch(/2026-10-15T20:00:00Z/);
+    expect(visible).toMatch(/15\\/10\\/2026/);
+    expect(visible).toMatch(/17:00/);
+    expect(visible).toMatch(/16\\/10\\/2026/);
+    expect(visible).toMatch(/05:00/);
+    expect(visible).toMatch(/GMT-3/);
     view.unmount();
     expect(ctrl.getSnapshot().state).toBe("idle");
     expect(ctrl.getSnapshot().rows).toEqual([]);
+  });
+});
+
+describe("MOB-TIME-01 explicit service timezone and overnight shifts",()=>{
+  test("does not trust device locale and keeps each UTC offset for DST fold",()=>{
+    expect(isCoverageServiceTimeZone("America/Argentina/Buenos_Aires")).toBe(true);
+    expect(isCoverageServiceTimeZone("America/New_York")).toBe(true);
+    expect(isCoverageServiceTimeZone("UTC")).toBe(true);
+    for(const zone of ["", "GMT-3", "Mars/Olympus", "../../secrets", "A".repeat(90)]){
+      expect(isCoverageServiceTimeZone(zone)).toBe(false);
+    }
+    expect(formatCoverageServiceInstant("2026-10-15T20:00:00Z",
+      "America/Argentina/Buenos_Aires")).toMatch(/17:00.*GMT-3/);
+    const prior=formatCoverageServiceInstant("2026-11-01T05:30:00Z","America/New_York");
+    const later=formatCoverageServiceInstant("2026-11-01T06:30:00Z","America/New_York");
+    expect(prior).toMatch(/01:30.*GMT-4/);
+    expect(later).toMatch(/01:30.*GMT-5/);
+    expect(prior).not.toBe(later);
+    expect(()=>formatCoverageServiceInstant("bad","UTC")).toThrow("ROSTER_TIME_INVALID");
+    expect(()=>formatCoverageServiceInstant("2026-10-15T20:00:00Z","GMT-3"))
+      .toThrow("ROSTER_TIME_ZONE_REQUIRED");
+  });
+
+  test("missing or changed organization timezone blocks requests and hides old rows",async()=>{
+    let calls=0;
+    const ctrl=createCoverageSessionController(config(async()=>{calls++;return success();}));
+    const authEvents={onAuthStateChange:()=>({data:{subscription:{unsubscribe:()=>{}}}})};
+    const view=render(<StagingOwnRosterPreview controller={ctrl}
+      authEvents={authEvents} serviceTimeZone="Mars/Olympus"/>);
+    expect(screen.getByTestId("staging-roster-zone")).toBeTruthy();
+    expect(screen.getByRole("button",{name:"Consultar mis coberturas de prueba"})
+      .props.accessibilityState?.disabled ?? screen.getByRole("button",{name:"Consultar mis coberturas de prueba"}).props.disabled).toBe(true);
+    fireEvent.press(screen.getByRole("button",{name:"Consultar mis coberturas de prueba"}));
+    expect(calls).toBe(0);
+    view.rerender(<StagingOwnRosterPreview controller={ctrl}
+      authEvents={authEvents} serviceTimeZone="America/Argentina/Buenos_Aires"/>);
+    await act(async()=>{fireEvent.press(screen.getByRole("button",{
+      name:"Consultar mis coberturas de prueba",
+    }));});
+    expect(calls).toBe(1);
+    expect(screen.getByTestId("staging-roster-list")).toBeTruthy();
+    view.rerender(<StagingOwnRosterPreview controller={ctrl}
+      authEvents={authEvents} serviceTimeZone="Mars/Olympus"/>);
+    expect(screen.queryByTestId("staging-roster-list")).toBeNull();
+    expect(screen.getByTestId("staging-roster-zone-blocked")).toBeTruthy();
+    view.unmount();
   });
 });
