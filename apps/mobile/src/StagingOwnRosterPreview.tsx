@@ -4,6 +4,7 @@ import { ScreenHeading } from "./ui";
 import { corners, palette, spacing, touchSize } from "./theme";
 import type { createCoverageSessionController } from "./coverageSessionController";
 import { bindCoverageAuthEvents, type SupabaseLikeAuthEvents } from "./coverageAuthEvents";
+import { formatCoverageServiceInstant, isCoverageServiceTimeZone } from "./coverageServiceTime";
 
 type CoverageController = ReturnType<typeof createCoverageSessionController>;
 
@@ -21,10 +22,12 @@ const STATUS_LABELS = Object.freeze({
  * because no authorized independent Supabase staging/auth provider exists.
  * No patient details, raw IDs, locations, clinical content or write controls.
  */
-export function StagingOwnRosterPreview({ controller, authEvents }: {
+export function StagingOwnRosterPreview({ controller, authEvents, serviceTimeZone }: {
   controller: CoverageController;
   authEvents: SupabaseLikeAuthEvents;
+  serviceTimeZone: string; // required IANA identifier approved for staging
 }) {
+  const validServiceTimeZone = isCoverageServiceTimeZone(serviceTimeZone);
   const current = useSyncExternalStore(
     controller.subscribe, controller.getSnapshot, controller.getSnapshot,
   );
@@ -51,6 +54,11 @@ export function StagingOwnRosterPreview({ controller, authEvents }: {
         title="Mis coberturas de prueba"
         subtitle="Lectura mínima desde Edge, únicamente en un ambiente autorizado."
       />
+      <Text style={styles.help} testID="staging-roster-zone">
+        {validServiceTimeZone
+          ? "Zona horaria del servicio: " + serviceTimeZone + " (cada horario indica su diferencia UTC)."
+          : "Falta configurar una zona horaria IANA válida para el servicio. Consulta bloqueada."}
+      </Text>
       <Text style={styles.warning}>
         NO HABILITADO PARA PACIENTES REALES. La identidad la determina
         Supabase Auth y la Edge. Esta pantalla no concede permisos clínicos.
@@ -58,9 +66,9 @@ export function StagingOwnRosterPreview({ controller, authEvents }: {
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Consultar mis coberturas de prueba"
-        disabled={current.state === "loading"}
-        style={[styles.button,current.state === "loading" && styles.disabled]}
-        onPress={() => { void controller.refresh(); }}
+        disabled={current.state === "loading" || !validServiceTimeZone}
+        style={[styles.button,(current.state === "loading" || !validServiceTimeZone) && styles.disabled]}
+        onPress={() => { if (validServiceTimeZone) void controller.refresh(); }}
       >
         <Text style={styles.buttonText}>
           {current.state === "loading" ? "Consultando…" : "Consultar mis coberturas de prueba"}
@@ -81,7 +89,12 @@ export function StagingOwnRosterPreview({ controller, authEvents }: {
           Consulta no disponible o sesión modificada. No se muestran registros.
         </Text>
       ) : null}
-      {current.state === "ready" ? (
+      {current.state === "ready" && !validServiceTimeZone ? (
+        <Text style={styles.warning} testID="staging-roster-zone-blocked">
+          No se muestran coberturas sin la zona horaria del servicio.
+        </Text>
+      ) : null}
+      {current.state === "ready" && validServiceTimeZone ? (
         <View style={styles.list} testID="staging-roster-list">
           <Text style={styles.help}>
             {current.rows.length} coberturas de muestra, únicamente metadatos.
@@ -102,8 +115,8 @@ export function StagingOwnRosterPreview({ controller, authEvents }: {
                 {row.serviceKind === "SHIFT" ? "Guardia" : "Visita"} de prueba {index+1}
               </Text>
               <Text style={styles.help}>Estado: {STATUS_LABELS[row.coverageState]}</Text>
-              <Text style={styles.help}>Inicio: {row.scheduledStart}</Text>
-              <Text style={styles.help}>Fin: {row.scheduledEnd}</Text>
+              <Text style={styles.help}>Inicio: {formatCoverageServiceInstant(row.scheduledStart, serviceTimeZone)}</Text>
+              <Text style={styles.help}>Fin: {formatCoverageServiceInstant(row.scheduledEnd, serviceTimeZone)}</Text>
             </View>
           ))}
         </View>

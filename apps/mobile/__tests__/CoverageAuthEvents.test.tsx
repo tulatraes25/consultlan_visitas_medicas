@@ -108,7 +108,7 @@ describe("MOB-AUTH-01 Auth provider integration clears staged roster",()=>{
 
   test("staging screen is wired to Auth changes and unsubscribes on unmount",async()=>{
     const events=fakeProvider(),ctrl=createCoverageSessionController(config());
-    const view=render(<StagingOwnRosterPreview controller={ctrl} authEvents={events.auth}/>);
+    const view=render(<StagingOwnRosterPreview controller={ctrl} serviceTimeZone="America/Argentina/Buenos_Aires" authEvents={events.auth}/>);
     expect(events.listenerCount).toBe(1);
     expect(screen.getByTestId("staging-roster-idle")).toBeTruthy();
     await act(async()=>{
