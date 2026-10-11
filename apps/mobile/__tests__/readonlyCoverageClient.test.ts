@@ -218,4 +218,44 @@ describe("MOB-DATA-01 dormant staging-only coverage client", () => {
     })));
     await expect(invalid.list()).rejects.toMatchObject({ code: "ROSTER_UNEXPECTED_SHAPE" });
   });
+
+  test("MOB-DATA-04 rejects reversed server order without reordering entries",async()=>{
+    const first={...safeRow(),id:"ffffffff-ffff-4fff-8fff-ffffffffffff"};
+    const next={...safeRow(),id:"22222222-2222-4222-8222-222222222222",
+      scheduled_start:"2026-10-15T10:00:00Z",scheduled_end:"2026-10-15T11:00:00Z"};
+    const make=(rows:unknown[])=>createReadOnlyCoverageClient(good(async()=>({
+      status:200,json:async()=>({ok:true,result:rows}),
+    }))).list();
+    await expect(make([first,next])).resolves.toMatchObject({
+      rows:[{id:first.id},{id:next.id}],
+    });
+    await expect(make([next,first])).rejects.toMatchObject({
+      code:"ROSTER_NOT_CHRONOLOGICAL",
+    });
+  });
+
+  test("MOB-DATA-04 honors microseconds and equal instants with timezone offsets",async()=>{
+    const early={...safeRow(),id:"ffffffff-ffff-4fff-8fff-ffffffffffff",
+      scheduled_start:"2026-10-15T09:00:00.123456Z"};
+    const late={...safeRow(),id:"22222222-2222-4222-8222-222222222222",
+      scheduled_start:"2026-10-15T09:00:00.123457Z"};
+    const first={...safeRow(),id:"11111111-1111-4111-8111-111111111111",
+      scheduled_start:"2026-10-15T09:00:00Z"};
+    const equalInstant={...safeRow(),id:"33333333-3333-4333-8333-333333333333",
+      scheduled_start:"2026-10-15T06:00:00-03:00"};
+    const make=(rows:unknown[])=>createReadOnlyCoverageClient(good(async()=>({
+      status:200,json:async()=>({ok:true,result:rows}),
+    }))).list();
+    // UUID decreases, but microseconds increase: this is correctly ordered.
+    await expect(make([early,late])).resolves.toMatchObject({
+      rows:[{id:early.id},{id:late.id}],
+    });
+    await expect(make([late,early])).rejects.toMatchObject({
+      code:"ROSTER_NOT_CHRONOLOGICAL",
+    });
+    await expect(make([first,equalInstant])).resolves.toHaveProperty("rows");
+    await expect(make([equalInstant,first])).rejects.toMatchObject({
+      code:"ROSTER_NOT_CHRONOLOGICAL",
+    });
+  });
 });

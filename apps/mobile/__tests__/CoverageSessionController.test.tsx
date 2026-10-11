@@ -149,6 +149,20 @@ describe("MOB-DATA-02 session-bound staging read controller",()=>{
     });
   });
 
+  test("MOB-DATA-04 clears a previously accepted roster on reversed Edge order",async()=>{
+    let attempts=0;
+    const ctrl=createCoverageSessionController(config(async()=>{
+      attempts++;
+      return success(attempts===1?[firstRow(),secondRow()]:[secondRow(),firstRow()]);
+    }));
+    expect(await ctrl.refresh()).toBe(true);
+    expect(ctrl.getSnapshot().rows).toHaveLength(2);
+    expect(await ctrl.refresh()).toBe(false);
+    expect(ctrl.getSnapshot()).toMatchObject({
+      state:"error",rows:[],errorCode:"ROSTER_NOT_CHRONOLOGICAL",
+    });
+  });
+
   test("no token or denied session fails without stale data",async()=>{
     let token:string|null=null,network=0;
     const ctrl=createCoverageSessionController(config(
