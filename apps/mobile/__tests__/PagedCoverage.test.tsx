@@ -146,6 +146,10 @@ describe("HC-READ-02B strict paginated mobile contract",()=>{
         hasMore:false,nextCursor:null},
       {rows:[row(0)],hasMore:true,nextCursor:cursor([row(0)])},
       {rows:firstRows,hasMore:true,nextCursor:null},
+      // Upstream SQL contract uses scheduled_start, not client camelCase.
+      {rows:firstRows,hasMore:true,nextCursor:{
+        id:firstRows[99].id,scheduledStart:firstRows[99].scheduled_start,
+      }},
       {rows:firstRows,hasMore:true,nextCursor:{
         ...cursor(firstRows),id:row(0).id,
       }},
