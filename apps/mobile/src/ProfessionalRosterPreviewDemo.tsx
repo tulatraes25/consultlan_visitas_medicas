@@ -27,6 +27,7 @@ export function ProfessionalRosterPreviewDemo({
   const selected = choices.find(item => item.id === selectedRef) ?? choices[0];
   const roster = projectDemoOwnRoster(selected, visits);
   const shiftCount = roster.filter(item => item.modality === "SHIFT").length;
+  const visitCount = roster.length - shiftCount;
 
   return (
     <View style={styles.root} testID="professional-own-roster-demo">
@@ -67,7 +68,7 @@ export function ProfessionalRosterPreviewDemo({
           </Text>
           <Text style={styles.help}>
             {roster.length} {roster.length === 1 ? "cobertura" : "coberturas"} de muestra ·
-            {" "}{roster.length - shiftCount} visitas · {shiftCount} guardias
+            {" "}{visitCount} {visitCount === 1 ? "visita" : "visitas"} · {shiftCount} {shiftCount === 1 ? "guardia" : "guardias"}
           </Text>
           {roster.length ? (
             <View style={styles.list} testID="own-roster-list">
