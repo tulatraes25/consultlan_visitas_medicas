@@ -196,7 +196,9 @@ describe("MOB-DATA-02 standalone staging read-only preview screen",()=>{
     const ctrl=createCoverageSessionController(config(async()=>{
       calls++;return success([{...firstRow(),rawClinicalNote:"not expected"} as never]);
     }));
-    const view=render(<StagingOwnRosterPreview controller={ctrl}/>);
+    const view=render(<StagingOwnRosterPreview controller={ctrl} authEvents={{
+      onAuthStateChange: () => ({data:{subscription:{unsubscribe:()=>{}}}}),
+    }}/>);
     expect(screen.getByTestId("staging-own-roster-screen")).toBeTruthy();
     expect(screen.getByText(/NO HABILITADO PARA PACIENTES REALES/)).toBeTruthy();
     expect(screen.getByTestId("staging-roster-idle")).toBeTruthy();
@@ -215,7 +217,9 @@ describe("MOB-DATA-02 standalone staging read-only preview screen",()=>{
 
   test("shows only type/state/time and removes all rows when unmounted",async()=>{
     const ctrl=createCoverageSessionController(config());
-    const view=render(<StagingOwnRosterPreview controller={ctrl}/>);
+    const view=render(<StagingOwnRosterPreview controller={ctrl} authEvents={{
+      onAuthStateChange: () => ({data:{subscription:{unsubscribe:()=>{}}}}),
+    }}/>);
     await act(async()=>{
       fireEvent.press(screen.getByRole("button",{
         name:"Consultar mis coberturas de prueba",

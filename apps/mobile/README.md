@@ -31,6 +31,10 @@ Usar el emulador/dispositivo compatible con Expo SDK 57. Para producir bundles e
 13. **Solicitudes de revisión coherentes (MOB-HC-REVIEW-02)**: cada solicitud pendiente DEMO aparece solo si existe una versión DRAFT válida del mismo paciente y episodio; no hay aprobación ni firma.
 14. **Vista profesional de muestra (MOB-HC-PRO-01)**: seleccioná un profesional ficticio en Gestión → Vista profesional para consultar solo sus coberturas DEMO, ordenadas incluso con guardias nocturnas. El selector no autentica y nunca concede permisos clínicos.
 
+## Suscripción segura de agenda a Auth (MOB-AUTH-01)
+
+La pantalla `StagingOwnRosterPreview` exige un parámetro `authEvents` con contrato `onAuthStateChange` compatible con el SDK Supabase. Cada evento de Auth, incluso renovación de token e inicio de sesión, borra la agenda de memoria y cancela consultas en curso; el desmontaje elimina la suscripción. Una implementación real deberá proveer este contrato desde el **Supabase nuevo, separado** y nunca desde Pediatrics ambulatorio. Hasta probar STAGING-01F-REMOTE, el componente sigue sin montarse en `App.tsx` ni habilitar login o datos reales. [SPEC MOB-AUTH-01](../../docs/specs/MOB-AUTH-01-event-bound-roster.md).
+
 ## Integridad de coberturas del adaptador Edge (MOB-DATA-03)
 
 El adaptador `readonlyCoverageClient.ts` rechaza fechas ISO imposibles y duplicados de UUID aunque difieran en mayúsculas. Esto evita presentar dos veces la misma cobertura o normalizar silenciosamente un 30 de febrero; conserva hasta 100 filas distintas, con aviso de posible truncamiento. Los fallos se expresan con códigos fijos y limpian la vista de staging sin exponer datos. Sigue sin conectarse a Supabase real y no ejecuta decisiones médicas. [SPEC MOB-DATA-03](../../docs/specs/MOB-DATA-03-coverage-integrity.md).
