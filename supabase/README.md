@@ -135,3 +135,9 @@ El comando `scripts/staging-integrated-verify.mjs` compone las pruebas HTTP de 0
 ## Variables de la app (futuro)
 La app podrá recibir URL del **Supabase propio** y su clave **publicable**, más el JWT de la sesión autenticada. La clave `service_role` y secretos de firma **nunca** pueden estar en el bundle móvil, secretos públicos del build ni repositorios.
 No se configura ninguna URL real en este gate. La demo sigue ejecutándose 100% con datos sintéticos en memoria.
+
+## HC-READ-02 — Lectura paginada acotada (solo GitHub, no desplegada)
+
+La migración número 12, `20261011100000_homecare_roster_keyset_read.sql`, agrega una RPC **solo para service_role** con ventana de UTC máxima de 32 días, 100 coberturas por página y cursor compuesto `scheduled_start + id`. Incluye coberturas largas que comenzaron antes pero siguen abiertas dentro de la ventana. La Edge reconoce rutas de primera/siguiente página tras Auth y verificación de sesión activa; nunca acepta identidad u organización elegidas por la app.
+
+Las primeras once migraciones **no se modifican**. GitHub CI aplica esta última después de los tests anteriores y verifica con 105 coberturas sintéticas que no hay saltos, duplicados ni accesos cruzados. `hasMore=false` significa solamente que esa consulta no halló más filas al ejecutarse: **no es snapshot consistente entre requests**, ni evidencia de cobertura clínica completa. El cliente móvil paginado se implementa en gate separado sin enlazar a pacientes reales. [SPEC HC-READ-02](../docs/specs/HC-READ-02-keyset-roster.md).

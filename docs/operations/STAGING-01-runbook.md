@@ -186,3 +186,9 @@ La undécima migración `20261010100000_episode_scope_edge_read.sql` revoca SELE
 - [Supabase: configuración local CLI](https://supabase.com/docs/guides/local-development/cli/config)
 
 **No-go absoluto:** proyecto no identificado, referencias no excluidas, pacientes reales, credencial privilegiada en app, Auth de otra base, firma médica simulada o migración destructiva sin aprobación.
+
+## HC-READ-02 — Regla de instalación con paginación
+
+Desde este commit, toda revisión de un Supabase staging autorizado debe incluir la migración **12/12** `20261011100000_homecare_roster_keyset_read.sql`, sin reescribir las once anteriores. La nueva función `api_hc_list_my_coverages_page` exige ventana UTC menor o igual a 32 días, y servidor Auth/Edge debe revalidar sesión para cada página. El catálogo 01D y ledger 01E cotejan el conjunto exacto de doce versiones; un destino con solo once queda **bloqueado**. El límite anterior de cien coberturas históricas sigue siendo una ruta heredada que **no debe utilizarse para una agenda clínica completa**.
+
+Los rangos UTC son parámetros estrictamente operativos de staging y no una decisión sobre turnos, feriados, urgencias ni documentación médica. Un cursor no concede alcance adicional; se vuelven a comprobar profesionales, membresía, equipo y episodio. No se garantiza snapshot entre páginas si coordinación modifica el roster durante una consulta; se debe refrescar la ventana, no declarar continuidad clínica ininterrumpida.
