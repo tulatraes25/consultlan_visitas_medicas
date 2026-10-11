@@ -25,6 +25,7 @@ Usar el emulador/dispositivo compatible con Expo SDK 57. Para producir bundles e
 7. **Planillas (HC-03B)**: catálogo por seis especialidades y hoja de evolución; previsualiza campos originales confirmados, sin campos de captura ni firmas. Lista→detalle en celulares/tablets medianas y dos paneles en tablet ancha. Desde una visita ficticia se abre la plantilla de su especialidad **sin enviar datos del paciente**.
 8. **Hojas en domicilio**: Kardex, signos vitales, procedimientos y hoja de crisis figuran únicamente como referencias físicas; no son formularios editables ni sistemas de alarmas.
 9. **Episodios (MOB-HC-EPISODE-01)**: dentro de Gestión, lista de episodios inventados y agenda VISIT/SHIFT agrupada por episodio y paciente; sin admisión ni plan aprobados, y sin mezcla de casos.
+10. **Continuidades de guardia (MOB-HC-HANDOVER-01)**: vista informativa de turnos SHIFT consecutivos y profesionales ficticios distintos, siempre del **mismo paciente y episodio**. Mensaje visible «SIN RELEVO ACREDITADO»; no se acepta, firma ni transmite información clínica.
 
 ## Adaptador de lectura futura (MOB-DATA-01)
 
