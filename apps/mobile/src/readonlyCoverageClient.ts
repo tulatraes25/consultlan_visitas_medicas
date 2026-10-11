@@ -4,7 +4,8 @@
  * Not wired to the app. No patient, clinical notes, medical orders, signatures,
  * caregiver identity or service-role secrets. Any eventual read MUST travel
  * through the Edge Auth + LIVE SESSION gate before its future scoped RPC.
- * There is no backend roster-read command yet; current Edge returns HTTP 422.
+ * The backend HC-READ-01 route is authored but not deployed to any Supabase;
+ * the adapter remains dormant until staging + institutional approval.
  */
 
 export type PublicCoverage = Readonly<{
@@ -123,9 +124,9 @@ export function createReadOnlyCoverageClient(config: ReadOnlyCoverageConfig) {
       if (response.status === 401 || response.status === 403) {
         return fail("ROSTER_ACCESS_DENIED");
       }
-      // Until a separately reviewed Edge read action exists, the published
-      // handler will return 422. Never treat that as an empty roster.
-      if (response.status === 422) return fail("ROSTER_EDGE_READ_NOT_IMPLEMENTED");
+      // A malformed/unacceptable request must never be disguised as an
+      // empty roster; staging alone is not clinical authorization.
+      if (response.status === 422) return fail("ROSTER_OPERATION_REJECTED");
       if (response.status !== 200) return fail("ROSTER_SERVICE_UNAVAILABLE");
       let envelope: unknown;
       try { envelope = await response.json(); }

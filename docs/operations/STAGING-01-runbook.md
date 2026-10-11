@@ -18,7 +18,7 @@ Desde el repositorio limpio con Node >=22:
 node scripts/staging-preflight.mjs --ci
 npm test
 ```
-El comando `--ci` no usa internet: comprueba el identificador **local** `project_id = "consultlan-visitas-medicas-local"`, `[functions.visits] verify_jwt = true`, las ocho migraciones SQL y que se hayan retirado tanto las rutas Edge como los permisos SQL de cinco RPC clínicas históricas. Este identificador local **no** es una referencia de proyecto online.
+El comando `--ci` no usa internet: comprueba el identificador **local** `project_id = "consultlan-visitas-medicas-local"`, `[functions.visits] verify_jwt = true`, las nueve migraciones SQL y que se hayan retirado tanto las rutas Edge como los permisos SQL de cinco RPC clínicas históricas. Este identificador local **no** es una referencia de proyecto online.
 
 GitHub Actions realiza además los tests RLS PostgreSQL 16 con Auth sintético, tests Edge Deno y typecheck/UI/exportación JS Android e iOS. No confundir bundles JS con un APK/IPA.
 
@@ -44,7 +44,7 @@ Resultado favorable = formato y declaraciones aceptados, **no** independencia/id
 ## 3. Instalación inicial del proyecto staging (MANUAL, bloqueada)
 Solo con autorizaciones y revisión de seguridad: crear un proyecto Supabase **nuevo**, habilitar Auth según política, verificar región, destinatarios, backups, restauración y políticas de Storage privado. No desplegar el proyecto SICOM, el servidor de Pediatrics ni los datos de consultorio.
 
-Revisar las ocho migraciones en orden y en staging vacío. No ejecutar `supabase db reset --linked`: es destructivo sobre el proyecto enlazado. No ejecutar `supabase db push` sin cotejo explícito de la referencia enlazada, revisión de cambios pendientes, backup de staging y aprobación del operador. Los datos sintéticos de `supabase/tests/postgres_auth_stub.sql` son **solo para PostgreSQL aislado de CI**; nunca aplicar ese shim en una base real Supabase.
+Revisar las nueve migraciones en orden y en staging vacío. No ejecutar `supabase db reset --linked`: es destructivo sobre el proyecto enlazado. No ejecutar `supabase db push` sin cotejo explícito de la referencia enlazada, revisión de cambios pendientes, backup de staging y aprobación del operador. Los datos sintéticos de `supabase/tests/postgres_auth_stub.sql` son **solo para PostgreSQL aislado de CI**; nunca aplicar ese shim en una base real Supabase.
 
 Validar que el esquema `private` no esté expuesto; verificar `SECURITY DEFINER`, propietario/search_path, GRANT/REVOKE, RLS, auditoría, Auth, funciones Edge, cifrado, redes y separación de cuentas. No activar ningún documento clínico, permiso médico, firma o paciente real.
 
@@ -122,6 +122,12 @@ node scripts/staging-session-verify.mjs --probe
 `--probe` realiza dos **GET de Auth** y cuatro POST Edge con acción deliberadamente desconocida, nunca un comando real: comprueba que A llegue al validador de acción, mientras B, JWT vencido y sesión anónima son rechazados. Si Supabase Auth **ya rechaza B**, el resultado queda **inconcluso para el control adicional de sesión**, aunque sea seguro: no declarar una prueba positiva del chequeo de `auth.sessions` sin evidencia. No se envían indicaciones, nombres de menores, firmas ni registros médicos.
 
 SPEC: [STAGING-01C](../specs/STAGING-01C-session-revocation-probe.md). Esta prueba tampoco demuestra por sí sola RLS completo, backups/restauración ni aptitud clínica.
+
+## 4E. HC-READ-01 — Consulta de coberturas solo a través de Edge (NO desplegada)
+
+La novena migración `20261010080000_homecare_roster_edge_read.sql` revoca SELECT directo a `authenticated` y `anon` sobre `homecare_coverage_assignments` y `homecare_shift_handovers`, y añade `api_hc_list_my_coverages` con EXECUTE exclusivo del backend. El único comando móvil previsto es `listMyHomecareCoverages`, **sin argumentos**, con identidad inyectada por Auth y sesión activa. Devuelve como máximo 100 coberturas propias con seis campos de metadatos, nunca datos de pacientes ni evolución médica.
+
+Solo después de crear staging autónomo se podrá auditar externamente: SELECT directo negado tras logout, RPC actor propio, otra organización, membresía/profesional/equipo inactivos y JWT sin sesión. **La lectura directa de otras tablas (pacientes, episodios, notas/visitas) sigue siendo un riesgo pendiente de SEC-READ-02; no usar pacientes reales.** [SPEC HC-READ-01](../specs/HC-READ-01-session-scoped-roster.md).
 
 ## 5. Aceptación de STAGING-01B/01C (todavía NO cumplida)
 - Mostrar evidencia de proyecto autónomo, titularidad, región, políticas y datos ficticios. Confirmar identidad contra proyectos excluidos por medios independientes.

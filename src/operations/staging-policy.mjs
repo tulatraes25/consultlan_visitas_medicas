@@ -11,6 +11,7 @@ export const REQUIRED_MIGRATIONS = Object.freeze([
   "20261010050000_homecare_review_requests.sql",
   "20261010060000_revoke_legacy_clinical_rpc.sql",
   "20261010070000_live_auth_session_gate.sql",
+  "20261010080000_homecare_roster_edge_read.sql",
 ]);
 
 export const RETIRED_CLINICAL_COMMANDS = Object.freeze([

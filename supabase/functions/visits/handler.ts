@@ -19,6 +19,13 @@ export type TrustedServices = {
   command: (rpc: string, args: Record<string, unknown>) => Promise<CommandResult>;
 };
 const COMMANDS: Record<string, CommandSpec> = {
+  // HC-READ-01: metadata-only professional roster. No caller-supplied
+  // organization, episode, actor or patient identifiers: SQL derives scope.
+  // Access requires the existing Auth + live session gate first.
+  listMyHomecareCoverages: {
+    rpc: "api_hc_list_my_coverages",
+    fields: {},
+  },
   createHomecareEpisodeDraft: {
     rpc: "api_hc_create_episode_draft",
     fields: {
