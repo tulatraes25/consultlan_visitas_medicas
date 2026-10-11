@@ -173,7 +173,7 @@ export function EpisodeOverviewDemo({
                   testID={"episode-participant-" + member.professionalRef}>
                   <Text style={styles.participantName}>{member.label} · {member.specialty}</Text>
                   <Text style={styles.help}>
-                    {member.visits} visitas · {member.shifts} guardias de muestra
+                    {member.visits} {member.visits === 1 ? "visita" : "visitas"} · {member.shifts} {member.shifts === 1 ? "guardia" : "guardias"} de muestra
                   </Text>
                 </View>
               ))}
