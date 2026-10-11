@@ -52,6 +52,8 @@ jobs:
           node --check src/domain/clinical-authorization-policy.mjs
           node --check src/operations/staging-policy.mjs
           node --check scripts/staging-preflight.mjs
+          node --check src/operations/staging-source-attestation.mjs
+          node --check scripts/staging-source-attestation.mjs
           node --check src/operations/staging-rls-policy.mjs
           node --check scripts/staging-rls-verify.mjs
           node --check src/operations/staging-session-policy.mjs
@@ -61,6 +63,8 @@ jobs:
           done
       - name: Validate staging source offline (no network or secrets)
         run: node scripts/staging-preflight.mjs --ci
+      - name: Verify exact commit, migration set and source SHA256 without network
+        run: node scripts/staging-source-attestation.mjs --ci
       - name: Validate synthetic two-tenant RLS runner remains offline
         run: node scripts/staging-rls-verify.mjs --ci
       - name: Validate signed-out Auth session probe remains offline
@@ -181,6 +185,8 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/episode_scope_edge_read.sql
       - name: Reject future mobile grants on any new public table or privileged RPC
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/dynamic_public_surface_guard.sql
+      - name: Verify read-only staging catalog preflight on synthetic Auth schema
+        run: psql -v ON_ERROR_STOP=1 -f supabase/staging/01d_catalog_readonly_attestation.sql
 
   edge-functions:
     name: Deno Edge JWT boundary and request validation

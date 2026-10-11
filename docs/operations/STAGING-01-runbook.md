@@ -22,6 +22,20 @@ El comando `--ci` no usa internet: comprueba el identificador **local** `project
 
 GitHub Actions realiza además los tests RLS PostgreSQL 16 con Auth sintético, tests Edge Deno y typecheck/UI/exportación JS Android e iOS. No confundir bundles JS con un APK/IPA.
 
+## 1D. STAGING-01D — huella de fuente y auditoría de catálogo (sin instalación)
+
+Antes de que un operador toque un Supabase real, obtener un checkout Git **limpio** del commit aprobado de `main`. El script STAGING-01D no lee variables de credenciales ni contacta a Supabase: exige que las once migraciones sean exactamente las esperadas, valida los archivos Edge/config y crea SHA-256 por archivo ligados al commit exacto.
+
+```bash
+node scripts/staging-source-attestation.mjs --ci
+node scripts/staging-source-attestation.mjs --emit > /tmp/visitas-staging-source.json
+node scripts/staging-source-attestation.mjs --verify /tmp/visitas-staging-source.json
+```
+
+Guardar el manifiesto fuera del repo bajo control institucional. Nunca usar el manifiesto de un commit diferente ni confundirlo con comprobante de instalación. Tras la instalación supervisada de las once migraciones, el operador podrá ejecutar **solo en el Supabase staging cuya identidad fue comprobada** el SQL `supabase/staging/01d_catalog_readonly_attestation.sql`. Es transacción `READ ONLY`, inspecciona `pg_catalog`, compatibilidad de estructura Auth, RLS y privilegios; no extrae filas de pacientes ni sesiones. Un PASS significa **únicamente** que coincide la estructura observada, no que el ambiente esté aprobado o haya probado backups/Storage y Auth reales.
+
+[SPEC STAGING-01D](../specs/STAGING-01D-source-and-catalog-attestation.md). Staging sigue pendiente de creación y autorización.
+
 ## 2. Variables temporales requeridas, solo en entorno autorizado
 No pasar llaves como argumentos, no usar archivos .env dentro del repositorio público, no pegar credenciales en chats, issues o logs. Usar el gestor de secretos del operador o un entorno de ejecución aislado.
 
