@@ -361,6 +361,14 @@ td .tag{font-size:9px}
   .shell--b .agenda-layout--ops{grid-template-columns:1fr}
   .shell--b .agenda-layout--ops .ops-queue{display:grid;grid-template-columns:1fr 1fr}
 }
+/* Keep the A/B/C selector inside its own line on medium tablet widths.
+   Firefox font metrics can otherwise force document-wide overflow. */
+@media(min-width:731px) and (max-width:900px){
+  .concept-strip{flex-wrap:wrap;align-items:center}
+  .concept-heading{flex:1 1 220px}
+  .variants{order:3;width:100%;justify-content:center}
+  .concept-state{margin-left:auto}
+}
 @media(max-width:730px){
   .concept-strip{flex-direction:column;align-items:stretch;gap:12px;padding:14px}
   .variants{display:grid;grid-template-columns:repeat(3,1fr);width:100%}
