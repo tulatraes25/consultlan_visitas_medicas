@@ -22,6 +22,11 @@ export type DemoOwnRosterItem = Readonly<{
   civilStartMinute: number;
 }>;
 
+export function isDemoProfessional(professional: DemoProfessional | undefined): boolean {
+  return Boolean(professional && PRO_CODE.test(professional.id) &&
+    SPECIALTIES.includes(professional.specialty));
+}
+
 /** An ID-derived synthetic label; never echo user-supplied names. */
 export function demoOwnProfessionalLabel(professional: DemoProfessional): string {
   return PRO_CODE.test(professional.id)
@@ -38,8 +43,7 @@ export function projectDemoOwnRoster(
   professional: DemoProfessional | undefined,
   visits: readonly DemoVisit[],
 ): readonly DemoOwnRosterItem[] {
-  if (!professional || !PRO_CODE.test(professional.id) ||
-      !SPECIALTIES.includes(professional.specialty)) return [];
+  if (!isDemoProfessional(professional)) return [];
   const seen = new Set<string>();
   const result: DemoOwnRosterItem[] = [];
   for (const visit of visits) {
