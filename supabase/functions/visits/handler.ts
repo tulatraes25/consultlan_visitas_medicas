@@ -54,6 +54,15 @@ const COMMANDS: Record<string, CommandSpec> = {
       cursorId: {db:"p_after_id",kind:"uuid"},
     },
   },
+  // HC-UX-04B1: Only the coverage UUID is supplied by mobile. Auth, episode,
+  // professional, organization, care team, care plan and specialty are all
+  // revalidated by server-only SQL. Never accept a templateId from the phone.
+  resolveMyHomecareAttendanceTemplate: {
+    rpc: "api_hc_resolve_my_attendance_template",
+    fields: {
+      coverageId: { db: "p_coverage", kind: "uuid" },
+    },
+  },
   createHomecareEpisodeDraft: {
     rpc: "api_hc_create_episode_draft",
     fields: {
@@ -165,6 +174,23 @@ function strictCursorInstant(value:string):boolean {
   const instant=Date.parse(value);
   return Number.isFinite(instant)&&
     new Date(instant+offset).toISOString().slice(0,19)===value.slice(0,19);
+}
+const PREVIEW_ONLY_TEMPLATES = new Set([
+  "MEDICAL_ATTENDANCE",
+  "NURSING_CAREGIVER_ATTENDANCE",
+  "PHYSIOTHERAPY_ATTENDANCE",
+  "SPEECH_ATTENDANCE",
+  "OCCUPATIONAL_THERAPY_ATTENDANCE",
+  "NUTRITION_ATTENDANCE",
+]);
+// Guard the SQL result as well as the inbound request: a DB projection
+// regression cannot accidentally send patient, organization, role, or clinical
+// fields to the mobile device through this endpoint.
+function isPreviewOnlyTemplate(value: unknown): boolean {
+  if (!record(value) || Object.keys(value).length !== 2) return false;
+  return value.mode === "READ_ONLY_STRUCTURE_PREVIEW" &&
+    typeof value.templateId === "string" &&
+    PREVIEW_ONLY_TEMPLATES.has(value.templateId);
 }
 const MAX_BODY_BYTES = 32768;
 const HEADERS = {
@@ -287,6 +313,12 @@ export function createVisitHandler(services: TrustedServices) {
       const status = errorStatus(result.code);
       // Do not leak SQL messages, patient names, provider URLs, JWTs or signing secrets.
       return json(status, { error: status === 502 ? "DATA_OPERATION_FAILED" : "OPERATION_DENIED_OR_CONFLICT" });
+    }
+    if (sanitized.rpc === "api_hc_resolve_my_attendance_template" &&
+      !isPreviewOnlyTemplate(result.data)) {
+      // Fail closed if an upstream resolver ever projects unknown clinical
+      // fields, an unsupported template, a signature or a document.
+      return json(502, { error: "DATA_OPERATION_FAILED" });
     }
     return json(200, { ok: true, result: result.data });
   };
