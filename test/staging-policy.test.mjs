@@ -137,5 +137,13 @@ test("STAGING-01A repository inspection enforces local ID, JWT, pending route an
   });
   assert.equal(legacy.ok,false);
   assert.ok(legacy.issues.includes("LEGACY_UNWINDOWED_ROSTER_EXPOSED"));
+  const inline=checkStagingSource({
+    ...good,edgeHandler:good.edgeHandler.replace(
+      "requestHomecarePlanReview:",
+      "listMyHomecareCoverages: {}, requestHomecarePlanReview:",
+    ),
+  });
+  assert.equal(inline.ok,false);
+  assert.ok(inline.issues.includes("LEGACY_UNWINDOWED_ROSTER_EXPOSED"));
   assert.equal(REQUIRED_MIGRATIONS.length, 13);
 });
