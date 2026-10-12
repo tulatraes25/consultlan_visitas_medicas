@@ -83,3 +83,11 @@ Desde el detalle de la agenda ficticia también se abre la planilla correspondie
 **Para la app real**, el profesional y la cobertura deben provenir de Auth + Edge/RLS del Supabase independiente y estar vinculados a un episodio y equipo autorizados. No derivar permisos clínicos de una especialidad pasada por el cliente. No activar guardado, firmas, evolución, rendición ni descarga de PDF sin completar HC-UX-03B y el circuito de autorización.
 
 Pruebas RN/Jest: un clic Inicio→planilla correcta, agenda→planilla, tableta ancha, cambio al catálogo libre solo desde pestaña, rechazo de especialidad extraña, rechazo de modo enfocado para documentos físicos/evolución. Las exportaciones Android/iOS siguen siendo bundles de CI, **no** APK/IPA instalables.
+
+## HC-UX-04B2 — Planilla individual determinada por la cobertura del servidor
+
+En \`src/authorizedFormPreviewClient.ts\` queda preparado el lector HTTP fijo de \`resolveMyHomecareAttendanceTemplate\` (HC-UX-04B1). **Solo puede llamar a un proyecto staging independiente explícitamente habilitado**, siempre después de obtener el JWT de un proveedor Auth inyectado, nunca del login del CONSULTLAN ambulatorio. La petición incluye únicamente el UUID de cobertura; la respuesta devuelve uno de seis modelos de asistencia, \`READ_ONLY_STRUCTURE_PREVIEW\` y ninguna información clínica. No permite seleccionar una especialidad desde el cliente.
+
+\`src/assignedFormSessionController.ts\` conserva exclusivamente el identificador de la plantilla en memoria y limpia inmediatamente al cambiar cobertura o sesión. \`src/StagingAssignedFormPreview.tsx\` muestra **un botón** y esa plantilla en modo enfocado (sin firmas, documentos, PDF o edición); se limpia ante Auth y segundo plano.
+
+**La pantalla NO está conectada a \`App.tsx\`**, no hay proyecto Supabase remoto desplegado ni pacientes reales. Solo se ejecuta con fixtures de CI. Para validar la relación \`cobertura -> profesional -> episodio -> plan -> especialidad\` con autenticación real hace falta staging independiente y usuarios exclusivamente ficticios, según [SPEC HC-UX-04B2](../../docs/specs/HC-UX-04B2-assigned-form-reader.md). El cotejo privado de los DOCX originales sigue pendiente (issue #57).
