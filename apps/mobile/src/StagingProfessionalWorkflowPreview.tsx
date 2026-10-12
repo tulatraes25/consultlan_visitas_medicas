@@ -1,6 +1,6 @@
 import React,{useEffect,useMemo,useState,useSyncExternalStore} from "react";
 import {Pressable,StyleSheet,Text,View} from "react-native";
-import {createPagedCoverageController} from "./pagedCoverageController";
+import {createPagedCoverageController,type PagedRosterSnapshot} from "./pagedCoverageController";
 import {createAssignedFormSessionController} from "./assignedFormSessionController";
 import {StagingPagedRosterPreview} from "./StagingPagedRosterPreview";
 import {StagingAssignedFormPreview} from "./StagingAssignedFormPreview";
@@ -34,7 +34,11 @@ export function StagingProfessionalWorkflowPreview({
   const roster=useSyncExternalStore(
     pair.roster.subscribe,pair.roster.getSnapshot,pair.roster.getSnapshot,
   );
-  const [selected,setSelected]=useState<string|null>(null);
+  // A row id is not a capability. Bind it to the exact authorized roster
+  // snapshot; an updated page cannot silently reuse an old selection.
+  const [selected,setSelected]=useState<{
+    coverageId:string; rosterSnapshot:PagedRosterSnapshot;
+  }|null>(null);
   const [binding,setBinding]=useState<{
     pair:typeof pair;
     authEvents:SupabaseLikeAuthEvents;
@@ -71,7 +75,8 @@ export function StagingProfessionalWorkflowPreview({
   },[pair]);
 
   const selectedFromCurrentPage=selected!==null&&ready&&
-    roster.state==="ready"&&roster.rows.some(row=>row.id===selected);
+    selected.rosterSnapshot===roster&&roster.state==="ready"&&
+    roster.rows.some(row=>row.id===selected.coverageId);
   const selectCoverage=(coverageId:string)=>{
     // Guard even if a button's event arrived after a roster switch.
     const current=pair.roster.getSnapshot();
@@ -83,7 +88,7 @@ export function StagingProfessionalWorkflowPreview({
     }
     // Never carry a template over from the preceding selected coverage.
     pair.form.clear();
-    setSelected(coverageId);
+    setSelected({coverageId,rosterSnapshot:current});
   };
 
   return <View testID="staging-professional-workflow" style={styles.root}>
@@ -92,10 +97,14 @@ export function StagingProfessionalWorkflowPreview({
       aprobaciones, firmas ni guardado. Cada planilla se verifica otra vez
       con la sesión y cobertura en el servidor.
     </Text>
-    <StagingPagedRosterPreview controller={pair.roster}
-      authEvents={authEvents} serviceTimeZone={serviceTimeZone}
-      windowStart={windowStart} windowEnd={windowEnd}
-      onSelectCoverage={selectCoverage}/>
+    <View testID="staging-workflow-roster"
+      style={selectedFromCurrentPage?styles.hidden:undefined}
+      importantForAccessibility={selectedFromCurrentPage?"no-hide-descendants":"auto"}>
+      <StagingPagedRosterPreview controller={pair.roster}
+        authEvents={authEvents} serviceTimeZone={serviceTimeZone}
+        windowStart={windowStart} windowEnd={windowEnd}
+        onSelectCoverage={selectCoverage}/>
+    </View>
     {selectedFromCurrentPage&&selected ? (
       <View testID="staging-workflow-selected" style={styles.selected}>
         <Pressable accessibilityRole="button"
@@ -104,8 +113,9 @@ export function StagingProfessionalWorkflowPreview({
           style={styles.back}>
           <Text style={styles.backText}>← Volver a mis coberturas</Text>
         </Pressable>
-        <StagingAssignedFormPreview controller={pair.form}
-          authEvents={authEvents} coverageId={selected}/>
+        <StagingAssignedFormPreview key={selected.coverageId}
+          controller={pair.form} authEvents={authEvents}
+          coverageId={selected.coverageId}/>
       </View>
     ) : (
       <Text testID="staging-workflow-no-selection" style={styles.help}>
@@ -118,6 +128,7 @@ export function StagingProfessionalWorkflowPreview({
 
 const styles=StyleSheet.create({
   root:{gap:spacing.lg},
+  hidden:{display:"none"},
   notice:{fontSize:12,lineHeight:19,color:"#92400E"},
   help:{fontSize:12,lineHeight:19,color:palette.textSecondary},
   selected:{gap:spacing.md,borderTopWidth:1,
