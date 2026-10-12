@@ -64,6 +64,8 @@ jobs:
           node --check apps/web-prototypes/scenario.js
           node --check apps/web-prototypes/app.js
           node --check test/hc-ux02-browser.e2e.cjs
+          node --check test/web-coord-react.e2e.cjs
+          node --check apps/web/scripts/emit-standalone.mjs
           for test_file in test/*.test.mjs; do
             node --check "$test_file"
           done
@@ -253,6 +255,13 @@ jobs:
         run: node test/web-compat-accessibility.e2e.cjs
       - name: Exercise original-source planillas and monthly dossier in Chrome 1440/768/390
         run: node test/hc-ux02-browser.e2e.cjs
+      - name: Build React coordination candidate without backend
+        run: |
+          cd apps/web
+          npm install --no-audit --no-fund
+          npm run build
+      - name: Exercise offline React coordination console in Chrome
+        run: node test/web-coord-react.e2e.cjs
       - name: Preserve browser QA screenshots for nontechnical review
         if: always()
         uses: actions/upload-artifact@v4
@@ -263,5 +272,7 @@ jobs:
             apps/web-prototypes/preview.html
             artifacts/hc-ux02/*.png
             apps/form-prototypes/preview.html
+            artifacts/web-coord-react/*.png
+            apps/web/dist/preview.html
           if-no-files-found: ignore
           retention-days: 14
