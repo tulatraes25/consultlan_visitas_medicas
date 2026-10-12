@@ -263,6 +263,20 @@ function safeRosterPage(data:unknown,args:Record<string,unknown>):boolean{
   }else if(data.nextCursor!==null)return false;
   return true;
 }
+// SEC-READ-03: a service_role SQL regression must not project patient
+// identifiers or clinical fields to the device via the episode scope probe.
+// The only admissible response is [] or [{id,organization_id}], and its
+// episode ID must be the exact UUID the authenticated caller requested.
+function safeEpisodeScope(data:unknown,requestedEpisode:unknown):boolean{
+  if(typeof requestedEpisode!=="string"||!UUID.test(requestedEpisode)||
+     !Array.isArray(data)||data.length>1)return false;
+  if(data.length===0)return true;
+  const row:unknown=data[0];
+  return exactKeys(row,["id","organization_id"])&&
+    typeof row.id==="string"&&UUID.test(row.id)&&
+    row.id.toLowerCase()===requestedEpisode.toLowerCase()&&
+    typeof row.organization_id==="string"&&UUID.test(row.organization_id);
+}
 const MAX_BODY_BYTES = 32768;
 const HEADERS = {
   "content-type": "application/json; charset=utf-8",
@@ -384,6 +398,12 @@ export function createVisitHandler(services: TrustedServices) {
       const status = errorStatus(result.code);
       // Do not leak SQL messages, patient names, provider URLs, JWTs or signing secrets.
       return json(status, { error: status === 502 ? "DATA_OPERATION_FAILED" : "OPERATION_DENIED_OR_CONFLICT" });
+    }
+    if (sanitized.rpc === "api_hc_episode_scope" &&
+      !safeEpisodeScope(result.data,sanitized.args.p_episode)) {
+      // The SQL definer controls tenant visibility. Edge separately refuses
+      // any expanded/mismatched projection before serializing its response.
+      return json(502, { error: "DATA_OPERATION_FAILED" });
     }
     if (sanitized.rpc === "api_hc_resolve_my_attendance_template" &&
       !isPreviewOnlyTemplate(result.data)) {

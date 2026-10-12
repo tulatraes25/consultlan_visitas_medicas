@@ -405,6 +405,50 @@ Deno.test("HC-READ-02B: accepts PostgreSQL UTC-offset cursor with six digits",as
   equal(h.calls.length,before,"no invalid offset reaches SQL");
 });
 
+Deno.test("SEC-READ-03: Edge emits only exact authorized episode scope metadata",async()=>{
+  const episodeId="e1000000-0000-4000-8000-000000000001";
+  const organizationId="aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+  const request={action:"inspectMyHomecareEpisodeScope",episodeId};
+  const allowed=[{id:episodeId,organization_id:organizationId}];
+  for(const rows of [[],allowed]){
+    const h=harness({command:async(rpc,args)=>{
+      equal(rpc,"api_hc_episode_scope","fixed service-only episode scope RPC");
+      equal(args.p_actor,ACTOR,"verified actor, never a mobile user override");
+      equal(args.p_episode,episodeId,"only known episode UUID goes to SQL");
+      return {ok:true,data:rows};
+    }});
+    const response=await h.handle(post(request));
+    equal(response.status,200,"valid strict scope metadata allowed");
+    const envelope=await response.json();
+    equal(JSON.stringify(envelope),
+      JSON.stringify({ok:true,result:rows}),"do not add extra fields");
+  }
+  for(const rows of [
+    null,{},false,"unexpected",[{id:episodeId}], 
+    [{id:episodeId,organization_id:organizationId,patient_id:PATIENT}],
+    [{id:episodeId,organization_id:organizationId,diagnosis:"NEVER_LEAK"}],
+    [{id:episodeId,organization_id:organizationId,signatures:[]}],
+    [{id:"e1000000-0000-4000-8000-000000000002",organization_id:organizationId}],
+    [{id:episodeId,organization_id:"not-a-uuid"}],
+    [allowed[0],allowed[0]],
+    [{id:episodeId,organization_id:organizationId,private_note:"NEVER_LEAK"}],
+  ]){
+    const h=harness({command:async()=>({ok:true,data:rows})});
+    const response=await h.handle(post(request));
+    equal(response.status,502,"expanded/malformed SQL scope must fail closed");
+    equal(await response.text(),
+      JSON.stringify({error:"DATA_OPERATION_FAILED"}),
+      "fixed failure envelope must not reflect SQL, patient IDs or private text");
+  }
+  const denied=harness({command:async()=>({ok:false,code:"42501"})});
+  const forbidden=await denied.handle(post(request));
+  equal(forbidden.status,403,"SQL tenant denial stays a denial");
+  const extra=harness();
+  const invalid=await extra.handle(post({...request,organizationId}));
+  equal(invalid.status,422,"mobile cannot choose or spoof tenant");
+  equal(extra.calls.length,0,"rejected body never reaches SQL");
+});
+
 Deno.test("HC-READ-04: exact six-field SQL metadata and cursor permit bounded results",async()=>{
   const first={
     action:"listMyHomecareCoveragesPage",
