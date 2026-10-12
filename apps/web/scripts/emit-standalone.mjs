@@ -17,8 +17,11 @@ function asset(path,extension){
 }
 const javascript=asset(js[1],"js").replace(/<\/script/gi,"<\\/script");
 const stylesheet=asset(sheet[1],"css").replace(/<\/style/gi,"<\\/style");
-html=html.replace(js[0],"<script type=\"module\">"+javascript+"</script>")
-  .replace(sheet[0],"<style>"+stylesheet+"</style>");
+// Function replacers preserve literal html=html.replace(js[0],"<script type=\"module\">"+javascript+"</script>")
+  .replace(sheet[0],"<style>"+stylesheet+"</style>");, $\x60 and $\x27 sequences in minified React.
+// String replacements would interpolate these tokens and corrupt the HTML.
+html=html.replace(js[0],()=>"<script type=\"module\">"+javascript+"</script>")
+  .replace(sheet[0],()=>"<style>"+stylesheet+"</style>");
 // Never scan inside the inlined JS/CSS: React's own runtime may contain
 // markup-like string fragments which are not actual external asset tags.
 const withoutInline=html
