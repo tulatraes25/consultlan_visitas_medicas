@@ -1,6 +1,8 @@
 # HC-READ-01 — Lectura mínima de coberturas por profesional y sesión activa
 
 **SPEC/Kiro · 2026-10-10 · Implementación GitHub con datos sintéticos, NO desplegada.**
+
+**HISTÓRICO / RUTA EDGE RETIRADA POR HC-READ-03.** La función SQL original se mantiene para preservar el historial de migraciones, pero la operación `listMyHomecareCoverages` ya no está permitida en Edge porque el límite global de las primeras cien coberturas puede ocultar asignaciones futuras. El cliente nuevo debe utilizar únicamente HC-READ-02 por ventana/cursor. Los párrafos siguientes documentan las decisiones de la fase original, no un endpoint vigente.
 Aplicación exclusiva de internación domiciliaria pediátrica, con Supabase autónomo. No se utilizan pacientes ambulatorios, secretos de producción, expedientes ni firmas.
 
 ## Problema y hallazgo de seguridad
@@ -17,7 +19,7 @@ En HC-02A, `authenticated` recibió SELECT directo sobre `homecare_coverage_assi
 
 ## Diseño / archivos
 - `supabase/migrations/20261010080000_homecare_roster_edge_read.sql`: RPC de consulta restringida y cierre de SELECT directo en coberturas/relevos.
-- `supabase/functions/visits/handler.ts`: allowlist `listMyHomecareCoverages` sin argumentos y con `p_actor` sobrescrito desde Auth.
+- `supabase/functions/visits/handler.ts`: **antiguamente** exponía `listMyHomecareCoverages` sin argumentos; la ruta fue retirada en HC-READ-03. Se conservan exclusivamente las acciones paginadas del nuevo contrato.
 - `supabase/tests/homecare_roster_edge_read.sql`: prueba real PostgreSQL 16, fixtures inventados de las migraciones anteriores, grants, aislamiento por organización y pertenencia, rol y revocaciones.
 - `supabase/functions/visits/authentication.test.ts`: prueba Deno de secuencia Auth→sesión activa→RPC, bloqueo ante JWT revocado y campos de actor/organización falsificados.
 - `apps/mobile/src/readonlyCoverageClient.ts`: contrato previo permanece desconectado; HTTP 422 ya no significa función ausente sino operación rechazada.
