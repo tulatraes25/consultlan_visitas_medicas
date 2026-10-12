@@ -24,7 +24,7 @@ const form=()=>({
   templateId:"NURSING_CAREGIVER_ATTENDANCE",
   mode:"READ_ONLY_STRUCTURE_PREVIEW",
 });
-function setup(){
+function setup(denyForm=false){
   const calls:string[]=[];
   let jwt="synthetic.header.signature";
   const config:ReadOnlyCoverageConfig={
@@ -39,6 +39,7 @@ function setup(){
       calls.push(payload.action);
       if(payload.action==="listMyHomecareCoveragesPage")return ok(pages());
       if(payload.action==="resolveMyHomecareAttendanceTemplate"){
+        if(denyForm)return {status:403,json:async()=>({error:"UPSTREAM_SECRET_NEVER_DISPLAY"})};
         if(payload.coverageId!==COVERAGE)
           throw new Error("Unexpected coverage in synthetic form request");
         return ok(form());
@@ -78,6 +79,8 @@ async function openAuthorizedForm(){
   expect(screen.queryByTestId("staging-workflow-selected")).toBeNull();
   await act(async()=>{fireEvent.press(screen.getByTestId("paged-open-form-0"));});
   expect(screen.getByTestId("staging-workflow-selected")).toBeTruthy();
+  expect(screen.getByTestId("staging-workflow-roster").props.importantForAccessibility)
+    .toBe("no-hide-descendants");
   expect(screen.queryByTestId("assigned-form-focused-preview")).toBeNull();
   await act(async()=>{
     fireEvent.press(screen.getByRole("button",{name:"Consultar mi planilla de prueba"}));
@@ -103,6 +106,8 @@ describe("HC-UX-04C staging-only professional workflow",()=>{
     fireEvent.press(screen.getByRole("button",{name:"Volver a mis coberturas de prueba"}));
     expect(screen.queryByTestId("assigned-form-focused-preview")).toBeNull();
     expect(screen.queryByTestId("staging-workflow-selected")).toBeNull();
+    expect(screen.getByTestId("staging-workflow-roster").props.importantForAccessibility)
+      .toBe("auto");
     view.unmount();
     expect(f.listeners).toBe(0);
   });
@@ -135,6 +140,22 @@ describe("HC-UX-04C staging-only professional workflow",()=>{
     view.unmount();
     expect(first.listeners).toBe(0);
     expect(replacement.listeners).toBe(0);
+  });
+
+  test("server 403 never falls back to another form or leaks upstream payload",async()=>{
+    const f=setup(true);
+    const view=render(<StagingProfessionalWorkflowPreview {...props(f)}/>);
+    await act(async()=>{
+      fireEvent.press(screen.getByRole("button",{name:"Consultar ventana de prueba"}));
+    });
+    await act(async()=>{fireEvent.press(screen.getByTestId("paged-open-form-0"));});
+    await act(async()=>{
+      fireEvent.press(screen.getByRole("button",{name:"Consultar mi planilla de prueba"}));
+    });
+    expect(screen.getByTestId("assigned-form-error")).toBeTruthy();
+    expect(screen.queryByTestId("assigned-form-focused-preview")).toBeNull();
+    expect(JSON.stringify(view.toJSON())).not.toContain("UPSTREAM_SECRET_NEVER_DISPLAY");
+    view.unmount();
   });
 
   test("disallowed Supabase project fails before Auth and network",()=>{
