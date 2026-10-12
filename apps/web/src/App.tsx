@@ -2,7 +2,7 @@ import React,{useEffect,useRef,useState} from "react";
 import {
   DAYS,EPISODES,PROFESSIONALS,COVERAGES,HANDOVERS,SPECIALTIES,
   SERVICE_TIME_ZONE,PERSON_NAME,clock,filterCoverages,overlapsDay,
-  overnight,summary,type Coverage,type Specialty,
+  coverageDaySlice,overnight,summary,type Coverage,type Specialty,
 } from "./data";
 
 type Section="resumen"|"agenda"|"episodios"|"profesionales"|"relevos"|"reportes";
@@ -33,17 +33,22 @@ function statusTone(c:Coverage):"neutral"|"warning"|"danger"|"success"{
   return !c.professionalId?"danger":c.status==="Relevo pendiente"?"warning":
     c.status==="Confirmada"?"success":"neutral";
 }
-function CoverageCard({coverage,onEpisode}:{
-  coverage:Coverage;onEpisode:(id:string)=>void;
+function CoverageCard({coverage,onEpisode,serviceDay}:{
+  coverage:Coverage;onEpisode:(id:string)=>void;serviceDay?:string;
 }){
   const kind=coverage.type==="SHIFT"?"Guardia":"Visita";
+  const slice=serviceDay?coverageDaySlice(coverage,serviceDay):null;
+  const from=slice?clock(new Date(slice.fromMs).toISOString()):clock(coverage.start);
+  const to=slice?clock(new Date(slice.toMs).toISOString()):clock(coverage.end);
+  const continuation=slice?.continuesFromPreviousDay?" · Continúa desde ayer":
+    slice?.continuesToNextDay?" · Sigue mañana":
+    !slice&&overnight(coverage)?" · +1 día":"";
   return <button type="button" className={"coverage-card coverage-card--"+statusTone(coverage)}
-    aria-label={kind+" de prueba "+coverage.episodeId+" "+clock(coverage.start)+" a "+clock(coverage.end)}
+    aria-label={kind+" de prueba "+coverage.episodeId+" "+from+" a "+to+continuation}
     onClick={()=>onEpisode(coverage.episodeId)}>
     <span className="card-line"><Tag>{kind}</Tag><span>{coverage.episodeId}</span></span>
     <strong>{coverage.specialty}</strong>
-    <span className="card-times">{clock(coverage.start)} — {clock(coverage.end)}
-      {overnight(coverage)?" · +1 día":""}</span>
+    <span className="card-times">{from} — {to}{continuation}</span>
     <span className="card-professional">{PERSON_NAME(coverage.professionalId)}</span>
     <span className="card-state">{coverage.status}</span>
   </button>;
@@ -106,18 +111,18 @@ function Agenda({onEpisode}: {onEpisode:(id:string)=>void}){
             {DAYS.map(d=><div className="day-column" key={d.date} data-day={d.date}>
               <div className="day-heading"><strong>{d.short}</strong><small>{d.date.slice(-2)}</small></div>
               {all.filter(c=>overlapsDay(c,d.date)).map(c=>
-                <CoverageCard key={c.id} coverage={c} onEpisode={onEpisode}/>)}
+                <CoverageCard key={c.id} coverage={c} serviceDay={d.date} onEpisode={onEpisode}/>)}
               {!all.some(c=>overlapsDay(c,d.date))?<p className="empty">Sin asignaciones en este día</p>:null}
             </div>)}
           </div>
         </div>
         :<div className="day-list" aria-live="polite">
           {today.length?today.map(c=><div key={c.id} className="day-event">
-            <div className="day-time">{clock(c.start)}
+            <div className="day-time">{clock(new Date(coverageDaySlice(c,day)?.fromMs??Date.parse(c.start)).toISOString())}
               <small>{c.start.slice(0,10)<day?"Desde ayer":
                 c.end.slice(0,10)>day?"Hasta mañana":"Jornada actual"}</small>
             </div>
-            <CoverageCard coverage={c} onEpisode={onEpisode}/>
+            <CoverageCard coverage={c} serviceDay={day} onEpisode={onEpisode}/>
           </div>):<p className="empty">Sin coberturas para este filtro y fecha.</p>}
         </div>}
     </section>
