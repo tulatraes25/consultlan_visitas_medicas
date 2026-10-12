@@ -73,7 +73,15 @@ async function check(browser,width,height){
     await page.getByRole("button",{name:"Reportes",exact:true}).click();
     assert.equal(await page.locator(".disabled-action:disabled").count(),1);
     await page.getByRole("button",{name:"Resumen",exact:true}).click();
-    assert.match(await page.locator(".alerts").innerText(),/COB-005/);
+    const coordinationAlerts=page.locator(".alerts p");
+    assert.equal(await coordinationAlerts.count(),3,
+      "Two uncovered visits/shifts and one pending handover, no duplicate overnight alerts");
+    assert.match(await coordinationAlerts.nth(0).innerText(),/Relevo COB-003 pendiente/);
+    assert.match(await coordinationAlerts.nth(1).innerText(),/Guardia COB-005 sin asignar/);
+    assert.match(await coordinationAlerts.nth(1).innerText(),/finaliza al día siguiente/);
+    assert.match(await coordinationAlerts.nth(2).innerText(),/Visita COB-007 sin asignar/);
+    assert.doesNotMatch(await page.locator(".alerts").innerText(),/COB-008/,
+      "Confirmed guards are not coordination alerts");
     await page.getByRole("button",{name:"Agenda 24/7",exact:true}).click();
     const geometry=await page.evaluate(()=>({
       pageWidth:document.documentElement.scrollWidth,windowWidth:window.innerWidth,
