@@ -56,8 +56,11 @@ export function StagingProfessionalFlowPreview({
 
   // Form metadata never survives a lost selection or leaving this staging flow.
   useEffect(()=>{
-    if(!active)formController.clear();
-  },[active,formController]);
+    if(!active){
+      formController.clear();
+      if(selection!==null)setSelection(null);
+    }
+  },[active,formController,selection]);
   useEffect(()=>()=>{formController.clear();},[formController]);
 
   const choose=(coverageId:string)=>{
