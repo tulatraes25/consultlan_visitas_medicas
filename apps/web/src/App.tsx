@@ -4,6 +4,7 @@ import {
   SERVICE_TIME_ZONE,PERSON_NAME,clock,filterCoverages,overlapsDay,
   coverageDaySlice,overnight,summary,type Coverage,type Specialty,
 } from "./data";
+import {deriveCoordinationAlerts} from "./coordinationAlerts";
 
 type Section="resumen"|"agenda"|"episodios"|"profesionales"|"relevos"|"reportes";
 type Mode="semana"|"dia";
@@ -243,10 +244,11 @@ export function App(){
           <Metrics/>
           <section className="panel">
             <header className="panel-heading"><h2>Atención de coordinación</h2><Tag tone="danger">Requiere revisión humana</Tag></header>
-            <div className="alerts">
-              <p><strong>Guardia COB-005 sin asignar.</strong> Martes 20:00 a miércoles 08:00.</p>
-              <p><strong>Relevo COB-003 pendiente.</strong> No se considera confirmado.</p>
-              <p><strong>Visita COB-007 sin profesional.</strong> Revisar disponibilidad.</p>
+            <div className="alerts" aria-label="Alertas de coberturas ficticias">
+              {deriveCoordinationAlerts().map(alert=>
+                <p key={alert.coverageId}>
+                  <strong>{alert.title}.</strong> {alert.detail}
+                </p>)}
             </div>
             <button className="text-action" type="button" onClick={()=>setSection("agenda")}>
               Abrir agenda de muestra →
