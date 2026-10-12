@@ -2,6 +2,8 @@
 
 **SPEC/Kiro · 2026-10-12 · solo fixtures sintéticos · dependencia HC-UX-04B2/04B3**
 
+**HISTÓRICO / SUSTITUIDO POR HC-UX-04D.** El componente `StagingProfessionalFlowPreview` que aceptaba controladores de agenda y planilla por separado fue retirado por riesgo de mezclar dos configuraciones Supabase independientes. El único ensamblador permitido es `StagingProfessionalWorkflowPreview` de HC-UX-04C/04D: construye ambos controladores desde un mismo `ReadOnlyCoverageConfig` y vincula la selección al snapshot exacto de la agenda. Los criterios siguientes describen la validación histórica, no instrucciones vigentes de integración.
+
 ## Objetivo de experiencia
 Un profesional sin conocimientos técnicos podrá consultar su lista de prestaciones y abrir la **estructura** de la única planilla correspondiente a la cobertura que acaba de seleccionar. La selección la hace a partir de una lista autorizada por el servidor; **jamás** escribiendo un UUID ni eligiendo otra especialidad.
 
