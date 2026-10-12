@@ -8,6 +8,18 @@ const VISIT = "1111bbbb-0000-4000-8000-000000000001";
 const REQUEST = "12340000-0000-4000-8000-000000000002";
 const JWT = "synthetic.header.signature";
 const TOKEN = "Bearer " + JWT;
+const SYNTHETIC_RETURN_ID = "d1000000-0000-4000-8000-000000000001";
+function syntheticRpcResult(rpc:string):unknown {
+  if(rpc==="api_hc_list_my_coverages_page")
+    return {rows:[],hasMore:false,nextCursor:null};
+  if(rpc==="api_hc_episode_scope")return [];
+  if(rpc==="api_hc_resolve_my_attendance_template")
+    return {templateId:"MEDICAL_ATTENDANCE",mode:"READ_ONLY_STRUCTURE_PREVIEW"};
+  if(rpc==="api_hc_create_plan_draft")return 1;
+  if(rpc==="api_hc_assign_team_member"||rpc==="api_hc_ack_handover")return null;
+  return SYNTHETIC_RETURN_ID;
+}
+
 
 function assert(condition: unknown, detail: string): asserts condition {
   if (!condition) throw new Error(detail);
@@ -28,9 +40,7 @@ function harness(overrides: Partial<TrustedServices> = {}) {
     authenticate: async (token) => token === JWT ? ACTOR : null,
     command: async (rpc, args) => {
       calls.push({ rpc, args });
-      return { ok: true, data: rpc === "api_hc_list_my_coverages_page"
-        ? {rows:[],hasMore:false,nextCursor:null}
-        : "synthetic-result" };
+      return { ok: true, data: syntheticRpcResult(rpc) };
     },
     ...overrides,
   };
