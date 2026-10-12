@@ -8,13 +8,14 @@ const assert=require("node:assert/strict");
 const fs=require("node:fs");
 const path=require("node:path");
 const {pathToFileURL}=require("node:url");
-const {chromium}=require("playwright");
+const {chromium,firefox,webkit}=require("playwright");
+const axePath=require.resolve("axe-core/axe.min.js");
 const preview=pathToFileURL(path.resolve(__dirname,
   "../apps/web/dist/preview.html")).href;
 const folder=path.resolve(__dirname,"../artifacts/web-coord-react");
 fs.mkdirSync(folder,{recursive:true});
 
-async function check(browser,width,height){
+async function check(browser,width,height,engine){
   const context=await browser.newContext({
     viewport:{width,height},deviceScaleFactor:1,locale:"es-AR",
     timezoneId:"America/Argentina/Buenos_Aires",reducedMotion:"reduce",
@@ -89,24 +90,69 @@ async function check(browser,width,height){
     assert.ok(geometry.pageWidth<=geometry.windowWidth+2,
       "No document-level horizontal overflow: "+JSON.stringify(geometry));
     await page.screenshot({path:path.join(folder,
-      width===1440?"desktop.png":"tablet.png"),fullPage:true,animations:"disabled"});
+      engine+"-"+width+".png"),fullPage:true,animations:"disabled"});
     assert.deepEqual(network,[],"Offline React preview must make zero HTTP requests");
     assert.deepEqual(errors,[],"No JavaScript browser errors");
-    process.stdout.write("WEB_COORD_REACT_OFFLINE_PASS "+width+"px\n");
+    process.stdout.write("WEB_COORD_REACT_OFFLINE_PASS "+engine+" "+width+"px\n");
   }finally{
     await context.close();
   }
 }
+async function scanAxe(browser,width,height){
+  const context=await browser.newContext({
+    viewport:{width,height},locale:"es-AR",
+    timezoneId:"America/Argentina/Buenos_Aires",reducedMotion:"reduce",
+  });
+  const network=[],errors=[];
+  await context.route(/^https?:\/\//,async route=>{
+    network.push(route.request().url());await route.abort();
+  });
+  const page=await context.newPage();
+  page.on("pageerror",error=>errors.push(error.message));
+  try{
+    await page.goto(preview,{waitUntil:"load",timeout:25000});
+    await page.addScriptTag({path:axePath});
+    for(const section of ["Agenda 24/7","Episodios","Relevos","Reportes","Resumen"]){
+      await page.getByRole("button",{name:section,exact:true}).click();
+      const result=await page.evaluate(async()=>window.axe.run(document,{
+        runOnly:{type:"tag",values:["wcag2a","wcag2aa","wcag21a","wcag21aa"]},
+      }));
+      const issues=result.violations.filter(v=>
+        v.impact==="critical"||v.impact==="serious");
+      if(issues.length)process.stderr.write("WEB_COORD_REACT_AXE_FINDINGS "+
+        JSON.stringify({section,width,issues:issues.map(v=>({
+          id:v.id,impact:v.impact,samples:v.nodes.slice(0,4).map(n=>({
+            target:n.target,summary:n.failureSummary,
+          })),
+        }))})+"\n");
+      assert.equal(issues.length,0,"WCAG issues in "+section+"/"+width);
+    }
+    assert.deepEqual(network,[],"Axe scan must not use external network");
+    assert.deepEqual(errors,[],"No page errors during WCAG audit");
+  }finally{await context.close();}
+}
 (async()=>{
-  const browser=await chromium.launch({
+  const chrome=await chromium.launch({
     channel:"chrome",headless:true,args:["--no-sandbox","--disable-dev-shm-usage"],
   });
   try{
-    await check(browser,1440,900);
-    await check(browser,768,1024);
-    process.stdout.write("WEB_COORD_02_BROWSER_QA_SUCCESS\n");
-  }finally{await browser.close();}
+    for(const [width,height] of [[1440,900],[768,1024],[390,844],[320,720]]){
+      await check(chrome,width,height,"chrome");
+    }
+    for(const [width,height] of [[1440,900],[390,844]]){
+      await scanAxe(chrome,width,height);
+    }
+  }finally{await chrome.close();}
+  for(const [engine,type] of [["firefox",firefox],["webkit",webkit]]){
+    const browser=await type.launch({headless:true});
+    try{
+      for(const [width,height] of [[768,1024],[390,844]]){
+        await check(browser,width,height,engine);
+      }
+    }finally{await browser.close();}
+  }
+  process.stdout.write("WEB_COORD_04_REACT_CROSS_ENGINE_WCAG_SUCCESS\n");
 })().catch(error=>{
-  process.stderr.write("WEB_COORD_02_BROWSER_QA_FAILED: "+error.stack+"\n");
+  process.stderr.write("WEB_COORD_04_REACT_QA_FAILED: "+error.stack+"\n");
   process.exitCode=1;
 });
