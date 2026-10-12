@@ -97,7 +97,7 @@ export function checkStagingSource({ config, edgeHandler, revokeMigration }) {
   }
   // A LIMIT 100 without window/cursor can hide future visits. No legacy
   // unbounded action may be exposed even if its server-only SQL still exists.
-  if (/(?:^|\n)\s*listMyHomecareCoverages:\s*\{/.test(commandBlock)) {
+  if (/\blistMyHomecareCoverages\s*:\s*\{/.test(commandBlock)) {
     issues.push("LEGACY_UNWINDOWED_ROSTER_EXPOSED");
   }
   for (const name of RETIRED_CLINICAL_COMMANDS) {
