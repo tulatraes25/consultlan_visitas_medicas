@@ -31,7 +31,17 @@ async function check(browser,width,height){
   });
   try{
     await page.goto(preview,{waitUntil:"load",timeout:25000});
-    await page.getByRole("heading",{name:"Agenda domiciliaria"}).waitFor({state:"visible"});
+    const wired=await page.evaluate(()=>({
+      scripts:document.querySelectorAll("script").length,
+      styles:document.querySelectorAll("style").length,
+      scriptSrc:document.querySelectorAll("script[src]").length,
+      styleHref:document.querySelectorAll('link[rel="stylesheet"][href]').length,
+    }));
+    assert.deepEqual(wired,{scripts:1,styles:1,scriptSrc:0,styleHref:0},
+      "Minified runtime must not inject or retain extra asset tags");
+    await page.getByRole("heading",{name:"Agenda domiciliaria"}).waitFor({
+      state:"visible",timeout:12000,
+    });
     assert.equal(await page.locator(".day-column").count(),7);
     assert.equal(await page.locator(".coverage-card--danger").count(),3,
       "Two unique unassigned coverages, with the overnight card on two days");
