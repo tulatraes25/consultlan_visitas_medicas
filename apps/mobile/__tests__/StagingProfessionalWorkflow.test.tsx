@@ -79,8 +79,8 @@ async function openAuthorizedForm(){
   expect(screen.queryByTestId("staging-workflow-selected")).toBeNull();
   await act(async()=>{fireEvent.press(screen.getByTestId("paged-open-form-0"));});
   expect(screen.getByTestId("staging-workflow-selected")).toBeTruthy();
-  expect(screen.getByTestId("staging-workflow-roster").props.importantForAccessibility)
-    .toBe("no-hide-descendants");
+  // Hidden roster must be absent from ordinary accessibility-aware queries.
+  expect(screen.queryByTestId("staging-workflow-roster")).toBeNull();
   expect(screen.queryByTestId("assigned-form-focused-preview")).toBeNull();
   await act(async()=>{
     fireEvent.press(screen.getByRole("button",{name:"Consultar mi planilla de prueba"}));
@@ -106,8 +106,7 @@ describe("HC-UX-04C staging-only professional workflow",()=>{
     fireEvent.press(screen.getByRole("button",{name:"Volver a mis coberturas de prueba"}));
     expect(screen.queryByTestId("assigned-form-focused-preview")).toBeNull();
     expect(screen.queryByTestId("staging-workflow-selected")).toBeNull();
-    expect(screen.getByTestId("staging-workflow-roster").props.importantForAccessibility)
-      .toBe("auto");
+    expect(screen.getByTestId("staging-workflow-roster")).toBeTruthy();
     view.unmount();
     expect(f.listeners).toBe(0);
   });
