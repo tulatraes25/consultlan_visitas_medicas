@@ -189,6 +189,80 @@ function isPreviewOnlyTemplate(value: unknown): boolean {
     typeof value.templateId === "string" &&
     PREVIEW_ONLY_TEMPLATES.has(value.templateId);
 }
+// HC-READ-04: the Edge response is a separate security boundary. A
+// service-only SQL projection change must never send arbitrary data to a
+// phone, even if a current mobile client would eventually reject it.
+const ROSTER_PAGE_FIELDS = [
+  "id","episode_id","service_kind","coverage_state",
+  "scheduled_start","scheduled_end",
+] as const;
+const ROSTER_STATES = new Set([
+  "PLANNED","ASSIGNED","ACTIVE","COMPLETED","CANCELLED","NOT_PERFORMED",
+]);
+function exactKeys(value:unknown,keys:readonly string[]):value is Record<string,unknown>{
+  return record(value) && Object.keys(value).length===keys.length &&
+    keys.every(key=>Object.prototype.hasOwnProperty.call(value,key));
+}
+/** UTC microsecond key is safe in the approved 2000–2100 service window. */
+function rosterMicros(iso:unknown):number|null{
+  if(typeof iso!=="string"||!strictCursorInstant(iso))return null;
+  const parts=CURSOR_ISO.exec(iso);
+  const millis=Date.parse(iso);
+  if(!parts||!Number.isFinite(millis))return null;
+  const micros=Math.floor(millis/1000)*1000000+
+    Number((parts[7]??"").padEnd(6,"0"));
+  return Number.isSafeInteger(micros)?micros:null;
+}
+function safeRosterPage(data:unknown,args:Record<string,unknown>):boolean{
+  if(!exactKeys(data,["rows","hasMore","nextCursor"])||
+     !Array.isArray(data.rows)||data.rows.length>100||
+     typeof data.hasMore!=="boolean")return false;
+  const wStart=rosterMicros(args.p_window_start);
+  const wEnd=rosterMicros(args.p_window_end);
+  if(wStart===null||wEnd===null||wEnd<=wStart)return false;
+  const requestedCursor=args.p_after_start===undefined?null:
+    rosterMicros(args.p_after_start);
+  const requestedId=args.p_after_id;
+  if(args.p_after_start!==undefined&&
+    (requestedCursor===null||typeof requestedId!=="string"||
+     !UUID.test(requestedId)))return false;
+  const seen=new Set<string>();
+  let lastStart:number|null=null,lastId:string|null=null;
+  for(const row of data.rows){
+    if(!exactKeys(row,ROSTER_PAGE_FIELDS)||
+      typeof row.id!=="string"||!UUID.test(row.id)||
+      typeof row.episode_id!=="string"||!UUID.test(row.episode_id)||
+      (row.service_kind!=="VISIT"&&row.service_kind!=="SHIFT")||
+      typeof row.coverage_state!=="string"||
+      !ROSTER_STATES.has(row.coverage_state))return false;
+    const start=rosterMicros(row.scheduled_start);
+    const end=rosterMicros(row.scheduled_end);
+    if(start===null||end===null||end<=start||
+      end<=wStart||start>=wEnd)return false;
+    const id=row.id.toLowerCase();
+    if(seen.has(id))return false;
+    seen.add(id);
+    if(lastStart!==null&&
+      (start<lastStart||(start===lastStart&&lastId!==null&&id<=lastId)))
+      return false;
+    if(requestedCursor!==null&&
+      (start<requestedCursor||
+       (start===requestedCursor&&id<=(requestedId as string).toLowerCase())))
+      return false;
+    lastStart=start;lastId=id;
+  }
+  if(data.hasMore){
+    if(data.rows.length!==100||
+      !exactKeys(data.nextCursor,["id","scheduled_start"])||
+      typeof data.nextCursor.id!=="string"||
+      typeof data.nextCursor.scheduled_start!=="string"||
+      lastId!==data.nextCursor.id.toLowerCase()||
+      data.nextCursor.scheduled_start!==
+        (data.rows[data.rows.length-1] as Record<string,unknown>).scheduled_start)
+      return false;
+  }else if(data.nextCursor!==null)return false;
+  return true;
+}
 const MAX_BODY_BYTES = 32768;
 const HEADERS = {
   "content-type": "application/json; charset=utf-8",
@@ -315,6 +389,12 @@ export function createVisitHandler(services: TrustedServices) {
       !isPreviewOnlyTemplate(result.data)) {
       // Fail closed if an upstream resolver ever projects unknown clinical
       // fields, an unsupported template, a signature or a document.
+      return json(502, { error: "DATA_OPERATION_FAILED" });
+    }
+    if (sanitized.rpc === "api_hc_list_my_coverages_page" &&
+      !safeRosterPage(result.data,sanitized.args)) {
+      // Do not reflect any malformed/expanded SQL rows, patient identifiers
+      // or upstream details back to the caller.
       return json(502, { error: "DATA_OPERATION_FAILED" });
     }
     return json(200, { ok: true, result: result.data });
