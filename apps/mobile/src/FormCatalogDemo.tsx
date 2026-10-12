@@ -325,13 +325,15 @@ export function FormCatalogDemo({
           </View>
         ) : null}
       </View>
-      <View style={styles.footnote}>
-        <Text style={styles.footnoteTitle}>Expediente mensual de referencia</Text>
-        <Text style={styles.help}>
-          {previewCatalog.monthlyDossier.source}: el contenido completo no está
-          transcrito ni se importarán automáticamente pacientes o firmas.
-        </Text>
-      </View>
+      {!focused ? (
+        <View style={styles.footnote}>
+          <Text style={styles.footnoteTitle}>Expediente mensual de referencia</Text>
+          <Text style={styles.help}>
+            {previewCatalog.monthlyDossier.source}: el contenido completo no está
+            transcrito ni se importarán automáticamente pacientes o firmas.
+          </Text>
+        </View>
+      ) : null}
     </View>
   );
 }
