@@ -142,33 +142,24 @@ Deno.test("SEC-SESSION-02: session verifier must return exact boolean true", asy
   equal(s.commands.length, 0, "no operation for non-boolean response");
 });
 
-Deno.test("HC-READ-01: real Edge orchestration dispatches the fixed scoped roster RPC only after Auth and live session", async () => {
-  const onlyMetadata = [{
-    id: "d1000000-0000-4000-8000-000000000001",
-    episode_id: "e1000000-0000-4000-8000-000000000001",
-    service_kind: "VISIT", coverage_state: "ASSIGNED",
-    scheduled_start: "2026-10-19T11:00:00Z",
-    scheduled_end: "2026-10-19T12:00:00Z",
-  }];
-  const s = system({ commandData: onlyMetadata });
-  const response = await s.handle(post(token(), { action: "listMyHomecareCoverages" }));
-  equal(response.status, 200, "authenticated active user can request own roster");
-  equal(s.calls.length, 2, "Auth and live-session checks precede roster");
-  equal(s.calls[0].url, authUrl, "Auth verified first");
-  equal(s.calls[1].url, sessionRpcUrl, "live session verified second");
-  equal(s.commands.length, 1, "exactly one server-only read dispatched");
-  equal(s.commands[0].name, "api_hc_list_my_coverages", "SQL function is fixed");
-  equal(JSON.stringify(s.commands[0].args), JSON.stringify({ p_actor: ACTOR }),
-    "only actor from Auth is forwarded, never a mobile scope");
-  const body = await response.json();
-  equal(body.ok, true, "Edge success envelope");
-  equal(JSON.stringify(body.result), JSON.stringify(onlyMetadata),
-    "payload is returned only after SQL's own authorization checks");
-  equal(response.headers.get("cache-control"), "no-store",
-    "roster responses must not be cached");
+Deno.test("HC-READ-03: old unwindowed roster action always fails closed",async()=>{
+  const s=system({commandData:[{
+    id:"d1000000-0000-4000-8000-000000000001",
+    episode_id:"e1000000-0000-4000-8000-000000000001",
+    service_kind:"VISIT",coverage_state:"ASSIGNED",
+    scheduled_start:"2026-10-19T11:00:00Z",
+    scheduled_end:"2026-10-19T12:00:00Z",
+  }]});
+  const response=await s.handle(post(token(),{action:"listMyHomecareCoverages"}));
+  equal(response.status,422,"legacy unwindowed command is no longer allowlisted");
+  equal(s.calls.length,2,"JWT Auth and live session are checked before any action");
+  equal(s.commands.length,0,"legacy command never reaches service-role SQL");
+  equal(response.headers.get("cache-control"),"no-store","no caching denied requests");
+  const payload=await response.json();
+  equal(payload.error,"INVALID_OPERATION_OR_FIELDS","generic error with no SQL or patient data");
 });
 
-Deno.test("HC-READ-01: mobile cannot choose another tenant, patient, scope or acting user", async () => {
+Deno.test("HC-READ-03: retired roster cannot be reopened by spoofed scope", async () => {
   const s = system();
   for (const added of [
     { p_actor: OTHER },
