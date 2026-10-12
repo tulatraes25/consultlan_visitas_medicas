@@ -21,7 +21,7 @@ Para desarrollo técnico: desde esta carpeta ejecutar `npm install`, `npm run de
 
 - Contrato `src/data.ts` con 13 coberturas, 4 episodios, 5 profesionales, 9 visitas y 4 guardias.
 - `src/App.tsx` implementa navegación accesible mediante botones, selectores nativos, un diálogo nativo y tabla; CSS responsive 320–1440 px.
-- CI construye React/TypeScript y el HTML offline y prueba su apertura en un navegador real: cambio de módulo, filtros, guardia nocturna, detalle ficticio, botones prohibidos deshabilitados y **cero solicitudes externas**.
+- CI construye React/TypeScript y el HTML offline, prueba navegación y guardias nocturnas en **Chrome (1440/768/390/320 px), Firefox y WebKit (768/390 px)** y audita WCAG con axe-core en Chrome. Comprueba cero solicitudes externas y cero acciones clínicas habilitadas.
 - No hay `fetch`, SDK Supabase, `localStorage`, tokens, login, importación de pacientes ni vías de escritura.
 - La identidad CONSULTLAN es solo visual; no comparte servidor, cuentas ni datos con Pediatrics ambulatorio.
 
