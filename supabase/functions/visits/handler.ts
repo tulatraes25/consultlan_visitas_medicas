@@ -28,13 +28,10 @@ const COMMANDS: Record<string, CommandSpec> = {
       episodeId: { db: "p_episode", kind: "uuid" },
     },
   },
-  // HC-READ-01: metadata-only professional roster. No caller-supplied
-  // organization, episode, actor or patient identifiers: SQL derives scope.
-  // Access requires the existing Auth + live session gate first.
-  listMyHomecareCoverages: {
-    rpc: "api_hc_list_my_coverages",
-    fields: {},
-  },
+  // HC-READ-03: RETIRED the unwindowed, earliest-100 roster action.
+  // Only the bounded keyset page actions below may be dispatched by Edge.
+  // The historical service-only SQL function remains for migration lineage,
+  // but has no accessible Edge command and must not drive clinical agendas.
   // HC-READ-02: keyset pages never accept actor, organization, episode or
   // professional from mobile. Two action names avoid optional-parameter
   // ambiguity: first and subsequent page both use the SAME backend RPC.

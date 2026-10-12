@@ -4,8 +4,11 @@
  * Not wired to the app. No patient, clinical notes, medical orders, signatures,
  * caregiver identity or service-role secrets. Any eventual read MUST travel
  * through the Edge Auth + LIVE SESSION gate before its future scoped RPC.
- * The backend HC-READ-01 route is authored but not deployed to any Supabase;
- * the adapter remains dormant until staging + institutional approval.
+ * HC-READ-03 RETIRED the unwindowed HC-READ-01 Edge action. The legacy
+ * list() exists only for offline historic parser tests, not runtime use; a real
+ * backend now rejects it with HTTP 422. Production candidates must use
+ * createPagedCoverageClient with an explicit UTC window and cursor.
+ * This adapter remains dormant until isolated staging + authorization.
  */
 
 export type PublicCoverage = Readonly<{
