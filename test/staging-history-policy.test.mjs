@@ -10,6 +10,7 @@ const root=resolve(dirname(fileURLToPath(import.meta.url)),"..");
 const migrationSql=readFileSync(resolve(root,"supabase/staging/01e_migration_history_readonly.sql"),"utf8");
 const fixture=readFileSync(resolve(root,"supabase/tests/ci_only_migration_history_stub.sql"),"utf8");
 const ciShell=readFileSync(resolve(root,"scripts/ci-staging-history-verify.sh"),"utf8");
+const runbook=readFileSync(resolve(root,"docs/operations/STAGING-01-runbook.md"),"utf8");
 const versionPattern=/'(\d{14})'/g;
 function versions(fragment) {
   return [...fragment.matchAll(versionPattern)].map(m=>m[1]);
@@ -55,4 +56,12 @@ test("STAGING-01E CI harness must challenge extra, missing and substituted versi
   assert.match(ciShell,/update \$ledger set version='20261010061000'/);
   assert.match(ciShell,/expect_rejected/g);
   assert.match(ciShell,/STAGING01E_CI_HISTORY_POSITIVE_AND_THREE_NEGATIVE_TESTS_PASS/);
+});
+
+test("STAGING-01 operator runbook cannot lag the verified 13-migration ledger",()=>{
+  assert.equal(REQUIRED_MIGRATIONS.length,13);
+  assert.match(runbook,/trece migraciones SQL/);
+  assert.match(runbook,/\*\*13 de 13\*\* `20261011110000_homecare_attendance_template_preview\.sql`/);
+  assert.match(runbook,/\*\*exacto de trece versiones\*\*/);
+  assert.doesNotMatch(runbook,/las doce migraciones|doce versiones exactas|12\/12|conjunto exacto de doce/i);
 });
