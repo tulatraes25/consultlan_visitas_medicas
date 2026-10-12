@@ -629,6 +629,63 @@ Deno.test("HC-UX-04B1: invalid/revoked Auth and SQL denial cannot resolve a docu
   assert(!payload.includes(body.coverageId),"do not leak denied identifier");
 });
 
+Deno.test("SEC-EGRESS-01: every admin RPC has an exact response type",async()=>{
+  const e="e1000000-0000-4000-8000-000000000001";
+  const outgoing="d1000000-0000-4000-8000-000000000002";
+  const incoming="d1000000-0000-4000-8000-000000000003";
+  const handover="f1000000-0000-4000-8000-000000000001";
+  const routes=[
+    {action:"createPatient",fields:{organizationId:ORG,
+      displayName:"Paciente totalmente ficticio",requestKey:REQUEST},type:"uuid"},
+    {action:"registerProfessional",fields:{organizationId:ORG,
+      authUserId:ACTOR,specialty:"Medicina"},type:"uuid"},
+    {action:"createHomecareEpisodeDraft",fields:{organizationId:ORG,
+      patientId:PATIENT,requestKey:REQUEST},type:"uuid"},
+    {action:"assignHomecareCareTeamMember",fields:{organizationId:ORG,
+      episodeId:e,professionalId:PROFESSIONAL},type:"void"},
+    {action:"createHomecarePlanDraft",fields:{organizationId:ORG,
+      episodeId:e,requestKey:REQUEST},type:"version"},
+    {action:"requestHomecarePlanReview",fields:{organizationId:ORG,
+      episodeId:e,carePlanVersion:1,requestKey:REQUEST},type:"uuid"},
+    {action:"scheduleHomecareCoverage",fields:{organizationId:ORG,
+      episodeId:e,professionalId:PROFESSIONAL,carePlanVersion:1,
+      serviceKind:"SHIFT",scheduledStart:"2026-10-30T06:00:00Z",
+      scheduledEnd:"2026-10-30T18:00:00Z",requestKey:REQUEST},type:"uuid"},
+    {action:"requestHomecareHandover",fields:{organizationId:ORG,
+      outgoingCoverageId:outgoing,incomingCoverageId:incoming},type:"uuid"},
+    {action:"acknowledgeHomecareHandover",fields:{organizationId:ORG,
+      handoverId:handover},type:"void"},
+  ] as const;
+  equal(routes.length,9,"all nine currently allowed administrative RPCs");
+  for(const route of routes){
+    const payload={action:route.action,...route.fields};
+    const valid:unknown=route.type==="uuid"?SYNTHETIC_RETURN_ID:
+      route.type==="version"?1:null;
+    const good=harness({command:async()=>({ok:true,data:valid})});
+    const response=await good.handle(post(payload));
+    equal(response.status,200,"type of "+route.action+" accepted");
+    const envelope=await response.json();
+    equal(JSON.stringify(envelope),JSON.stringify({ok:true,result:valid}),
+      "only typed metadata leaves Edge");
+    const malformed:unknown[]=route.type==="uuid"?
+      [null,"NOT_UUID",7,[SYNTHETIC_RETURN_ID],
+        {id:SYNTHETIC_RETURN_ID,patientName:"NEVER_LEAK"}]:
+      route.type==="version"?[null,0,-1,1.5,"1",
+        {version:1,clinicalNotes:"NEVER_LEAK"}]:
+      ["",false,[],{},0,{patientName:"NEVER_LEAK"}];
+    for(const data of malformed){
+      const bad=harness({command:async()=>({ok:true,data})});
+      const blocked=await bad.handle(post(payload));
+      equal(blocked.status,502,
+        "malformed output for "+route.action+" must not escape");
+      equal(await blocked.text(),JSON.stringify({error:"DATA_OPERATION_FAILED"}),
+        "no client-visible private metadata on response mismatch");
+      equal(blocked.headers.get("cache-control"),"no-store",
+        "failed RPC response cannot be cached");
+    }
+  }
+});
+
 Deno.test("HC-UX-04B1: reject malformed or expanded SQL result without leaking PHI",async()=>{
   const original={
     templateId:"NURSING_CAREGIVER_ATTENDANCE",
