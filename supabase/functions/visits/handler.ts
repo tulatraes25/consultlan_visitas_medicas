@@ -277,6 +277,36 @@ function safeEpisodeScope(data:unknown,requestedEpisode:unknown):boolean{
     row.id.toLowerCase()===requestedEpisode.toLowerCase()&&
     typeof row.organization_id==="string"&&UUID.test(row.organization_id);
 }
+// SEC-EGRESS-01: service_role can return arbitrary JSON from every RPC.
+// Prevent accidental egress of patient/clinical fields on administrative
+// operations too. Contract comes from the SQL RETURNS type, never mobile input.
+// Unrecognized future RPCs fail closed until their output is explicitly reviewed.
+const RESULT_KINDS:Readonly<Record<string,"uuid"|"version"|"void">>=Object.freeze({
+  api_create_patient:"uuid",
+  api_register_professional:"uuid",
+  api_hc_create_episode_draft:"uuid",
+  api_hc_assign_team_member:"void",
+  api_hc_create_plan_draft:"version",
+  api_hc_request_plan_review:"uuid",
+  api_hc_schedule_coverage:"uuid",
+  api_hc_request_handover:"uuid",
+  api_hc_ack_handover:"void",
+});
+function safeRpcOutput(rpc:string,data:unknown,args:Record<string,unknown>):boolean{
+  if(rpc==="api_hc_episode_scope")
+    return safeEpisodeScope(data,args.p_episode);
+  if(rpc==="api_hc_resolve_my_attendance_template")
+    return isPreviewOnlyTemplate(data);
+  if(rpc==="api_hc_list_my_coverages_page")
+    return safeRosterPage(data,args);
+  if(!Object.prototype.hasOwnProperty.call(RESULT_KINDS,rpc))return false;
+  switch(RESULT_KINDS[rpc]){
+    case "uuid":return typeof data==="string"&&UUID.test(data);
+    case "version":return typeof data==="number"&&
+      Number.isSafeInteger(data)&&data>=1&&data<=1000000;
+    case "void":return data===null;
+  }
+}
 const MAX_BODY_BYTES = 32768;
 const HEADERS = {
   "content-type": "application/json; charset=utf-8",
@@ -399,22 +429,9 @@ export function createVisitHandler(services: TrustedServices) {
       // Do not leak SQL messages, patient names, provider URLs, JWTs or signing secrets.
       return json(status, { error: status === 502 ? "DATA_OPERATION_FAILED" : "OPERATION_DENIED_OR_CONFLICT" });
     }
-    if (sanitized.rpc === "api_hc_episode_scope" &&
-      !safeEpisodeScope(result.data,sanitized.args.p_episode)) {
-      // The SQL definer controls tenant visibility. Edge separately refuses
-      // any expanded/mismatched projection before serializing its response.
-      return json(502, { error: "DATA_OPERATION_FAILED" });
-    }
-    if (sanitized.rpc === "api_hc_resolve_my_attendance_template" &&
-      !isPreviewOnlyTemplate(result.data)) {
-      // Fail closed if an upstream resolver ever projects unknown clinical
-      // fields, an unsupported template, a signature or a document.
-      return json(502, { error: "DATA_OPERATION_FAILED" });
-    }
-    if (sanitized.rpc === "api_hc_list_my_coverages_page" &&
-      !safeRosterPage(result.data,sanitized.args)) {
-      // Do not reflect any malformed/expanded SQL rows, patient identifiers
-      // or upstream details back to the caller.
+    if (!safeRpcOutput(sanitized.rpc,result.data,sanitized.args)) {
+      // No successful service-role projection crosses Edge until its exact
+      // output contract is accepted, including all administrative RPCs.
       return json(502, { error: "DATA_OPERATION_FAILED" });
     }
     return json(200, { ok: true, result: result.data });
