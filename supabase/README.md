@@ -43,6 +43,10 @@ psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261010090000_close_direct_sensi
 psql -v ON_ERROR_STOP=1 -f supabase/tests/close_direct_sensitive_reads.sql
 psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261010100000_episode_scope_edge_read.sql
 psql -v ON_ERROR_STOP=1 -f supabase/tests/episode_scope_edge_read.sql
+psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261011100000_homecare_roster_keyset_read.sql
+psql -v ON_ERROR_STOP=1 -f supabase/tests/homecare_roster_keyset_read.sql
+psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261011110000_homecare_attendance_template_preview.sql
+psql -v ON_ERROR_STOP=1 -f supabase/tests/homecare_attendance_template_preview.sql
 psql -v ON_ERROR_STOP=1 -f supabase/tests/dynamic_public_surface_guard.sql
 psql -v ON_ERROR_STOP=1 -f supabase/staging/01d_catalog_readonly_attestation.sql
 ```
@@ -89,7 +93,7 @@ La revisión de metadatos de un plan domiciliario ahora se solicita mediante `re
 
 ## STAGING-01A — Preflight sin credenciales y runbook (aún no conectado)
 
-El comando `node scripts/staging-preflight.mjs --ci` comprueba sin conexión externa la consistencia mínima del repositorio: doce migraciones, id local de CLI, JWT obligatorio en Edge, revisión administrativa PENDING y bloqueo de RPC clínicas históricas. También se ejecuta automáticamente en GitHub Actions.
+El comando `node scripts/staging-preflight.mjs --ci` comprueba sin conexión externa la consistencia mínima del repositorio: trece migraciones, id local de CLI, JWT obligatorio en Edge, revisión administrativa PENDING y bloqueo de RPC clínicas históricas. También se ejecuta automáticamente en GitHub Actions.
 
 El modo opcional `--probe` es **posterior** a crear y asegurar un proyecto staging nuevo de internación domiciliaria. Exige aprobación explícita y una clave **publicable**, nunca secreta, y solo realiza pruebas negativas sin JWT ni mutaciones. No equivale a aprobación de seguridad, RLS, identidad o clínica.
 
@@ -113,11 +117,11 @@ La migración `20261010080000_homecare_roster_edge_read.sql` revoca SELECT direc
 
 ## SEC-SURFACE-01 — Control de regresiones de permisos ante nuevas migraciones
 
-Tras las doce migraciones, el Quality Gate recorre **dinámicamente** los objetos del catálogo de PostgreSQL: deniega a `authenticated` y `anon` permisos de SELECT/escritura sobre cualquier tabla o vista pública nueva, permisos de secuencias y EXECUTE sobre RPC `api_*` y funciones `SECURITY DEFINER` públicas. Así no depende únicamente del inventario fijo de catorce tablas conocido hoy. Valida también el `search_path` fijado en funciones privilegiadas. La auditoría es sintética; el ensayo contra Supabase alojado sigue pendiente. [SPEC SEC-SURFACE-01](../docs/specs/SEC-SURFACE-01-dynamic-privilege-guard.md).
+Tras las trece migraciones, el Quality Gate recorre **dinámicamente** los objetos del catálogo de PostgreSQL: deniega a `authenticated` y `anon` permisos de SELECT/escritura sobre cualquier tabla o vista pública nueva, permisos de secuencias y EXECUTE sobre RPC `api_*` y funciones `SECURITY DEFINER` públicas. Así no depende únicamente del inventario fijo de catorce tablas conocido hoy. Valida también el `search_path` fijado en funciones privilegiadas. La auditoría es sintética; el ensayo contra Supabase alojado sigue pendiente. [SPEC SEC-SURFACE-01](../docs/specs/SEC-SURFACE-01-dynamic-privilege-guard.md).
 
 ## STAGING-01E — Historial registrado por Supabase (no desplegado)
 
-El SQL `staging/01e_migration_history_readonly.sql` consulta únicamente el historial `supabase_migrations.schema_migrations.version` en una **transacción de solo lectura**: requiere 11 versiones exactas. CI usa un stub descartable con 11 versiones, y verifica rechazo de historial extra, faltante o sustituido. Un operador autorizado debe revisar `supabase migration list --linked` y `supabase db push --dry-run` antes de cualquier instalación remota; **este repositorio no ejecuta despliegues automáticamente**. El historial registra versiones, no demuestra por sí solo igualdad de bytes ni prueba Auth administrado. [SPEC STAGING-01E](../docs/specs/STAGING-01E-migration-history-readiness.md).
+El SQL `staging/01e_migration_history_readonly.sql` consulta únicamente el historial `supabase_migrations.schema_migrations.version` en una **transacción de solo lectura**: requiere 13 versiones exactas. CI usa un stub descartable con 13 versiones, y verifica rechazo de historial extra, faltante o sustituido. Un operador autorizado debe revisar `supabase migration list --linked` y `supabase db push --dry-run` antes de cualquier instalación remota; **este repositorio no ejecuta despliegues automáticamente**. El historial registra versiones, no demuestra por sí solo igualdad de bytes ni prueba Auth administrado. [SPEC STAGING-01E](../docs/specs/STAGING-01E-migration-history-readiness.md).
 
 ## STAGING-01F — Suite única de identidad, tenant y revocación (pendiente de nube)
 
@@ -141,3 +145,14 @@ No se configura ninguna URL real en este gate. La demo sigue ejecutándose 100% 
 La migración número 12, `20261011100000_homecare_roster_keyset_read.sql`, agrega una RPC **solo para service_role** con ventana de UTC máxima de 32 días, 100 coberturas por página y cursor compuesto `scheduled_start + id`. Incluye coberturas largas que comenzaron antes pero siguen abiertas dentro de la ventana. La Edge reconoce rutas de primera/siguiente página tras Auth y verificación de sesión activa; nunca acepta identidad u organización elegidas por la app.
 
 Las primeras once migraciones **no se modifican**. GitHub CI aplica esta última después de los tests anteriores y verifica con 105 coberturas sintéticas que no hay saltos, duplicados ni accesos cruzados. `hasMore=false` significa solamente que esa consulta no halló más filas al ejecutarse: **no es snapshot consistente entre requests**, ni evidencia de cobertura clínica completa. El cliente móvil paginado se prepara en HC-READ-02B, mediante código inerte y pruebas sintéticas; permanece desconectado de App y de cualquier paciente real. [SPEC HC-READ-02](../docs/specs/HC-READ-02-keyset-roster.md).
+
+
+## HC-UX-04B1 — Planilla fuente derivada en el servidor (NO CLÍNICA)
+
+La migración **13**, `20261011110000_homecare_attendance_template_preview.sql`, incorpora `api_hc_resolve_my_attendance_template(p_actor,p_coverage)`, un RPC de `service_role` que devuelve **solo `{templateId,mode}`** con `mode=READ_ONLY_STRUCTURE_PREVIEW` si la cobertura pertenece al actor autenticado, profesional y membresía siguen activos, el equipo está vigente, el episodio está activo y el plan relacionado figura aprobado dentro de su vigencia. El estado `APPROVED` de fixtures PostgreSQL **no equivale a aprobación médica real**. Para `SHIFT`, el prototipo solo reconoce Enfermería/Cuidadoras; visitas puntuales contemplan los seis modelos documentales de HC-03A.
+
+La función **no acepta** IDs de profesional, paciente, organización, episodio ni plan; usa únicamente cobertura y actor inyectado **por la Edge después de verificar Auth + sesión viva**. Los estados cancelados, completados, organizaciones distintas, pacientes ajenos y especialidades no clasificadas reciben el mismo código de denegación (sin revelar la existencia del registro). `authenticated` y `anon` no pueden invocarla directamente, ni pueden leer las tablas del roster.
+
+La Edge `resolveMyHomecareAttendanceTemplate` rechaza cualquier campo adicional y comprueba también la salida: **solo dos claves y solo seis `ATTENDANCE` permitidas**, sin narrativa, dirección, diagnóstico, firmas, paciente, obra social o metadata identificable. Las pruebas CI usan únicamente usuarios/episodios sintéticos, PostgreSQL 16 y Deno. **Ninguna migración fue desplegada en un Supabase real.**
+
+**Pendientes:** vincular un cliente móvil de solo lectura a la sesión autorizada en un staging independiente, demostrar revocación/swap/logout y validar con Pediatrics los DOCX/PDF privados (issue #57) antes de capturar o emitir una planilla clínica. [SPEC HC-UX-04B1](../docs/specs/HC-UX-04B1-authorized-form-preview.md).

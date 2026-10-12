@@ -195,6 +195,10 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261011100000_homecare_roster_keyset_read.sql
       - name: Validate 105 synthetic coverages, cursor, revocation and cross-tenant pages
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/homecare_roster_keyset_read.sql
+      - name: Apply preview-only template resolver with live actor and coverage scope
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261011110000_homecare_attendance_template_preview.sql
+      - name: Verify source form allowlist, all role and tenant denials, plan and team revocations
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/homecare_attendance_template_preview.sql
       - name: Reject future mobile grants on any new public table or privileged RPC
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/dynamic_public_surface_guard.sql
       - name: Verify read-only staging catalog preflight on synthetic Auth schema

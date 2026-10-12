@@ -402,3 +402,120 @@ Deno.test("HC-READ-02B: accepts PostgreSQL UTC-offset cursor with six digits",as
   }
   equal(h.calls.length,before,"no invalid offset reaches SQL");
 });
+
+Deno.test("HC-UX-04B1: coverage-only resolver injects verified actor and returns a two-field preview",async()=>{
+  const recorded:{rpc:string;args:Record<string,unknown>}[]=[];
+  const h=harness({command:async(rpc,args)=>{
+    recorded.push({rpc,args});
+    return {ok:true,data:{
+      templateId:"PHYSIOTHERAPY_ATTENDANCE",
+      mode:"READ_ONLY_STRUCTURE_PREVIEW",
+    }};
+  }});
+  const coverageId="d1000000-0000-4000-8000-000000000001";
+  const res=await h.handle(post({
+    action:"resolveMyHomecareAttendanceTemplate",coverageId,
+  }));
+  equal(res.status,200,"preview authorization endpoint reachable after Auth");
+  equal(JSON.stringify(recorded),JSON.stringify([{
+    rpc:"api_hc_resolve_my_attendance_template",
+    args:{p_coverage:coverageId,p_actor:ACTOR},
+  }]),"backend, not mobile, controls identity and source");
+  const body=await res.json();
+  equal(JSON.stringify(body),JSON.stringify({
+    ok:true,result:{
+      templateId:"PHYSIOTHERAPY_ATTENDANCE",mode:"READ_ONLY_STRUCTURE_PREVIEW",
+    },
+  }),"no extraneous fields exposed");
+  equal(res.headers.get("cache-control"),"no-store","never cache preview metadata");
+});
+
+Deno.test("HC-UX-04B1: reject actor, organization, episode, professional, template or case from mobile",async()=>{
+  const h=harness();
+  const request={
+    action:"resolveMyHomecareAttendanceTemplate",
+    coverageId:"d1000000-0000-4000-8000-000000000001",
+  };
+  const invalid=[
+    {...request,p_actor:ACTOR},{...request,actorId:ACTOR},
+    {...request,organizationId:ORG},{...request,professionalId:PROFESSIONAL},
+    {...request,episodeId:PATIENT},{...request,patientId:PATIENT},
+    {...request,sourceTemplateId:"MEDICAL_ATTENDANCE"},
+    {...request,templateId:"MEDICAL_ATTENDANCE"},
+    {...request,specialty:"Medicina"},
+    {...request,canEmit:true},{...request,signature:"fake"},
+    {...request,coverageId:"not-a-uuid"},
+    {...request,coverageId:null},{...request,coverageId:123},
+    {action:request.action},{...request,appRole:"ADMIN"},
+    {...request,service_role:"secret"},
+    {...request,carePlanVersion:1},
+    {...request,includeClinical:true},
+    {...request,action:"approveAttendance"},
+  ];
+  for(const x of invalid){
+    const res=await h.handle(post(x));
+    equal(res.status,422,"client must not select actor, form, episode or clinical output");
+  }
+  equal(h.calls.length,0,"invalid requests never dispatch privileged SQL");
+});
+
+Deno.test("HC-UX-04B1: invalid/revoked Auth and SQL denial cannot resolve a document",async()=>{
+  const body={
+    action:"resolveMyHomecareAttendanceTemplate",
+    coverageId:"d1000000-0000-4000-8000-000000000001",
+  };
+  const revoked=harness({authenticate:async()=>null});
+  const unauth=await revoked.handle(post(body));
+  equal(unauth.status,401,"revoked session refused");
+  equal(revoked.calls.length,0,"no SQL before Auth");
+  const denied=harness({command:async()=>({ok:false,code:"42501"})});
+  const res=await denied.handle(post(body));
+  equal(res.status,403,"SQL coverage/role/team denies without revealing existence");
+  const payload=await res.text();
+  assert(!payload.includes(body.coverageId),"do not leak denied identifier");
+});
+
+Deno.test("HC-UX-04B1: reject malformed or expanded SQL result without leaking PHI",async()=>{
+  const original={
+    templateId:"NURSING_CAREGIVER_ATTENDANCE",
+    mode:"READ_ONLY_STRUCTURE_PREVIEW",
+  };
+  const invalid:unknown[]=[
+    null,"MEDICAL_ATTENDANCE",{},[],{...original,canSign:true},
+    {...original,patientId:PATIENT},
+    {...original,organizationId:ORG},
+    {...original,clinicalNotes:"private-content"},
+    {...original,mode:"AUTHORIZED_FOR_CARE"},
+    {...original,templateId:"CLINICAL_EVOLUTION"},
+    {...original,templateId:"KARDEX"},
+    {...original,templateId:"UNKNOWN_SHEET"},
+    {...original,templateId:null},
+    {templateId:"MEDICAL_ATTENDANCE"},
+  ];
+  for(const data of invalid){
+    const h=harness({command:async()=>({ok:true,data})});
+    const r=await h.handle(post({
+      action:"resolveMyHomecareAttendanceTemplate",
+      coverageId:"d1000000-0000-4000-8000-000000000001",
+    }));
+    equal(r.status,502,"upstream payload mismatch must be hidden");
+    const message=await r.text();
+    assert(!message.includes("private-content"),"no clinical leak");
+    assert(!message.includes(PATIENT),"no patient identifier leak");
+  }
+  for(const id of [
+    "MEDICAL_ATTENDANCE","NURSING_CAREGIVER_ATTENDANCE",
+    "PHYSIOTHERAPY_ATTENDANCE","SPEECH_ATTENDANCE",
+    "OCCUPATIONAL_THERAPY_ATTENDANCE","NUTRITION_ATTENDANCE",
+  ]){
+    const h=harness({command:async()=>({ok:true,data:{
+      templateId:id,mode:"READ_ONLY_STRUCTURE_PREVIEW",
+    }})});
+    const r=await h.handle(post({
+      action:"resolveMyHomecareAttendanceTemplate",
+      coverageId:"d1000000-0000-4000-8000-000000000001",
+    }));
+    equal(r.status,200,"six confirmed source templates allowed");
+  }
+});
+

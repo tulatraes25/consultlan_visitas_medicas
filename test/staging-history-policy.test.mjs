@@ -15,9 +15,9 @@ function versions(fragment) {
   return [...fragment.matchAll(versionPattern)].map(m=>m[1]);
 }
 
-test("STAGING-01E exact expected 12 migrations derive from GitHub's current inventory",()=>{
+test("STAGING-01E exact expected 13 migrations derive from GitHub's current inventory",()=>{
   const expected=REQUIRED_MIGRATIONS.map(m=>m.slice(0,14));
-  assert.equal(expected.length,12);
+  assert.equal(expected.length,13);
   const section=migrationSql.split("expected constant text[] := ARRAY[")[1]
     ?.split("];")[0];
   assert.ok(section,"version list present");
