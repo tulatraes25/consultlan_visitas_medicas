@@ -68,7 +68,8 @@ function system(settings: StubOptions = {}) {
     }),
     command: async (name, args) => {
       commands.push({ name, args });
-      return { ok: true, data: settings.commandData ?? "synthetic-only" };
+      return { ok: true, data: settings.commandData === undefined ?
+        "d1000000-0000-4000-8000-000000000001" : settings.commandData };
     },
   };
   return { handle: createVisitHandler(services), calls, commands };
