@@ -90,7 +90,7 @@ begin
     raise exception 'SEC_SURFACE_EXPECTED_RPC_INVENTORY_MISSING: %',routine_count;
   end if;
 
-  -- Verify the two current server-side scope RPCs and session verifier
+  -- Verify backend-only scope, session and attendance template preview RPCs
   -- remain explicitly callable ONLY by service_role. Earlier legacy RPCs
   -- deliberately revoked from service_role are not reopened here.
   if not pg_catalog.has_function_privilege('service_role',
@@ -98,7 +98,9 @@ begin
     or not pg_catalog.has_function_privilege('service_role',
       'public.api_hc_list_my_coverages(uuid)','EXECUTE')
     or not pg_catalog.has_function_privilege('service_role',
-      'public.api_is_live_session(uuid,uuid)','EXECUTE') then
+      'public.api_is_live_session(uuid,uuid)','EXECUTE')
+    or not pg_catalog.has_function_privilege('service_role',
+      'public.api_hc_resolve_my_attendance_template(uuid,uuid)','EXECUTE') then
     raise exception 'SEC_SURFACE_REQUIRED_BACKEND_ROUTINE_NOT_EXECUTABLE';
   end if;
 end $$;

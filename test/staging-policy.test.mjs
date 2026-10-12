@@ -129,5 +129,5 @@ test("STAGING-01A repository inspection enforces local ID, JWT, pending route an
   }).ok, false);
   assert.equal(checkStagingSource({ ...good, config: good.config.replace("true", "false") }).ok, false);
   assert.equal(checkStagingSource({ ...good, revokeMigration: "" }).ok, false);
-  assert.equal(REQUIRED_MIGRATIONS.length, 12);
+  assert.equal(REQUIRED_MIGRATIONS.length, 13);
 });
