@@ -61,6 +61,19 @@ export function overlapsDay(item:Coverage,date:string):boolean{
   const end=Date.parse(nextDate(date)+"T00:00:00-03:00");
   return Date.parse(item.start)<end&&Date.parse(item.end)>begin;
 }
+/** The portion of a visit/shift that actually intersects the service day. */
+export function coverageDaySlice(item:Coverage,date:string){
+  if(!overlapsDay(item,date))return null;
+  const dayStart=Date.parse(date+"T00:00:00-03:00");
+  const dayEnd=Date.parse(nextDate(date)+"T00:00:00-03:00");
+  const start=Date.parse(item.start),end=Date.parse(item.end);
+  return Object.freeze({
+    fromMs:Math.max(start,dayStart),
+    toMs:Math.min(end,dayEnd),
+    continuesFromPreviousDay:start<dayStart,
+    continuesToNextDay:end>dayEnd,
+  });
+}
 export function filterCoverages(specialty:"Todas"|Specialty,day?:string):readonly Coverage[]{
   return COVERAGES.filter(c=>(specialty==="Todas"||c.specialty===specialty)&&
     (!day||overlapsDay(c,day))).sort((a,b)=>
