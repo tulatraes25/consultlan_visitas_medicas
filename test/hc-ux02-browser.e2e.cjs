@@ -75,6 +75,16 @@ fs.mkdirSync(capture,{recursive:true});
         assert.equal(await page.locator("[data-field-id='professionalSignature']").count(),0);
         await page.locator("[data-section='mensual']").click();
         await page.getByText("0 documentos emitidos").waitFor();
+        await page.getByText("0 documentos autorizados").waitFor();
+        await page.getByText("FALTA COTEJO CON LOS ORIGINALES").waitFor();
+        const sourceReview=page.locator("details").filter({
+          hasText:"Ver las siete planillas pendientes de comparación",
+        });
+        await sourceReview.locator("summary").click();
+        assert.equal(await page.locator("[data-review-id]").count(),7,
+          "All 7 source documents must request private visual comparison");
+        assert.equal(await page.locator("[data-review-id] .tag.warn").count(),7);
+        assert.match(await page.locator("#stage").innerText(),/no una cantidad fija/);
         assert.equal(await page.getByText("PAPEL",{exact:true}).count(),4);
         assert.match(await page.locator("#stage").innerText(),/56 páginas escaneadas/);
         await page.screenshot({path:path.join(capture,"expediente-"+size.width+".png"),
