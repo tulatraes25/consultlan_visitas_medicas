@@ -38,8 +38,11 @@ async function check(browser,width,height){
     const monday=page.locator('.day-column[data-day="2026-10-12"]');
     const tuesday=page.locator('.day-column[data-day="2026-10-13"]');
     assert.ok(await monday.getByRole("button",{name:/Guardia de prueba EPI-101/}).count()===1);
-    assert.ok(await tuesday.getByRole("button",{name:/Guardia de prueba EPI-101/}).count()===1,
+    const overnightTuesday=tuesday.getByRole("button",{name:/Guardia de prueba EPI-101/});
+    assert.equal(await overnightTuesday.count(),1,
       "Overnight guard continues Tuesday, not a second treatment");
+    assert.match(await overnightTuesday.innerText(),/00:00.*08:00.*Continúa desde ayer/,
+      "Second day shows only 00:00–08:00 service portion");
     await page.getByRole("combobox",{name:"Elegir día"}).selectOption("2026-10-13");
     await page.getByText("Jornada del Martes 13").waitFor({state:"visible"});
     assert.ok(await page.locator(".day-list").getByRole("button",{
