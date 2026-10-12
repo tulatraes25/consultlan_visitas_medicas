@@ -368,3 +368,28 @@ describe("HC-UX-04B2 dormant phone/tablet preview",()=>{
     view.unmount();
   });
 });
+
+describe("HC-UX-04B4 accessible staging status",()=>{
+  test("idle and rejected request expose accessible status without sensitive details",async()=>{
+    const ctrl=createAssignedFormSessionController(config(async()=>({
+      status:403,json:async()=>({secret:"DO_NOT_DISPLAY"}),
+    })));
+    const auth=provider();
+    const view=render(<StagingAssignedFormPreview controller={ctrl}
+      authEvents={auth.auth} coverageId={COV_A}/>);
+    expect(screen.getByTestId("assigned-form-idle").props.accessibilityLiveRegion)
+      .toBe("polite");
+    await act(async()=>{
+      fireEvent.press(screen.getByRole("button",{
+        name:"Consultar mi planilla de prueba",
+      }));
+    });
+    await waitFor(()=>expect(screen.getByTestId("assigned-form-error")).toBeTruthy());
+    expect(screen.getByTestId("assigned-form-error").props.accessibilityLiveRegion)
+      .toBe("assertive");
+    expect(screen.getByText(/volver a intentar desde tu cobertura asignada/)).toBeTruthy();
+    expect(screen.queryByTestId("assigned-form-focused-preview")).toBeNull();
+    expect(JSON.stringify(view.toJSON())).not.toContain("DO_NOT_DISPLAY");
+    view.unmount();
+  });
+});
