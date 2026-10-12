@@ -33,8 +33,8 @@ async function check(browser,width,height){
     await page.goto(preview,{waitUntil:"load",timeout:25000});
     await page.getByRole("heading",{name:"Agenda domiciliaria"}).waitFor({state:"visible"});
     assert.equal(await page.locator(".day-column").count(),7);
-    assert.equal(await page.locator(".coverage-card--danger").count(),2,
-      "Only two uncovered roster cards across week");
+    assert.equal(await page.locator(".coverage-card--danger").count(),3,
+      "Two unique unassigned coverages, with the overnight card on two days");
     const monday=page.locator('.day-column[data-day="2026-10-12"]');
     const tuesday=page.locator('.day-column[data-day="2026-10-13"]');
     assert.ok(await monday.getByRole("button",{name:/Guardia de prueba EPI-101/}).count()===1);
