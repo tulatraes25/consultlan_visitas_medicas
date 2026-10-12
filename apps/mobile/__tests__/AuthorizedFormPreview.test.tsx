@@ -79,6 +79,8 @@ describe("HC-UX-04B2 staging-only authorized form reader",()=>{
       method:"POST",redirect:"error",cache:"no-store",
       headers:{authorization:"Bearer "+A,apikey:cfg.publishableKey},
     });
+    expect(isAuthorizedCoverageId(COV_A)).toBe(true);
+    expect(isAuthorizedCoverageId(COV_B)).toBe(true);
     expect(JSON.parse(String(calls[0].options.body))).toEqual({
       action:"resolveMyHomecareAttendanceTemplate",coverageId:COV_A,
     });

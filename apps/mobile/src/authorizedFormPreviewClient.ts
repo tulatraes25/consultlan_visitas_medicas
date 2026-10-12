@@ -12,7 +12,7 @@ import {
   type ReadOnlyCoverageConfig,
 } from "./readonlyCoverageClient";
 
-const UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
+const UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 const JWT = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/;
 const FORM_IDS = Object.freeze([
   "MEDICAL_ATTENDANCE",
