@@ -49,6 +49,7 @@ jobs:
           node --check src/domain/visit-policy.mjs
           node --check src/domain/homecare-policy.mjs
           node --check src/domain/homecare-form-contracts.mjs
+          node --check src/domain/homecare-source-review.mjs
           node --check src/domain/clinical-authorization-policy.mjs
           node --check src/operations/staging-policy.mjs
           node --check scripts/staging-preflight.mjs

@@ -30,3 +30,11 @@ El PDF mensual original **no está transcrito integralmente**. El prototipo NO r
 Las pruebas Node verifican igualdad de los campos contra el catálogo y el contrato fuente, ausencia de captura clínica y bloqueo de documentos físicos. El trabajo de navegador CI abre el archivo real en Chrome en **1440 / 768 / 390 px**, prueba todas las especialidades, evolución, expediente, no desbordamiento y cero peticiones HTTP externas. Los PNG y el HTML de demostración están disponibles en los artefactos del Quality Gate.
 
 Todavía falta validación funcional por Pediatrics, cotejo visual con los DOCX/PDF originales privados, condiciones de firma y emisión y aprobación del expediente mensual. **No** sustituye las hojas físicas, ni las indicaciones médicas, ni habilita pacientes.
+
+## HC-UX-03A — Qué falta revisar antes de emitir documentos
+
+En la pestaña **Expediente mensual** ahora aparece **FALTA COTEJO CON LOS ORIGINALES**. Si se abre `Ver las siete planillas pendientes de comparación`, se muestran las seis constancias y la evolución, todas con estado **PENDIENTE**. También se recuerda que **las cuatro hojas físicas siguen en domicilio**.
+
+El PDF original escaneado de **56 páginas es una muestra**, no una obligación de emitir un expediente de 56 páginas. El orden de secciones, la cantidad final de hojas, el formato exigido por las obras sociales y el foliado siguen sin aprobación de Pediatrics. El prototipo siempre muestra **0 documentos autorizados** y **0 emitidos**.
+
+El módulo `src/domain/homecare-source-review.mjs` permite comparar, solo en memoria, **identificadores de campos declarados por un revisor privado**, sin aceptar nombres de pacientes, rutas de archivos, historias clínicas o imágenes. Aun con coincidencia exacta de campos, el resultado **nunca** certifica un original ni habilita generación, firma o envío. El cotejo real de DOCX/PDF debe ocurrir únicamente en un entorno privado autorizado.
