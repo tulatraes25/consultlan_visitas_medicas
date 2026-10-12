@@ -32,8 +32,14 @@ const bySpecialty: Record<Specialty, string> = {
   Nutrición: 'NUTRITION_ATTENDANCE',
 };
 
-export function formIdForSpecialty(specialty: Specialty): string {
-  return bySpecialty[specialty];
+export function formIdForSpecialty(specialty: unknown): string | undefined {
+  // TypeScript's Specialty union is not a runtime authorization boundary.
+  // Unknown/fabricated specialties, including "__proto__", must fail closed.
+  if (typeof specialty !== 'string' ||
+      !Object.prototype.hasOwnProperty.call(bySpecialty, specialty)) return undefined;
+  const id = bySpecialty[specialty as Specialty];
+  return previewCatalog.templates.some(t => t.id === id && t.kind === 'ATTENDANCE')
+    ? id : undefined;
 }
 
 function defaultId(group: CatalogGroup): string {
@@ -166,13 +172,22 @@ function CatalogItem({
   );
 }
 
-export function FormCatalogDemo({ initialTemplateId }: { initialTemplateId?: string }) {
+export function FormCatalogDemo({
+  initialTemplateId, focusAssignedTemplate = false, onExitFocused,
+}: {
+  initialTemplateId?: string;
+  focusAssignedTemplate?: boolean;
+  onExitFocused?: () => void;
+}) {
   const { width } = useWindowDimensions();
   const split = width >= 1180;
   const authorizedInitial = previewCatalog.templates.some(t => t.id === initialTemplateId)
     || previewCatalog.paper.some(t => t.id === initialTemplateId)
     ? initialTemplateId
     : undefined;
+  const assignedSource = previewCatalog.templates.find(t =>
+    t.id === authorizedInitial && t.kind === 'ATTENDANCE');
+  const focused = focusAssignedTemplate && Boolean(assignedSource);
   const [group, setGroup] = useState<CatalogGroup>(() => groupForTemplateId(authorizedInitial));
   const [selectedId, setSelectedId] = useState(() => authorizedInitial ?? defaultId('attendance'));
   const [showDetail, setShowDetail] = useState(Boolean(authorizedInitial));
@@ -194,12 +209,31 @@ export function FormCatalogDemo({ initialTemplateId }: { initialTemplateId?: str
     setShowDetail(true);
   }
 
+  if (focusAssignedTemplate && !assignedSource) {
+    return (
+      <View style={styles.page} testID="assigned-form-unavailable">
+        <ScreenHeading eyebrow="DOCUMENTACIÓN BLOQUEADA"
+          title="Planilla no disponible"
+          subtitle="Esta asignación no tiene una constancia verificada. No se abre otra planilla por defecto." />
+        {onExitFocused ? (
+          <Pressable accessibilityRole="button"
+            accessibilityLabel="Volver a la agenda"
+            onPress={onExitFocused} style={styles.back}>
+            <Text style={styles.backText}>← Volver a la agenda</Text>
+          </Pressable>
+        ) : null}
+      </View>
+    );
+  }
+
   return (
     <View style={styles.page}>
       <ScreenHeading
         eyebrow="Documentación de internación domiciliaria"
-        title="Planillas y constancias"
-        subtitle="Explorá la estructura de las planillas originales. Sin historias clínicas ni firmas reales."
+        title={focused ? 'Tu planilla para esta prestación' : 'Planillas y constancias'}
+        subtitle={focused
+          ? 'La especialidad ficticia seleccionó automáticamente esta constancia. Sin historia clínica ni firmas reales.'
+          : 'Explorá la estructura de las planillas originales. Sin historias clínicas ni firmas reales.'}
       />
       <View style={styles.notice}>
         <Text style={styles.noticeTitle}>SOLO PREVISUALIZACIÓN · SIN DATOS DE PACIENTES</Text>
@@ -208,6 +242,15 @@ export function FormCatalogDemo({ initialTemplateId }: { initialTemplateId?: str
           Los formularios siguen pendientes de aprobación institucional.
         </Text>
       </View>
+      {focused ? (
+        <View style={styles.notice} testID="auto-selected-form-explanation">
+          <Text style={styles.noticeTitle}>PLANILLA SELECCIONADA AUTOMÁTICAMENTE · DEMO</Text>
+          <Text style={styles.noticeBody}>
+            Solo aparece la constancia de esta especialidad. No tenés que elegir entre modelos ni completar datos clínicos.
+          </Text>
+        </View>
+      ) : null}
+      {!focused ? (
       <View style={styles.categoryRow} accessibilityRole="radiogroup">
         {categories.map(option => (
           <Pressable
@@ -224,8 +267,9 @@ export function FormCatalogDemo({ initialTemplateId }: { initialTemplateId?: str
           </Pressable>
         ))}
       </View>
-      <View style={[styles.layout, split && styles.layoutWide]}>
-        {(!showDetail || split) ? (
+      ) : null}
+      <View style={[styles.layout, !focused && split && styles.layoutWide]}>
+        {!focused && (!showDetail || split) ? (
           <View style={[styles.catalog, split && styles.catalogWide]} testID="form-catalog-list">
             <Text style={styles.catalogHeading}>
               {group === 'paper' ? 'Documentos que quedan en casa' :
@@ -250,9 +294,18 @@ export function FormCatalogDemo({ initialTemplateId }: { initialTemplateId?: str
             ))}
           </View>
         ) : null}
-        {(showDetail || split) ? (
+        {(focused || showDetail || split) ? (
           <View style={styles.detailPane}>
-            {!split ? (
+            {focused && onExitFocused ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Volver a la agenda"
+                onPress={onExitFocused}
+                style={styles.back}
+              >
+                <Text style={styles.backText}>← Volver a la agenda</Text>
+              </Pressable>
+            ) : !focused && !split ? (
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Volver al catálogo de planillas"
@@ -272,13 +325,15 @@ export function FormCatalogDemo({ initialTemplateId }: { initialTemplateId?: str
           </View>
         ) : null}
       </View>
-      <View style={styles.footnote}>
-        <Text style={styles.footnoteTitle}>Expediente mensual de referencia</Text>
-        <Text style={styles.help}>
-          {previewCatalog.monthlyDossier.source}: el contenido completo no está
-          transcrito ni se importarán automáticamente pacientes o firmas.
-        </Text>
-      </View>
+      {!focused ? (
+        <View style={styles.footnote}>
+          <Text style={styles.footnoteTitle}>Expediente mensual de referencia</Text>
+          <Text style={styles.help}>
+            {previewCatalog.monthlyDossier.source}: el contenido completo no está
+            transcrito ni se importarán automáticamente pacientes o firmas.
+          </Text>
+        </View>
+      ) : null}
     </View>
   );
 }

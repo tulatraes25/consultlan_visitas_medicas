@@ -60,15 +60,21 @@ function SummaryStat({ value, label, accent = false }: { value: number; label: s
 }
 
 function HomePanel({
-  visits, onAgenda, onSelect,
+  visits, onAgenda, onSelect, onOpenForms,
 }: {
   visits: DemoVisit[];
   onAgenda: () => void;
   onSelect: (id: string) => void;
+  onOpenForms: (specialty: Specialty) => void;
 }) {
   const today = visits[0]?.date;
   const todaysVisits = visits.filter(v => v.date === today);
-  const upcoming = visits.filter(v => isPending(v.status)).slice(0, 2);
+  // Home is a synthetic fixture. A real "my next task" must come only from
+  // an authenticated, backend-authorized assignment, never an actor-supplied specialty.
+  const upcoming = visits.filter(v => isPending(v.status))
+    .sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime))
+    .slice(0, 2);
+  const nextTask = upcoming[0];
   const completed = todaysVisits.filter(v => v.status === 'CLOSED_VERIFIED').length;
   return (
     <View style={styles.page}>
@@ -79,19 +85,37 @@ function HomePanel({
       />
 
       <View style={styles.hero}>
-        <Text style={styles.heroEyebrow}>PEDIATRICS · ATENCIÓN EN DOMICILIO</Text>
-        <Text style={styles.heroTitle}>Cada cobertura, con claridad y seguimiento.</Text>
-        <Text style={styles.heroBody}>
-          Esta vista demuestra visitas y guardias. Todos los pacientes son ficticios.
-        </Text>
+        <Text style={styles.heroEyebrow}>PEDIATRICS · ATENCIÓN EN DOMICILIO · DEMO</Text>
+        <Text style={styles.heroTitle}>Tu próxima planilla, sin buscarla.</Text>
+        {nextTask ? (
+          <>
+            <Text style={styles.heroBody}>
+              {nextTask.specialty} · {formatDemoDate(nextTask.date)} ·{' '}
+              {formatDemoTimeRange(nextTask.startTime, nextTask.endTime)}.
+              La especialidad de esta prestación ficticia determina la planilla.
+            </Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Abrir planilla de mi próxima prestación (demo)"
+              onPress={() => onOpenForms(nextTask.specialty)}
+              style={({ pressed }) => [styles.heroButton, pressed && styles.pressed]}
+            >
+              <Text style={styles.heroButtonText}>Abrir mi planilla (demo)</Text>
+              <Text style={styles.heroButtonArrow}>→</Text>
+            </Pressable>
+          </>
+        ) : (
+          <Text style={styles.heroBody}>
+            No hay prestaciones pendientes en esta agenda ficticia.
+          </Text>
+        )}
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Abrir agenda de demostración"
           onPress={onAgenda}
-          style={({ pressed }) => [styles.heroButton, pressed && styles.pressed]}
+          style={({ pressed }) => [styles.heroSecondaryAction, pressed && styles.pressed]}
         >
-          <Text style={styles.heroButtonText}>Explorar mi agenda</Text>
-          <Text style={styles.heroButtonArrow}>→</Text>
+          <Text style={styles.heroSecondaryText}>Ver agenda completa →</Text>
         </Pressable>
       </View>
 
@@ -353,8 +377,11 @@ export default function App() {
     if (nextTab === 'forms') setInitialFormTemplateId(undefined);
   }
   function openFormForSpecialty(specialty: Specialty) {
-    // Only the specialty is routed; no patient/visit fields are passed into form previews.
-    setInitialFormTemplateId(formIdForSpecialty(specialty));
+    // Strict read-only demo routing. Real assignments must be verified by
+    // independent Supabase Auth + Edge/RLS before a template can be selected.
+    const templateId = formIdForSpecialty(specialty);
+    if (!templateId) return; // no fallback to a medical or another specialty's form
+    setInitialFormTemplateId(templateId);
     setTab('forms');
     setShowMobileDetail(false);
   }
@@ -435,12 +462,15 @@ export default function App() {
               <VisitDetail visit={selectedVisit} isTablet={false} onBack={() => openTab('agenda')}
                 onOpenForms={openFormForSpecialty} />
             ) : tab === 'home' ? (
-              <HomePanel visits={visits} onAgenda={() => openTab('agenda')} onSelect={openVisit} />
+              <HomePanel visits={visits} onAgenda={() => openTab('agenda')}
+                onSelect={openVisit} onOpenForms={openFormForSpecialty} />
             ) : tab === 'agenda' ? (
               <AgendaPanel visits={visits} selectedId={selectedId} onSelect={openVisit}
                 onOpenForms={openFormForSpecialty} isTablet={isSplitAgenda} />
             ) : tab === 'forms' ? (
-              <FormCatalogDemo key={initialFormTemplateId ?? 'catalog'} initialTemplateId={initialFormTemplateId} />
+              <FormCatalogDemo key={initialFormTemplateId ?? 'catalog'} initialTemplateId={initialFormTemplateId}
+                focusAssignedTemplate={Boolean(initialFormTemplateId)}
+                onExitFocused={() => openTab('agenda')} />
             ) : (
               <AdminWorkspaceDemo
                 patients={patients} professionals={professionals} visits={visits}
@@ -522,6 +552,8 @@ const styles = StyleSheet.create({
     backgroundColor: palette.mint, flexDirection: 'row', alignItems: 'center', gap: spacing.md,
   },
   heroButtonText: { color: palette.deep, fontSize: 14, fontWeight: '700' },
+  heroSecondaryAction: { minHeight: touchSize, alignSelf: 'flex-start', justifyContent: 'center' },
+  heroSecondaryText: { color: palette.surface, textDecorationLine: 'underline', fontSize: 13, fontWeight: '700' },
   heroButtonArrow: { color: palette.deep, fontSize: 18 },
   statsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.lg },
   summaryStat: {
