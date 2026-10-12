@@ -28,7 +28,9 @@ function harness(overrides: Partial<TrustedServices> = {}) {
     authenticate: async (token) => token === JWT ? ACTOR : null,
     command: async (rpc, args) => {
       calls.push({ rpc, args });
-      return { ok: true, data: "synthetic-result" };
+      return { ok: true, data: rpc === "api_hc_list_my_coverages_page"
+        ? {rows:[],hasMore:false,nextCursor:null}
+        : "synthetic-result" };
     },
     ...overrides,
   };
@@ -401,6 +403,104 @@ Deno.test("HC-READ-02B: accepts PostgreSQL UTC-offset cursor with six digits",as
     equal(res.status,422,"invalid cursor rejected before RPC");
   }
   equal(h.calls.length,before,"no invalid offset reaches SQL");
+});
+
+Deno.test("HC-READ-04: exact six-field SQL metadata and cursor permit bounded results",async()=>{
+  const first={
+    action:"listMyHomecareCoveragesPage",
+    windowStart:"2026-11-02T00:00:00Z",
+    windowEnd:"2026-11-05T00:00:00Z",
+  };
+  const one={
+    id:"d1000000-0000-4000-8000-000000000001",
+    episode_id:"e1000000-0000-4000-8000-000000000001",
+    service_kind:"VISIT",coverage_state:"ASSIGNED",
+    scheduled_start:"2026-11-02T10:00:00+00:00",
+    scheduled_end:"2026-11-02T11:00:00+00:00",
+  };
+  const empty=harness({command:async()=>({
+    ok:true,data:{rows:[],hasMore:false,nextCursor:null},
+  })});
+  const emptyResult=await empty.handle(post(first));
+  equal(emptyResult.status,200,"empty page is valid, not an authorization claim");
+
+  const valid=harness({command:async()=>({
+    ok:true,data:{rows:[one],hasMore:false,nextCursor:null},
+  })});
+  const response=await valid.handle(post(first));
+  equal(response.status,200,"synthetic six-field page is valid");
+  equal(JSON.stringify((await response.json()).result.rows[0]),
+    JSON.stringify(one),"exact metadata passed, never enriched");
+
+  const firstHundred=Array.from({length:100},(_,i)=>({
+    ...one,
+    id:"c"+String(i).padStart(7,"0")+"-0000-4000-8000-"+
+      String(i).padStart(12,"0"),
+    scheduled_start:new Date(Date.UTC(2026,10,2)+i*900000)
+      .toISOString().replace(".000Z","+00:00"),
+    scheduled_end:new Date(Date.UTC(2026,10,2)+i*900000+300000)
+      .toISOString().replace(".000Z","+00:00"),
+  }));
+  const last=firstHundred[99];
+  const full=harness({command:async()=>({
+    ok:true,data:{rows:firstHundred,hasMore:true,
+      nextCursor:{id:last.id,scheduled_start:last.scheduled_start}},
+  })});
+  equal((await full.handle(post(first))).status,200,
+    "100 sorted rows with matching cursor accepted");
+  const second=harness({command:async()=>({
+    ok:true,data:{rows:[],hasMore:false,nextCursor:null},
+  })});
+  const next=await second.handle(post({
+    action:"listMyHomecareCoveragesNextPage",...{
+      windowStart:first.windowStart,windowEnd:first.windowEnd,
+      cursorStart:last.scheduled_start,cursorId:last.id,
+    },
+  }));
+  equal(next.status,200,"bounded next page accepts empty completion");
+});
+
+Deno.test("HC-READ-04: malformed or PHI-expanded SQL pages fail before Edge response",async()=>{
+  const req={
+    action:"listMyHomecareCoveragesPage",
+    windowStart:"2026-11-02T00:00:00Z",windowEnd:"2026-11-05T00:00:00Z",
+  };
+  const one={
+    id:"d1000000-0000-4000-8000-000000000001",
+    episode_id:"e1000000-0000-4000-8000-000000000001",
+    service_kind:"VISIT",coverage_state:"ASSIGNED",
+    scheduled_start:"2026-11-02T10:00:00+00:00",
+    scheduled_end:"2026-11-02T11:00:00+00:00",
+  };
+  const valid={rows:[one],hasMore:false,nextCursor:null};
+  const invalid:unknown[]=[
+    null,[],{}, {rows:[]}, {...valid,patient_name:"CHILD_PRIVATE"},
+    {...valid,rows:[{...one,diagnosis:"SECRET_DIAGNOSIS"}]},
+    {...valid,rows:[{...one,patient_id:"SECRET_CHILD_ID"}]},
+    {...valid,rows:[{...one,signature:"SECRET_SIGNATURE"}]},
+    {...valid,rows:[{...one,id:"invalid-id"}]},
+    {...valid,rows:[{...one,scheduled_start:"2026-02-30T10:00:00Z"}]},
+    {...valid,rows:[{...one,scheduled_end:one.scheduled_start}]},
+    {...valid,rows:[one,one]},
+    {...valid,rows:[one,{...one,id:"d1000000-0000-4000-8000-000000000002",
+      scheduled_start:"2026-11-02T09:59:00Z"}]},
+    {...valid,rows:[{...one,scheduled_start:"2026-11-10T10:00:00+00:00"}]},
+    {...valid,hasMore:true,nextCursor:null},
+    {...valid,nextCursor:{id:one.id,scheduled_start:one.scheduled_start}},
+    {...valid,rows:"not-array"},
+    {...valid,rows:[{...one,coverage_state:"SIGNED"}]},
+    {...valid,rows:[{...one,service_kind:"EMERGENCY"}]},
+  ];
+  for(const data of invalid){
+    const h=harness({command:async()=>({ok:true,data})});
+    const response=await h.handle(post(req));
+    equal(response.status,502,"invalid upstream projection must be denied");
+    const message=await response.text();
+    for(const secret of ["CHILD_PRIVATE","SECRET_DIAGNOSIS",
+      "SECRET_CHILD_ID","SECRET_SIGNATURE",one.id]){
+      assert(!message.includes(secret),"Edge error never reflects private data");
+    }
+  }
 });
 
 Deno.test("HC-UX-04B1: coverage-only resolver injects verified actor and returns a two-field preview",async()=>{
