@@ -19,7 +19,12 @@ const javascript=asset(js[1],"js").replace(/<\/script/gi,"<\\/script");
 const stylesheet=asset(sheet[1],"css").replace(/<\/style/gi,"<\\/style");
 html=html.replace(js[0],"<script type=\"module\">"+javascript+"</script>")
   .replace(sheet[0],"<style>"+stylesheet+"</style>");
-if(/<script[^>]+src=|<link[^>]+href=/.test(html))
+// Never scan inside the inlined JS/CSS: React's own runtime may contain
+// markup-like string fragments which are not actual external asset tags.
+const withoutInline=html
+  .replace(/<script\\b[^>]*>[\\s\\S]*?<\\/script>/gi,"")
+  .replace(/<style\\b[^>]*>[\\s\\S]*?<\\/style>/gi,"");
+if(/<script[^>]+src=|<link[^>]+href=|<iframe\\b/i.test(withoutInline))
   throw new Error("Standalone preview still references external assets");
 writeFileSync(resolve(dist,"preview.html"),html,"utf8");
 process.stdout.write("WEB_CANDIDATE_STANDALONE_PREVIEW_GENERATED\n");
