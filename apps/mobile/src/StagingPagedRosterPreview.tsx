@@ -18,13 +18,14 @@ const STATES={
  * mounts this screen. Not a clinical roster or proof that care was delivered.
  */
 export function StagingPagedRosterPreview({
-  controller,authEvents,serviceTimeZone,windowStart,windowEnd,
+  controller,authEvents,serviceTimeZone,windowStart,windowEnd,onSelectCoverage,
 }:{
   controller:Controller;
   authEvents:SupabaseLikeAuthEvents;
   serviceTimeZone:string;
   windowStart:string; // approved synthetic UTC instant
   windowEnd:string;   // exclusive synthetic UTC instant
+  onSelectCoverage?:(coverageId:string)=>void; // ONLY ids from loaded Edge page
 }){
   const validZone=isCoverageServiceTimeZone(serviceTimeZone);
   const validWindow=isCoverageWindow({startUtc:windowStart,endUtc:windowEnd});
@@ -133,6 +134,20 @@ export function StagingPagedRosterPreview({
               <Text style={styles.help}>
                 Fin: {formatCoverageServiceInstant(row.scheduledEnd,serviceTimeZone)}
               </Text>
+              {onSelectCoverage ? (
+                <Pressable accessibilityRole="button"
+                  accessibilityLabel="Consultar planilla de esta cobertura de prueba"
+                  accessibilityHint="Requiere otra comprobación de autorización en el servidor"
+                  testID={"paged-open-form-"+index}
+                  onPress={()=>{
+                    // Row identity comes from the currently authorized Edge page.
+                    if(ready && current.state==="ready" &&
+                      current.rows.some(item=>item.id===row.id))
+                      onSelectCoverage(row.id);
+                  }} style={styles.secondary}>
+                  <Text style={styles.secondaryText}>Abrir planilla de prueba</Text>
+                </Pressable>
+              ):null}
             </View>
           ))}
           {current.hasMore ? (
@@ -181,4 +196,8 @@ const styles=StyleSheet.create({
   card:{backgroundColor:palette.surface,borderColor:palette.border,
     borderWidth:1,borderRadius:corners.medium,padding:spacing.md,gap:spacing.xs},
   heading:{fontSize:14,fontWeight:"700",color:palette.deep},
+  secondary:{minHeight:touchSize,borderWidth:1,borderColor:palette.primary,
+    borderRadius:corners.medium,justifyContent:"center",alignItems:"center",
+    padding:spacing.sm,backgroundColor:palette.surface},
+  secondaryText:{fontSize:13,fontWeight:"700",color:palette.deep},
 });
