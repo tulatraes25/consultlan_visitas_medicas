@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 
 const read = path => readFileSync(new URL('../' + path, import.meta.url), 'utf8');
 const config = JSON.parse(read('apps/mobile/app.json')).expo;
@@ -44,4 +44,16 @@ test('signature sketch is explicitly discarded and cannot persist or claim legal
   assert.match(signature,/SIMULACIÓN SIN VALIDEZ LEGAL/);
   assert.doesNotMatch(signature,/\bfetch\s*\(|AsyncStorage|SecureStore|FileSystem|expo-file-system|axios|upload|saveAsync|createDocument/);
   assert.equal(packageJson.dependencies['react-native-svg'], '15.15.4');
+});
+
+test('HC-UX-04D one locked staging composition cannot be mounted in demo',()=>{
+  const canonical=read('apps/mobile/src/StagingProfessionalWorkflowPreview.tsx');
+  assert.equal(existsSync(new URL(
+    '../apps/mobile/src/StagingProfessionalFlowPreview.tsx',import.meta.url,
+  )),false,'independently injected dual-controller component must stay retired');
+  assert.doesNotMatch(app,/StagingProfessionalWorkflowPreview/);
+  assert.match(canonical,/roster:createPagedCoverageController\(config\)/);
+  assert.match(canonical,/form:createAssignedFormSessionController\(config\)/);
+  assert.match(canonical,/selected\.rosterSnapshot===roster/);
+  assert.match(canonical,/no-hide-descendants/);
 });
