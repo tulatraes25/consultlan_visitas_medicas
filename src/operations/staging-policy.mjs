@@ -95,6 +95,11 @@ export function checkStagingSource({ config, edgeHandler, revokeMigration }) {
   if (!commandBlock.includes("requestHomecarePlanReview:")) {
     issues.push("PENDING_REVIEW_EDGE_ROUTE_MISSING");
   }
+  // A LIMIT 100 without window/cursor can hide future visits. No legacy
+  // unbounded action may be exposed even if its server-only SQL still exists.
+  if (/(?:^|\n)\s*listMyHomecareCoverages:\s*\{/.test(commandBlock)) {
+    issues.push("LEGACY_UNWINDOWED_ROSTER_EXPOSED");
+  }
   for (const name of RETIRED_CLINICAL_COMMANDS) {
     if (new RegExp(`(?:^|\\n)\\s*${name}:\\s*\\{`).test(commandBlock)) {
       issues.push("LEGACY_EDGE_COMMAND_EXPOSED");
