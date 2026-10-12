@@ -71,7 +71,7 @@ export function StagingAssignedFormPreview({
         No guarda, certifica, firma ni emite documentos.
       </Text>
       {!ready ? (
-        <Text testID="assigned-form-binding-blocked" style={styles.warning}>
+        <Text testID="assigned-form-binding-blocked" accessibilityLiveRegion="polite" style={styles.warning}>
           Planilla bloqueada hasta vincular una cobertura y sesión de staging válidas.
         </Text>
       ) : null}
@@ -87,22 +87,22 @@ export function StagingAssignedFormPreview({
         </Text>
       </Pressable>
       {ready&&snapshot.state==="idle" ? (
-        <Text testID="assigned-form-idle" style={styles.help}>
+        <Text testID="assigned-form-idle" accessibilityLiveRegion="polite" style={styles.help}>
           Elegí consultar: el sistema verificará tu sesión y prestación.
         </Text>
       ) : null}
       {loading ? (
-        <Text testID="assigned-form-loading" style={styles.help}>
+        <Text testID="assigned-form-loading" accessibilityLiveRegion="polite" style={styles.help}>
           Comprobando la asignación con el servidor…
         </Text>
       ) : null}
       {ready&&snapshot.state==="error" ? (
-        <Text testID="assigned-form-error" style={styles.warning}>
-          No se pudo validar esta prestación. No se muestra ninguna planilla.
+        <Text testID="assigned-form-error" accessibilityLiveRegion="assertive" style={styles.warning}>
+          No se pudo validar esta prestación. No se muestra ninguna planilla. Podés volver a intentar desde tu cobertura asignada.
         </Text>
       ) : null}
       {showForm ? (
-        <View testID="assigned-form-focused-preview" style={styles.form}>
+        <View testID="assigned-form-focused-preview" accessibilityLabel="Planilla autorizada para consulta, solo lectura" style={styles.form}>
           <Text style={styles.help}>
             Solo una vista sin edición: la plantilla llega del servidor,
             no de una especialidad elegida por el celular.
