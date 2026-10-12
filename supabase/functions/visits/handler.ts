@@ -306,6 +306,7 @@ function safeRpcOutput(rpc:string,data:unknown,args:Record<string,unknown>):bool
       Number.isSafeInteger(data)&&data>=1&&data<=1000000;
     case "void":return data===null;
   }
+  return false;
 }
 const MAX_BODY_BYTES = 32768;
 const HEADERS = {
