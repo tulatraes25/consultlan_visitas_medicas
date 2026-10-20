@@ -57,7 +57,7 @@ export const SAMPLE_DOCUMENTS:readonly SampleDocument[]=Object.freeze([
     serviceDate:"2026-10-16",recordedAt:"2026-10-16T11:00:00-03:00",
     professionalAttestation:"recibida",caregiverAttestationRequired:false,
     caregiverAttestation:"no_aplica",correctionRequested:false,origin:"digital"},
-]);
+] satisfies readonly SampleDocument[]);
 
 export function documentFindings(
   doc:SampleDocument,coverages:readonly Coverage[]=COVERAGES,
