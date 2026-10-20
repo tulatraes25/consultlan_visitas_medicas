@@ -73,6 +73,46 @@ async function check(browser,width,height,engine){
     assert.equal(await page.locator(".disabled-action:disabled").count(),2);
     await page.getByRole("button",{name:"Reportes",exact:true}).click();
     assert.equal(await page.locator(".disabled-action:disabled").count(),1);
+    await page.getByRole("button",{name:"Control documental",exact:true}).click();
+    await page.getByRole("heading",{name:"Control documental mensual"}).waitFor();
+    assert.equal(await page.getByTestId("doc-total").innerText(),"8",
+      "Eight independent synthetic documents, not inferred from booked visits");
+    assert.equal(await page.getByTestId("doc-blocked").innerText(),"5",
+      "Date, signature, caregiver, correction and scan each yield an observation");
+    assert.equal(await page.getByTestId("doc-ready").innerText(),"3");
+    assert.equal(await page.locator(".doc-item").count(),8,
+      "An overnight shift can yield only its one paper record");
+    assert.equal(await page.locator('[data-doc-id="DOC-003"]').count(),1,
+      "Night shift document is not duplicated across calendar dates");
+    assert.ok(await page.getByRole("button",{
+      name:"Preparar expediente mensual · deshabilitado",
+    }).isDisabled(),"Closing a clinical dossier must not be possible offline");
+    await page.locator('[data-doc-id="DOC-002"] summary').click();
+    assert.match(await page.locator('[data-doc-id="DOC-002"]').innerText(),
+      /Constancia de firma profesional pendiente/,
+      "Explain the exact missing item to a nontechnical coordinator");
+    await page.getByRole("button",{name:"Ver pendientes"}).click();
+    assert.equal(await page.locator(".doc-item").count(),5,
+      "Pending button filters without changing underlying documents");
+    await page.getByRole("combobox",{
+      name:"Filtrar documentación por episodio",
+    }).selectOption("EPI-101");
+    assert.equal(await page.locator(".doc-item").count(),2);
+    await page.getByRole("combobox",{
+      name:"Filtrar documentación por estado",
+    }).selectOption("Sin observaciones");
+    assert.equal(await page.locator(".doc-item").count(),1);
+    await page.getByRole("combobox",{
+      name:"Filtrar documentación por episodio",
+    }).selectOption("Todos");
+    await page.getByRole("combobox",{
+      name:"Filtrar documentación por estado",
+    }).selectOption("Todas");
+    assert.equal(await page.locator(".doc-item").count(),8,
+      "Filters do not alter the immutable synthetic test dataset");
+    await page.screenshot({path:path.join(folder,
+      "documentation-"+engine+"-"+width+".png"),
+      fullPage:true,animations:"disabled"});
     await page.getByRole("button",{name:"Resumen",exact:true}).click();
     const coordinationAlerts=page.locator(".alerts p");
     assert.equal(await coordinationAlerts.count(),3,
@@ -112,7 +152,7 @@ async function scanAxe(browser,width,height){
   try{
     await page.goto(preview,{waitUntil:"load",timeout:25000});
     await page.addScriptTag({path:axePath});
-    for(const section of ["Agenda 24/7","Episodios","Relevos","Reportes","Resumen"]){
+    for(const section of ["Agenda 24/7","Episodios","Relevos","Control documental","Reportes","Resumen"]){
       await page.getByRole("button",{name:section,exact:true}).click();
       const result=await page.evaluate(async()=>window.axe.run(document,{
         runOnly:{type:"tag",values:["wcag2a","wcag2aa","wcag21a","wcag21aa"]},
