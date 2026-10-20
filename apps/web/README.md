@@ -16,13 +16,15 @@ Para desarrollo técnico: desde esta carpeta ejecutar `npm install`, `npm run de
 - **Profesionales:** cinco perfiles ficticios, sin declarar matrícula verificada.
 - **Relevos:** cambios de guardia pendientes; confirmar/aprobar está deshabilitado.
 - **Reportes:** totales ilustrativos, sin conciliación facturable, firma ni documentos emitibles.
+- **Control documental:** simulación de cierre mensual con 8 documentos inventados, control de fecha/firma/conformidad/corrección/escaneo, filtros, observaciones y **cierre siempre deshabilitado**. No presupone prestaciones realizadas ni el régimen legal de firmas.
 
 ## Controles de calidad
 
 - Contrato `src/data.ts` con 13 coberturas, 4 episodios, 5 profesionales, 9 visitas y 4 guardias.
-- `src/App.tsx` implementa navegación accesible mediante botones, selectores nativos, un diálogo nativo y tabla; CSS responsive 320–1440 px.
+- `src/App.tsx` implementa navegación accesible mediante botones, selectores nativos, un diálogo nativo y tabla; `src/DocumentControl.tsx` agrega control documental sintético basado en funciones puras de `src/documentReadiness.ts`; CSS responsive 320–1440 px.
 - CI construye React/TypeScript y el HTML offline, prueba navegación y guardias nocturnas en **Chrome (1440/768/390/320 px), Firefox y WebKit (768/390 px)** y audita WCAG con axe-core en Chrome. Comprueba cero solicitudes externas y cero acciones clínicas habilitadas.
 - No hay `fetch`, SDK Supabase, `localStorage`, tokens, login, importación de pacientes ni vías de escritura.
+- Guía de aceptación y restricciones: [`WEB-COORD-05`](../../docs/specs/WEB-COORD-05-document-readiness-demo.md). Los estados "sin observaciones" son reglas de demo, nunca autorización de presentación.
 - La identidad CONSULTLAN es solo visual; no comparte servidor, cuentas ni datos con Pediatrics ambulatorio.
 
 ## Limitaciones bloqueantes

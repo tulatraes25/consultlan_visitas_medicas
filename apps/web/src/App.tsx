@@ -5,8 +5,9 @@ import {
   coverageDaySlice,overnight,summary,type Coverage,type Specialty,
 } from "./data";
 import {deriveCoordinationAlerts} from "./coordinationAlerts";
+import {DocumentControl} from "./DocumentControl";
 
-type Section="resumen"|"agenda"|"episodios"|"profesionales"|"relevos"|"reportes";
+type Section="resumen"|"agenda"|"episodios"|"profesionales"|"relevos"|"documentos"|"reportes";
 type Mode="semana"|"dia";
 const SECTIONS:readonly {id:Section;label:string;symbol:string}[]=[
   {id:"resumen",label:"Resumen",symbol:"◫"},
@@ -14,6 +15,7 @@ const SECTIONS:readonly {id:Section;label:string;symbol:string}[]=[
   {id:"episodios",label:"Episodios",symbol:"▤"},
   {id:"profesionales",label:"Profesionales",symbol:"♧"},
   {id:"relevos",label:"Relevos",symbol:"↔"},
+  {id:"documentos",label:"Control documental",symbol:"✓"},
   {id:"reportes",label:"Reportes",symbol:"▥"},
 ];
 const PAGE:Record<Section,{title:string;description:string}>={
@@ -22,6 +24,7 @@ const PAGE:Record<Section,{title:string;description:string}>={
   episodios:{title:"Episodios en seguimiento",description:"Vista operativa por caso, sin historia clínica"},
   profesionales:{title:"Equipo interdisciplinario",description:"Disponibilidad y asignaciones exclusivamente ficticias"},
   relevos:{title:"Relevos pendientes",description:"Decisiones humanas todavía no acreditadas"},
+  documentos:{title:"Control documental mensual",description:"Fechas, firmas y requisitos pendientes en ejemplos ficticios"},
   reportes:{title:"Resumen de gestión",description:"Indicadores de demostración, no aptos para rendición"},
 };
 
@@ -259,6 +262,7 @@ export function App(){
         {section==="episodios"?<EpisodeList onEpisode={setSelected}/>:null}
         {section==="profesionales"?<Professionals/>:null}
         {section==="relevos"?<Handovers/>:null}
+        {section==="documentos"?<DocumentControl/>:null}
         {section==="reportes"?<Reports/>:null}
         <footer className="main-footer">
           Candidato C · diseño híbrido de CONSULTLAN · pendiente de aprobación institucional.
