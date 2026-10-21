@@ -10,7 +10,7 @@ import {TabletSignaturePractice} from "./TabletSignaturePractice";
  * Demonstration ONLY. Cannot edit, sign, scan, upload, persist, export, close
  * or certify any patient document. It deliberately uses invented identifiers.
  */
-export function DocumentControl(){
+export function DocumentControl({onOpenResults}:{onOpenResults:()=>void}){
   const [episode,setEpisode]=useState("Todos");
   const [showSignaturePractice,setShowSignaturePractice]=useState(false);
   const [view,setView]=useState<"Todas"|"Con observaciones"|"Sin observaciones">("Todas");
@@ -26,6 +26,19 @@ export function DocumentControl(){
       firmas válidas, expedientes completos ni una historia clínica.
       Los criterios de conformidad y presentación deberán definirse con Pediatrics y Laura.
     </div>
+    <section className="panel" aria-label="Consulta de registros desde la web">
+      <header className="panel-heading">
+        <div>
+          <h2>Consultar las evoluciones en la web</h2>
+          <p>Vista de los registros de muestra tal como los revisaría Coordinación,
+            con fecha de carga, profesional y documentación pendiente.</p>
+        </div>
+        <button type="button" className="doc-shortcut"
+          onClick={onOpenResults}>Ver resultados de visitas</button>
+      </header>
+      <p className="muted">Los registros fueron inventados para esta demostración;
+        todavía no hay transferencia desde la tablet.</p>
+    </section>
     <section className="panel" aria-label="Precontrol mensual de ejemplo">
       <header className="panel-heading">
         <div>
