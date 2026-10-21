@@ -18,6 +18,7 @@ fs.mkdirSync(folder,{recursive:true});
 async function check(browser,width,height,engine){
   const context=await browser.newContext({
     viewport:{width,height},deviceScaleFactor:1,locale:"es-AR",
+    hasTouch:engine==="chrome"&&width===768,
     timezoneId:"America/Argentina/Buenos_Aires",reducedMotion:"reduce",
   });
   const network=[],errors=[];
@@ -113,6 +114,66 @@ async function check(browser,width,height,engine){
     await page.screenshot({path:path.join(folder,
       "documentation-"+engine+"-"+width+".png"),
       fullPage:true,animations:"disabled"});
+    await page.getByRole("button",{
+      name:/Probar recuadro táctil de firma/,
+    }).click();
+    const signatureDialog=page.getByRole("dialog",{
+      name:"Probar recuadro táctil de firma",
+    });
+    await signatureDialog.waitFor({state:"visible"});
+    assert.match(await signatureDialog.innerText(),/SIN VALIDEZ LEGAL/,
+      "Clearly distinguish handwriting practice from a legally valid signature");
+    const canvas=page.getByTestId("signature-practice-canvas");
+    const geometryPad=await canvas.evaluate(c=>({
+      width:c.getBoundingClientRect().width,
+      height:c.getBoundingClientRect().height,
+      touchAction:getComputedStyle(c).touchAction,
+    }));
+    assert.ok(geometryPad.height>=200&&geometryPad.width>=200,
+      "Tablet signature area must be large enough for a passive stylus");
+    assert.equal(geometryPad.touchAction,"none",
+      "Touching the signature pad must draw, not scroll the page");
+    await canvas.scrollIntoViewIfNeeded();
+    const padBounds=await canvas.boundingBox();
+    assert.ok(padBounds,"Signature canvas must have a layout");
+    await page.mouse.move(padBounds.x+38,padBounds.y+32);
+    await page.mouse.down();
+    await page.mouse.move(padBounds.x+120,padBounds.y+95,{steps:8});
+    await page.mouse.up();
+    assert.match(await page.getByTestId("signature-stroke-count").innerText(),
+      /1 trazo dibujado/,
+      "Standard pointer drawing must work with a passive capacitive stylus");
+    if(engine==="chrome"&&width===768){
+      await canvas.tap({position:{x:48,y:90}});
+      assert.match(await page.getByTestId("signature-stroke-count").innerText(),
+        /2 trazos dibujados/,
+        "Capacitive finger-like touch must work without active stylus features");
+    }
+    await page.getByRole("button",{
+      name:"Borrar y volver a dibujar",
+    }).click();
+    assert.match(await page.getByTestId("signature-stroke-count").innerText(),
+      /0 trazos dibujados/);
+    await page.getByRole("combobox",{
+      name:"Seleccionar firmante de demostración",
+    }).selectOption("cuidador");
+    assert.match(await page.getByTestId("signature-stroke-count").innerText(),
+      /0 trazos dibujados/,
+      "Changing between professional/caregiver discards the other ink");
+    await page.screenshot({path:path.join(folder,
+      "signature-tablet-"+engine+"-"+width+".png"),
+      fullPage:true,animations:"disabled"});
+    await page.getByRole("button",{name:"Cerrar y descartar trazos"}).click();
+    assert.equal(await page.locator("dialog.signature-practice-dialog[open]").count(),0);
+    await page.getByRole("button",{name:/Probar recuadro táctil de firma/}).click();
+    assert.match(await page.getByTestId("signature-stroke-count").innerText(),
+      /0 trazos dibujados/,"Closing the modal destroys all stroke memory");
+    await page.getByRole("button",{name:"Cerrar y descartar trazos"}).click();
+    assert.equal(await page.getByTestId("doc-blocked").innerText(),"5",
+      "Drawing on canvas must never resolve a pending professional signature");
+    assert.ok(await page.getByRole("button",{
+      name:"Preparar expediente mensual · deshabilitado",
+    }).isDisabled(),"Signature practice never enables dossier issuance");
     await page.getByRole("button",{name:"Resumen",exact:true}).click();
     const coordinationAlerts=page.locator(".alerts p");
     assert.equal(await coordinationAlerts.count(),3,
@@ -166,6 +227,20 @@ async function scanAxe(browser,width,height){
           })),
         }))})+"\n");
       assert.equal(issues.length,0,"WCAG issues in "+section+"/"+width);
+      if(section==="Control documental"){
+        await page.getByRole("button",{
+          name:/Probar recuadro táctil de firma/,
+        }).click();
+        const modalResults=await page.evaluate(async()=>window.axe.run(document,{
+          runOnly:{type:"tag",values:["wcag2a","wcag2aa","wcag21a","wcag21aa"]},
+        }));
+        const severe=modalResults.violations.filter(v=>
+          v.impact==="critical"||v.impact==="serious");
+        assert.equal(severe.length,0,
+          "Tablet signature practice must not add major WCAG issues "+
+          JSON.stringify(severe.map(v=>({id:v.id,nodes:v.nodes.map(n=>n.target)}))));
+        await page.getByRole("button",{name:"Cerrar y descartar trazos"}).click();
+      }
     }
     assert.deepEqual(network,[],"Axe scan must not use external network");
     assert.deepEqual(errors,[],"No page errors during WCAG audit");
