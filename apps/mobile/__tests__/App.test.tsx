@@ -76,7 +76,7 @@ describe('Pediatrics mobile demo interactions — synthetic data only', () => {
     fireEvent.press(screen.getByRole('button', { name: /Ver detalle de Paciente ficticio C/ }));
     fireEvent.press(screen.getByRole('button', { name: 'Probar ventana táctil de firma (demo)' }));
 
-    expect(screen.getByText('Ventana táctil de firma')).toBeTruthy();
+    expect(screen.getByText('Recuadro táctil de firma para tablets')).toBeTruthy();
     expect(screen.getByText('SIMULACIÓN SIN VALIDEZ LEGAL')).toBeTruthy();
     expect(screen.getByText('Trazos: 0')).toBeTruthy();
     fireEvent.press(screen.getByRole('radio', { name: 'Vínculo de muestra: Tutor' }));
@@ -94,10 +94,30 @@ describe('Pediatrics mobile demo interactions — synthetic data only', () => {
     fireEvent(pad, 'responderGrant', { nativeEvent: { locationX: 15, locationY: 30 } });
     expect(screen.getByText('Trazos: 1')).toBeTruthy();
     fireEvent.press(screen.getByRole('button', { name: 'Cerrar y descartar demostración' }));
-    expect(screen.queryByText('Ventana táctil de firma')).toBeNull();
+    expect(screen.queryByText('Recuadro táctil de firma para tablets')).toBeNull();
 
     fireEvent.press(screen.getByRole('button', { name: 'Probar ventana táctil de firma (demo)' }));
     expect(screen.getByText('Trazos: 0')).toBeTruthy();
+  });
+
+  test('tablet signature pad offers a larger touch target with passive capacitive pen guidance', () => {
+    setViewport(1000,850);
+    render(<App />);
+    fireEvent.press(screen.getByRole('tab',{name:'Agenda'}));
+    fireEvent.press(screen.getByRole('button',{name:/Ver detalle de Paciente ficticio F/}));
+    fireEvent.press(screen.getByRole('button',{name:'Probar ventana táctil de firma (demo)'}));
+    expect(screen.getByText('Recuadro táctil de firma para tablets')).toBeTruthy();
+    expect(screen.getByText('Dibujá con el dedo o birome capacitiva')).toBeTruthy();
+    const pad=screen.getByTestId('demo-signature-pad');
+    expect(pad.props.style).toEqual(expect.arrayContaining([
+      expect.objectContaining({height:270}),
+    ]));
+    expect(screen.getByText('SIMULACIÓN SIN VALIDEZ LEGAL')).toBeTruthy();
+    expect(screen.getByText('Trazos: 0')).toBeTruthy();
+    fireEvent.press(screen.getByRole('button',{
+      name:'Cerrar y descartar demostración',
+    }));
+    expect(screen.queryByTestId('demo-signature-pad')).toBeNull();
   });
 
   test('medium tablet shows focused visit detail with a back action', () => {
