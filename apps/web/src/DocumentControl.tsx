@@ -4,6 +4,7 @@ import {
   SAMPLE_DOCUMENTS,documentFindings,monthlyDocumentSummary,
 } from "./documentReadiness";
 import "./documentControl.css";
+import {TabletSignaturePractice} from "./TabletSignaturePractice";
 
 /**
  * Demonstration ONLY. Cannot edit, sign, scan, upload, persist, export, close
@@ -11,6 +12,7 @@ import "./documentControl.css";
  */
 export function DocumentControl(){
   const [episode,setEpisode]=useState("Todos");
+  const [showSignaturePractice,setShowSignaturePractice]=useState(false);
   const [view,setView]=useState<"Todas"|"Con observaciones"|"Sin observaciones">("Todas");
   const stats=monthlyDocumentSummary();
   const visible=SAMPLE_DOCUMENTS.filter(doc=>{
@@ -122,6 +124,20 @@ export function DocumentControl(){
         }):<p className="empty">No hay documentos de muestra para estos filtros.</p>}
       </div>
     </section>
+    <section className="panel signature-practice-example"
+      aria-label="Práctica de firma en tablet sin guardar">
+      <span className="overline">TABLET · DEDO O BIROME CAPACITIVA</span>
+      <h2>Un recuadro amplio para firmar</h2>
+      <p className="muted">
+        Así podrá practicarse el gesto de una firma directamente en una tablet,
+        incluso con una lapicera capacitiva económica sin Bluetooth.
+        El profesional y el cuidador autorizado tendrán circuitos diferentes.
+      </p>
+      <button type="button" className="signature-practice-try"
+        onClick={()=>setShowSignaturePractice(true)}>
+        Probar recuadro táctil de firma · sin guardar
+      </button>
+    </section>
     <section className="panel doc-final-gate" aria-label="Control de cierre no habilitado">
       <div>
         <h2>Expediente mensual</h2>
@@ -133,5 +149,7 @@ export function DocumentControl(){
         Preparar expediente mensual · deshabilitado
       </button>
     </section>
+    <TabletSignaturePractice open={showSignaturePractice}
+      onClose={()=>setShowSignaturePractice(false)}/>
   </div>;
 }
