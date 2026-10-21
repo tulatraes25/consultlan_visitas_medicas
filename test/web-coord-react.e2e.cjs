@@ -74,6 +74,64 @@ async function check(browser,width,height,engine){
     assert.equal(await page.locator(".disabled-action:disabled").count(),2);
     await page.getByRole("button",{name:"Reportes",exact:true}).click();
     assert.equal(await page.locator(".disabled-action:disabled").count(),1);
+    await page.getByRole("button",{name:"Resultados de visitas",exact:true}).click();
+    await page.getByRole("heading",{name:"Resultados de visitas",exact:true}).waitFor();
+    assert.match(await page.locator(".results-demo .notice").first().innerText(),
+      /SIN SINCRONIZACIÓN/,
+      "Demo results must never suggest actual tablet uploads");
+    assert.equal(await page.getByTestId("results-total").innerText(),"8");
+    assert.equal(await page.getByTestId("results-observed").innerText(),"5");
+    assert.equal(await page.getByTestId("results-unobserved").innerText(),"3");
+    assert.equal(await page.locator("[data-result-id]").count(),8);
+    assert.equal(await page.locator("[data-result-id]").first().getAttribute("data-result-id"),
+      "DOC-008","Most recently entered synthetic note shown first");
+    assert.equal(await page.locator('[data-result-id="DOC-003"]').count(),1,
+      "Overnight shift produces just one registered result");
+    assert.equal(await page.locator('[data-result-id="DOC-006"]').count(),1,
+      "Second overnight shift also produces just one registered result");
+    await page.locator('[data-result-id="DOC-002"] summary').click();
+    assert.match(await page.locator('[data-result-id="DOC-002"]').innerText(),
+      /Firma profesional: Pendiente/);
+    await page.locator('[data-result-id="DOC-007"] summary').click();
+    assert.match(await page.locator('[data-result-id="DOC-007"]').innerText(),
+      /no fue digitalizado/,"Paper-only record cannot expose nonexistent note content");
+    await page.getByRole("combobox",{name:"Filtrar resultados por episodio"})
+      .selectOption("EPI-101");
+    assert.equal(await page.locator("[data-result-id]").count(),3);
+    await page.getByRole("combobox",{name:"Filtrar resultados por especialidad"})
+      .selectOption("Medicina");
+    assert.equal(await page.locator("[data-result-id]").count(),1);
+    await page.getByRole("combobox",{name:"Filtrar resultados por estado documental"})
+      .selectOption("Sin observaciones");
+    assert.equal(await page.locator("[data-result-id]").count(),0);
+    await page.getByRole("combobox",{name:"Filtrar resultados por estado documental"})
+      .selectOption("Con observaciones");
+    assert.equal(await page.locator("[data-result-id]").count(),1);
+    await page.getByRole("combobox",{name:"Filtrar resultados por episodio"})
+      .selectOption("Todos");
+    await page.getByRole("combobox",{name:"Filtrar resultados por especialidad"})
+      .selectOption("Todas");
+    await page.getByRole("combobox",{name:"Filtrar resultados por estado documental"})
+      .selectOption("Todos");
+    assert.equal(await page.locator("[data-result-id]").count(),8,
+      "Filters do not mutate synthetic results or require network");
+    assert.ok(await page.getByRole("button",{
+      name:"Descargar historia clínica · no disponible",
+    }).isDisabled(),"Do not permit exporting unauthenticated clinical data");
+    const resultsGeometry=await page.evaluate(()=>({
+      width:document.documentElement.scrollWidth,viewport:window.innerWidth,
+    }));
+    assert.ok(resultsGeometry.width<=resultsGeometry.viewport+2,
+      "Results screen must remain usable at "+width+"px without page overflow");
+    await page.screenshot({path:path.join(folder,
+      "results-"+engine+"-"+width+".png"),
+      fullPage:true,animations:"disabled"});
+    await page.getByRole("button",{name:"Abrir control documental"}).click();
+    assert.equal(await page.getByTestId("doc-total").innerText(),"8",
+      "Records and monthly documentary review must reference the same fixtures");
+    await page.getByRole("button",{name:"Ver resultados de visitas"}).click();
+    assert.equal(await page.getByTestId("results-total").innerText(),"8",
+      "Coordinator can return to web visit results");
     await page.getByRole("button",{name:"Control documental",exact:true}).click();
     await page.getByRole("heading",{name:"Control documental mensual"}).waitFor();
     assert.equal(await page.getByTestId("doc-total").innerText(),"8",
@@ -213,7 +271,7 @@ async function scanAxe(browser,width,height){
   try{
     await page.goto(preview,{waitUntil:"load",timeout:25000});
     await page.addScriptTag({path:axePath});
-    for(const section of ["Agenda 24/7","Episodios","Relevos","Control documental","Reportes","Resumen"]){
+    for(const section of ["Agenda 24/7","Episodios","Relevos","Resultados de visitas","Control documental","Reportes","Resumen"]){
       await page.getByRole("button",{name:section,exact:true}).click();
       const result=await page.evaluate(async()=>window.axe.run(document,{
         runOnly:{type:"tag",values:["wcag2a","wcag2aa","wcag21a","wcag21aa"]},

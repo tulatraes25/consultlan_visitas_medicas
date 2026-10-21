@@ -17,6 +17,7 @@ Para desarrollo técnico: desde esta carpeta ejecutar `npm install`, `npm run de
 - **Relevos:** cambios de guardia pendientes; confirmar/aprobar está deshabilitado.
 - **Reportes:** totales ilustrativos, sin conciliación facturable, firma ni documentos emitibles.
 - **Control documental:** simulación de cierre mensual con 8 documentos inventados, control de fecha/firma/conformidad/corrección/escaneo, filtros, observaciones y **cierre siempre deshabilitado**. También permite **probar un recuadro amplio de firma en tablet** con dedo o birome capacitiva pasiva, sin guardar trazos, acreditar firmas ni cambiar los pendientes.
+- **Resultados de visitas:** ventana web con ocho evoluciones completamente ficticias, especialidad, fecha de prestación y carga, estados de documentación, filtros y detalle; permite regresar al Control documental. Muestra cómo se verá un resultado registrado desde una tablet, pero **no está sincronizada con una tablet ni con Supabase**.
 
 ## Controles de calidad
 
@@ -24,7 +25,7 @@ Para desarrollo técnico: desde esta carpeta ejecutar `npm install`, `npm run de
 - `src/App.tsx` implementa navegación accesible mediante botones, selectores nativos, un diálogo nativo y tabla; `src/DocumentControl.tsx` agrega control documental sintético basado en funciones puras de `src/documentReadiness.ts`; CSS responsive 320–1440 px.
 - CI construye React/TypeScript y el HTML offline, prueba navegación y guardias nocturnas en **Chrome (1440/768/390/320 px), Firefox y WebKit (768/390 px)** y audita WCAG con axe-core en Chrome. Comprueba cero solicitudes externas y cero acciones clínicas habilitadas.
 - No hay `fetch`, SDK Supabase, `localStorage`, tokens, login, importación de pacientes ni vías de escritura.
-- Guías de aceptación: [`WEB-COORD-05`](../../docs/specs/WEB-COORD-05-document-readiness-demo.md) (control mensual) y [`WEB-COORD-06`](../../docs/specs/WEB-COORD-06-tablet-signature-practice.md) (firma táctil ficticia). Los trazos no se guardan, y "sin observaciones" nunca autoriza presentar documentación.
+- Guías de aceptación: [`WEB-COORD-05`](../../docs/specs/WEB-COORD-05-document-readiness-demo.md) (control mensual), [`WEB-COORD-06`](../../docs/specs/WEB-COORD-06-tablet-signature-practice.md) (firma táctil ficticia) y [`WEB-COORD-07`](../../docs/specs/WEB-COORD-07-tablet-to-web-visit-results.md) (resultados vistos desde web). Los trazos no se guardan, y "sin observaciones" nunca autoriza presentar documentación.
 - La identidad CONSULTLAN es solo visual; no comparte servidor, cuentas ni datos con Pediatrics ambulatorio.
 
 ## Limitaciones bloqueantes
