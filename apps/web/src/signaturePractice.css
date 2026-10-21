@@ -1,0 +1,64 @@
+/* WEB-COORD-06: passive capacitive stylus, finger and mouse.
+ * No dependency on active stylus hardware or network services. */
+.signature-practice-dialog{
+  width:min(840px,calc(100vw - 24px));
+  max-height:min(95dvh,940px);
+  border:1px solid #C9DFD0;
+  border-radius:18px;
+  padding:0;
+  color:var(--ink);
+  background:#fff;
+  box-shadow:0 30px 100px #082E2050;
+  overflow-y:auto;
+}
+.signature-practice-dialog::backdrop{background:#09291FD4}
+.signature-practice-body{padding:clamp(15px,2.7vw,28px);display:flex;flex-direction:column;gap:15px}
+.signature-practice-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.signature-practice-head h2{font-size:clamp(20px,2.6vw,26px);line-height:1.25;color:var(--forest);margin:0}
+.signature-practice-close{
+  flex:none;width:48px;height:48px;border:0;border-radius:12px;
+  background:#E8F3ED;color:#184C32;font-size:28px;font-weight:700;
+}
+.signature-practice-role{display:flex;flex-wrap:wrap;align-items:center;gap:12px;font-size:13px;font-weight:720}
+.signature-practice-role select{
+  width:min(100%,380px);min-height:48px;border:1px solid #A9CABA;
+  border-radius:10px;background:#fff;color:var(--forest);
+  padding:10px 12px;font:inherit;
+}
+.signature-practice-ink{display:flex;flex-direction:column;gap:10px;min-width:0}
+.signature-practice-instruction{font-size:13px;line-height:1.65;margin:0;color:#244B37}
+.signature-practice-canvas{
+  box-sizing:border-box;
+  display:block;
+  width:100%;
+  height:clamp(210px,31dvh,310px);
+  touch-action:none;user-select:none;-webkit-user-select:none;
+  background:#FDFEFD;border:2px solid #267C56;
+  border-radius:13px;
+  cursor:crosshair;
+}
+.signature-practice-tools{
+  display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;
+}
+.signature-practice-tools>span{font-size:12px;font-weight:700;color:var(--muted)}
+.signature-practice-tools button{min-height:48px}
+.signature-practice-muted{margin:0;font-size:12px;line-height:1.6;color:var(--muted)}
+.signature-practice-dismiss{
+  min-height:50px;padding:12px 18px;border:0;border-radius:11px;
+  background:var(--forest);color:#fff;font-size:14px;font-weight:800;
+}
+.signature-practice-dismiss:hover{background:#146140}
+.signature-practice-try{
+  min-height:48px;align-self:flex-start;padding:12px 18px;
+  border:1px solid #9CC8AD;border-radius:10px;
+  background:#E8F7EF;color:#0B5B36;font-size:13px;font-weight:790;
+}
+.signature-practice-try:hover{background:#DBF0E4}
+.signature-practice-example p{max-width:660px}
+@media(max-width:650px){
+  .signature-practice-dialog{max-height:94dvh}
+  .signature-practice-role{flex-direction:column;align-items:stretch}
+  .signature-practice-role select{width:100%;max-width:none}
+  .signature-practice-canvas{height:215px}
+  .signature-practice-try{width:100%}
+}
