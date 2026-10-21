@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   Modal, Pressable, ScrollView, StyleSheet, Text, View,
-  type GestureResponderEvent, type LayoutChangeEvent,
+  useWindowDimensions, type GestureResponderEvent, type LayoutChangeEvent,
 } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 import type { DemoVisit } from './demoData';
@@ -36,6 +36,7 @@ function toPath(stroke: InkStroke): string {
 }
 
 export function SignaturePadDemo() {
+  const { width: windowWidth } = useWindowDimensions();
   const [strokes, setStrokes] = useState<InkStroke[]>([]);
   const [layout, setLayout] = useState({ width: VIRTUAL_W, height: VIRTUAL_H });
 
@@ -67,7 +68,7 @@ export function SignaturePadDemo() {
       <View
         accessibilityLabel="Área de dibujo táctil de demostración"
         testID="demo-signature-pad"
-        style={styles.pad}
+        style={[styles.pad, { height: windowWidth >= 700 ? 270 : 200 }]}
         onLayout={updateSize}
         onStartShouldSetResponder={() => true}
         onMoveShouldSetResponder={() => true}
@@ -86,8 +87,8 @@ export function SignaturePadDemo() {
         </Svg>
         {strokes.length === 0 ? (
           <View style={styles.placeholder} pointerEvents="none">
-            <Text style={styles.placeholderText}>Dibujá con el dedo o lápiz</Text>
-            <Text style={styles.placeholderSubtext}>Práctica visual, no es una firma válida</Text>
+            <Text style={styles.placeholderText}>Dibujá con el dedo o birome capacitiva</Text>
+            <Text style={styles.placeholderSubtext}>Sin lápiz activo especial · práctica sin validez legal</Text>
           </View>
         ) : null}
       </View>
@@ -141,7 +142,7 @@ export function AttendanceSignatureDemo({
             <View style={styles.headerRow}>
               <View style={styles.headerText}>
                 <Text style={styles.eyebrow}>PEDIATRICS · MODO DEMO</Text>
-                <Text style={styles.title}>Ventana táctil de firma</Text>
+                <Text style={styles.title}>Recuadro táctil de firma para tablets</Text>
               </View>
               <Pressable
                 accessibilityRole="button"
@@ -157,7 +158,8 @@ export function AttendanceSignatureDemo({
               <Text style={styles.warningTitle}>SIMULACIÓN SIN VALIDEZ LEGAL</Text>
               <Text style={styles.warningDescription}>
                 Nadie está firmando una prestación real. Esta pantalla solo permite probar el
-                gesto de dibujar una firma, sin guardar ni enviar información.
+                gesto de dibujar una firma con dedo o birome capacitiva pasiva,
+                sin guardar ni enviar información.
               </Text>
             </View>
 
@@ -218,7 +220,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(7,42,29,0.68)', padding: spacing.lg,
   },
   sheet: {
-    width: '100%', maxWidth: 660, maxHeight: '94%',
+    width: '100%', maxWidth: 760, maxHeight: '94%',
     borderRadius: corners.large, backgroundColor: palette.surface,
     overflow: 'hidden',
   },
@@ -259,7 +261,7 @@ const styles = StyleSheet.create({
   relationshipWarning: { color: palette.warning, fontSize: 11, lineHeight: 17 },
   padOuter: { gap: spacing.sm },
   pad: {
-    height: 180, borderRadius: corners.medium, borderWidth: 1.5,
+    height: 200, borderRadius: corners.medium, borderWidth: 1.5,
     borderColor: palette.primary, backgroundColor: '#FBFFFC', overflow: 'hidden',
   },
   placeholder: {
